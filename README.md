@@ -1,0 +1,53 @@
+# MealDeal
+
+MealDeal ist eine lokale Desktop-Anwendung für den privaten Gebrauch. Sie soll künftig Gerichte, Rezepte, Wochenpläne und Einkaufslisten verwalten.
+
+## Status
+
+Das Projekt befindet sich in einer frühen Entwicklungsphase. Aktuell ist ausschließlich das technische Fundament eingerichtet; Fachfunktionen und Datenbankschema sind noch nicht implementiert.
+
+## Technologie-Stack
+
+- Java 25 LTS
+- JavaFX 25
+- Maven
+- SQLite mit direktem JDBC-Zugriff
+- Repository Pattern für die spätere Persistenz
+- JUnit 5
+- Windows als primäre Zielplattform
+
+## Voraussetzungen unter Windows
+
+- JDK 25; `JAVA_HOME` verweist auf diese Installation
+- Apache Maven; `mvn` ist über `PATH` erreichbar
+
+Die Installation lässt sich in PowerShell prüfen:
+
+```powershell
+java -version
+mvn -version
+```
+
+Beide Ausgaben müssen Java 25 anzeigen.
+
+## Bauen und testen
+
+Im Projektverzeichnis:
+
+```powershell
+mvn clean test
+```
+
+## Anwendung starten
+
+```powershell
+mvn javafx:run
+```
+
+Der Start öffnet derzeit nur ein minimales Fenster mit dem Titel „MealDeal“.
+
+## Architekturprinzipien
+
+Das Projekt trennt vier Verantwortungsbereiche: Domänenmodell, Services, Persistenz und JavaFX-Oberfläche. Geschäftslogik bleibt unabhängig von JavaFX und wird automatisiert testbar entwickelt. SQL-Zugriffe werden später ausschließlich in der Persistenzschicht über JDBC und das Repository Pattern umgesetzt.
+
+Weitere Grundlagen stehen in [docs/architecture.md](docs/architecture.md). Dauerhafte Entwicklungsregeln sind in [AGENTS.md](AGENTS.md) festgehalten.
