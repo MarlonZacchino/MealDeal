@@ -6,7 +6,7 @@ import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 1;
+    static final int CURRENT_VERSION = 2;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -59,6 +59,16 @@ final class SqliteSchema {
         """
     };
 
+    private static final String VERSION_2_STATEMENT = """
+            CREATE TABLE meal_plan_entries (
+                id TEXT PRIMARY KEY NOT NULL,
+                planned_date TEXT NOT NULL UNIQUE,
+                recipe_id TEXT NOT NULL,
+                serving_count INTEGER NOT NULL CHECK (serving_count > 0),
+                FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE RESTRICT
+            )
+            """;
+
     private SqliteSchema() {
     }
 
@@ -70,6 +80,10 @@ final class SqliteSchema {
         }
         if (version == 0) {
             createVersion1(connection);
+            version = 1;
+        }
+        if (version == 1) {
+            createVersion2(connection);
         }
     }
 
@@ -80,7 +94,7 @@ final class SqliteSchema {
         }
     }
 
-    private static void createVersion1(Connection connection) throws SQLException {
+    static void createVersion1(Connection connection) throws SQLException {
         for (String sql : VERSION_1_STATEMENTS) {
             try (Statement statement = connection.createStatement()) {
                 statement.execute(sql);
@@ -88,6 +102,13 @@ final class SqliteSchema {
         }
         try (Statement statement = connection.createStatement()) {
             statement.execute("PRAGMA user_version = 1");
+        }
+    }
+
+    private static void createVersion2(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.execute(VERSION_2_STATEMENT);
+            statement.execute("PRAGMA user_version = 2");
         }
     }
 }
