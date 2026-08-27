@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="de.mealdeal.ui.controller.MainController"
+            stylesheets="@styles.css"
+            styleClass="root-shell">
+    <left>
+        <VBox prefWidth="230.0" spacing="8.0" styleClass="sidebar">
+            <padding>
+                <Insets top="32.0" right="20.0" bottom="24.0" left="20.0"/>
+            </padding>
+            <Label text="MealDeal" styleClass="brand"/>
+            <Label text="Einfach essen. Besser planen." wrapText="true" styleClass="brand-subtitle"/>
+            <VBox spacing="8.0" styleClass="navigation">
+                <Button fx:id="homeButton" text="Start" maxWidth="1.7976931348623157E308"
+                        onAction="#showHome" styleClass="navigation-button"/>
+                <Button fx:id="recipesButton" text="Meine Gerichte" maxWidth="1.7976931348623157E308"
+                        onAction="#showRecipes" styleClass="navigation-button"/>
+                <Button fx:id="searchButton" text="Suche" maxWidth="1.7976931348623157E308"
+                        onAction="#showSearch" styleClass="navigation-button"/>
+                <Button fx:id="weekPlanButton" text="Wochenplan" maxWidth="1.7976931348623157E308"
+                        onAction="#showWeekPlan" styleClass="navigation-button"/>
+                <Button fx:id="shoppingButton" text="Einkauf" maxWidth="1.7976931348623157E308"
+                        onAction="#showShopping" styleClass="navigation-button"/>
+            </VBox>
+        </VBox>
+    </left>
+    <center>
+        <StackPane fx:id="contentHost" styleClass="content-host"/>
+    </center>
+</BorderPane>

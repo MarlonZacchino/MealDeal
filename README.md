@@ -4,7 +4,7 @@ MealDeal ist eine lokale Desktop-Anwendung für den privaten Gebrauch. Sie soll 
 
 ## Status
 
-Das Projekt befindet sich in einer frühen Entwicklungsphase. Technisches Fundament, Domain-Modell, SQLite-Persistenz, Portions- und Einheitenberechnungen, Recipe-Suche, Wochenplanung und fachliche Einkaufslistenberechnung sind eingerichtet. Sichtbare Such-, Wochenplan- und Einkaufslistenoberflächen sind noch nicht implementiert.
+Das Projekt befindet sich in einer frühen Entwicklungsphase. Technisches Fundament, Domain-Modell, SQLite-Persistenz, Portions- und Einheitenberechnungen, Recipe-Suche, Wochenplanung und fachliche Einkaufslistenberechnung sind eingerichtet. Das JavaFX-Anwendungsgerüst bietet bereits eine feste Seitenleiste und strukturelle Ansichten für Start, Gerichte, Suche, Wochenplan und Einkauf. Die fachlichen Funktionen dieser Ansichten werden in späteren Phasen angebunden.
 
 ## Technologie-Stack
 
@@ -44,7 +44,7 @@ mvn clean test
 mvn javafx:run
 ```
 
-Der Start öffnet derzeit nur ein minimales Fenster mit dem Titel „MealDeal“.
+Der Start öffnet das Hauptfenster „MealDeal“. Über die linke Seitenleiste lassen sich alle derzeit angelegten Bereiche im selben Fenster aufrufen.
 
 ## Architekturprinzipien
 

@@ -1,0 +1,125 @@
+.root-shell {
+    -fx-background-color: #f5f6f2;
+    -fx-font-family: "Segoe UI";
+}
+
+.sidebar {
+    -fx-background-color: #26382f;
+}
+
+.brand {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+}
+
+.brand-subtitle {
+    -fx-text-fill: #c9d6ce;
+    -fx-font-size: 13px;
+    -fx-padding: 0 0 28px 0;
+}
+
+.navigation-button {
+    -fx-alignment: center-left;
+    -fx-background-color: transparent;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-font-size: 15px;
+    -fx-padding: 12px 14px;
+    -fx-text-fill: #e7eee9;
+}
+
+.navigation-button:hover {
+    -fx-background-color: #354b40;
+}
+
+.navigation-button.active {
+    -fx-background-color: #dfe9df;
+    -fx-font-weight: bold;
+    -fx-text-fill: #26382f;
+}
+
+.content-host,
+.content-scroll,
+.content-scroll > .viewport {
+    -fx-background-color: #f5f6f2;
+}
+
+.content-scroll {
+    -fx-border-color: transparent;
+}
+
+.page {
+    -fx-background-color: #f5f6f2;
+}
+
+.page-title {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #25332c;
+}
+
+.page-subtitle {
+    -fx-font-size: 16px;
+    -fx-text-fill: #617068;
+    -fx-padding: 0 0 18px 0;
+}
+
+.card-grid {
+    -fx-padding: 4px 0 0 0;
+}
+
+.action-card,
+.placeholder-box {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 14px;
+    -fx-border-color: #e1e6e1;
+    -fx-border-radius: 14px;
+    -fx-padding: 24px;
+}
+
+.card-title,
+.section-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2d4036;
+}
+
+.card-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #68756e;
+}
+
+.primary-button,
+.secondary-button {
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 14px;
+}
+
+.primary-button {
+    -fx-background-color: #5f8068;
+    -fx-text-fill: #ffffff;
+}
+
+.primary-button:hover {
+    -fx-background-color: #4d6d57;
+}
+
+.secondary-button {
+    -fx-background-color: #e8efe8;
+    -fx-text-fill: #365040;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #dae6da;
+}
+
+.day-chip {
+    -fx-background-color: #edf2ec;
+    -fx-background-radius: 8px;
+    -fx-padding: 10px 14px;
+    -fx-text-fill: #415348;
+}

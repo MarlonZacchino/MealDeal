@@ -101,4 +101,18 @@ Die geplante Personenanzahl fließt ausschließlich über `RecipeScaler` ein. Gl
 
 ## UI
 
-Verwendet JavaFX für Darstellung und Benutzereingaben. Views und Controller enthalten keine Geschäftslogik und keine direkten SQL-Zugriffe.
+Verwendet JavaFX für Darstellung und Benutzereingaben. Die deklarativen FXML-Dateien beschreiben die Struktur der Views; eine zentrale CSS-Datei gestaltet das gemeinsame Anwendungsgerüst. Controller behandeln ausschließlich UI-Ereignisse und Navigation. Sie enthalten keine Geschäftslogik und keine direkten SQL-Zugriffe.
+
+```text
+FXML-Views
+    ↓
+JavaFX-Controller
+    ↓
+ApplicationContext / Services
+    ↓
+Domain und Repositories
+```
+
+`MealDealApplication` öffnet genau eine primäre Stage. `MainController` hält die Seitenleiste dauerhaft sichtbar, während `ViewNavigator` nur den Inhaltsbereich austauscht und den aktiven Navigationseintrag markiert. Dadurch entstehen beim Wechsel zwischen Start, Gerichten, Suche, Wochenplan und Einkauf keine zusätzlichen Fenster.
+
+`ApplicationContext` übernimmt die bewusste manuelle Zusammensetzung der UI. Spätere Phasen können dort Services und Repository-Schnittstellen per Konstruktor an Controller übergeben, ohne ein Dependency-Injection-Framework einzuführen. Die aktuellen Platzhalter-Views greifen noch nicht auf Datenbank oder Fachservices zu.
