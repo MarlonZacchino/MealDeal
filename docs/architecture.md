@@ -4,7 +4,19 @@ MealDeal trennt die Verantwortlichkeiten in vier überschaubare Bereiche. Die Sc
 
 ## Domain
 
-Enthält später die fachlichen Datenobjekte. Die Domain hat weder JavaFX- noch SQLite-Abhängigkeiten.
+Enthält die fachlichen Datenobjekte. Die Domain hat weder JavaFX-, JDBC- noch SQLite-Abhängigkeiten.
+
+Das derzeit implementierte Modell ist:
+
+```text
+Recipe
+ ├── RecipeIngredient *
+ │    └── Ingredient
+ ├── RecipeStep *
+ └── Taste *
+```
+
+`Ingredient` und `Taste` besitzen eine persistenzunabhängige UUID als stabile technische Identität. Ein Rezept lässt jede dieser Identitäten höchstens einmal zu. Rezeptschritte werden anhand ihrer eindeutigen Position sortiert. Rezeptmengen werden mit `BigDecimal` gespeichert. Einheiten weisen ihre Dimension aus, damit spätere Umrechnung nur zwischen kompatiblen Einheiten erfolgt.
 
 ## Service
 

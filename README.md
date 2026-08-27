@@ -4,7 +4,7 @@ MealDeal ist eine lokale Desktop-Anwendung für den privaten Gebrauch. Sie soll 
 
 ## Status
 
-Das Projekt befindet sich in einer frühen Entwicklungsphase. Aktuell ist ausschließlich das technische Fundament eingerichtet; Fachfunktionen und Datenbankschema sind noch nicht implementiert.
+Das Projekt befindet sich in einer frühen Entwicklungsphase. Das technische Fundament und das fachliche Grundmodell sind eingerichtet; Anwendungsfunktionen, Benutzeroberfläche und Datenbankschema sind noch nicht implementiert.
 
 ## Technologie-Stack
 
