@@ -18,6 +18,7 @@ public final class Recipe {
 
     public static final int DEFAULT_SERVING_COUNT = 2;
 
+    private final UUID id;
     private final String name;
     private final int standardServingCount;
     private final List<RecipeIngredient> ingredients;
@@ -34,7 +35,7 @@ public final class Recipe {
      */
     public Recipe(String name, List<RecipeIngredient> ingredients,
                   List<RecipeStep> steps, List<Taste> tastes) {
-        this(name, DEFAULT_SERVING_COUNT, ingredients, steps, tastes);
+        this(UUID.randomUUID(), name, DEFAULT_SERVING_COUNT, ingredients, steps, tastes);
     }
 
     /**
@@ -49,6 +50,23 @@ public final class Recipe {
     public Recipe(String name, int standardServingCount,
                   List<RecipeIngredient> ingredients, List<RecipeStep> steps,
                   List<Taste> tastes) {
+        this(UUID.randomUUID(), name, standardServingCount, ingredients, steps, tastes);
+    }
+
+    /**
+     * Recreates a recipe with an existing technical identity.
+     *
+     * @param id the stable, persistence-independent identity
+     * @param name the recipe name
+     * @param standardServingCount positive number of standard servings
+     * @param ingredients ingredients with their quantities and units
+     * @param steps individually positioned preparation steps
+     * @param tastes one or more tastes assigned to the recipe
+     */
+    public Recipe(UUID id, String name, int standardServingCount,
+                  List<RecipeIngredient> ingredients, List<RecipeStep> steps,
+                  List<Taste> tastes) {
+        this.id = java.util.Objects.requireNonNull(id, "Recipe ID must not be null.");
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Recipe name must not be blank.");
         }
@@ -73,6 +91,10 @@ public final class Recipe {
         rejectDuplicateTasteIds(this.tastes);
     }
 
+    public UUID getId() {
+        return id;
+    }
+
     public String getName() {
         return name;
     }
@@ -91,6 +113,22 @@ public final class Recipe {
 
     public List<Taste> getTastes() {
         return tastes;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof Recipe recipe)) {
+            return false;
+        }
+        return id.equals(recipe.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
     }
 
     private static <T> List<T> copyWithoutNulls(List<T> values, String fieldName) {

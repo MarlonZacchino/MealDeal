@@ -5,8 +5,10 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RecipeTest {
@@ -103,6 +105,18 @@ class RecipeTest {
         assertThrows(IllegalArgumentException.class,
                 () -> new Recipe("Pasta", List.of(recipeIngredient),
                         List.of(recipeStep), List.of(savory, savory)));
+    }
+
+    @Test
+    void equalityUsesStableIdentity() {
+        UUID id = UUID.randomUUID();
+        Recipe first = new Recipe(id, "Pasta", 2, List.of(recipeIngredient),
+                List.of(recipeStep), List.of(savory));
+        Recipe renamed = new Recipe(id, "Renamed pasta", 4, List.of(recipeIngredient),
+                List.of(recipeStep), List.of(savory));
+
+        assertEquals(first, renamed);
+        assertNotEquals(first, createRecipe("Pasta", 2));
     }
 
     private Recipe createRecipe(String name, int servingCount) {

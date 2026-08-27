@@ -24,7 +24,21 @@ Enthält später die Geschäftslogik, beispielsweise Portionsberechnung, Suche, 
 
 ## Persistence
 
-Kapselt später den direkten JDBC-Zugriff auf SQLite. Repository-Implementierungen übernehmen das Speichern und Laden fachlicher Daten.
+Kapselt den direkten JDBC-Zugriff auf SQLite. Repository-Schnittstellen kennen nur Domain- und Standard-Java-Typen; ihre SQLite-Implementierungen bilden Domain-Objekte auf das relationale Schema ab.
+
+```text
+Repository Interface
+        ↓
+SQLite Repository
+        ↓
+       JDBC
+        ↓
+      SQLite
+```
+
+Schema Version 1 wird beim ersten Öffnen erstellt und über `PRAGMA user_version` verfolgt. UUIDs werden als Text, `BigDecimal`-Mengen verlustfrei als Dezimaltext und Units über ihre Enum-Namen gespeichert. Jede neue Verbindung aktiviert SQLite-Foreign-Keys ausdrücklich.
+
+Ingredients und Tastes werden über ihre eigenen Repositories verwaltet und müssen vor einem referenzierenden Recipe existieren. Das vollständige Speichern oder Aktualisieren eines Recipe läuft in einer Transaktion. Dabei werden seine Beziehungs- und Schrittzeilen verständlich und atomar ersetzt; bei Fehlern erfolgt ein Rollback.
 
 ## UI
 
