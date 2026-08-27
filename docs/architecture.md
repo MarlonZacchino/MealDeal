@@ -20,7 +20,17 @@ Recipe
 
 ## Service
 
-Enthält später die Geschäftslogik, beispielsweise Portionsberechnung, Suche, Planung und Einkaufslisten. Services bleiben unabhängig von der Darstellung.
+Enthält Geschäftslogik unabhängig von Darstellung und Persistenz. `RecipeScaler` erzeugt für eine gewünschte positive Personenanzahl neue `RecipeIngredient`-Objekte, ohne das gespeicherte Recipe zu verändern. Die Berechnung verwendet `BigDecimal` mit `MathContext.DECIMAL128`.
+
+```text
+Recipe
+  ↓
+RecipeScaler
+  ↓
+skalierte RecipeIngredient-Daten
+```
+
+`Quantity` bildet Menge und Unit als eigenständigen unveränderlichen Wert ab. Addition behält deterministisch die Einheit des ersten Operanden. `UnitConverter` unterstützt ausschließlich identische Units sowie `GRAM` ↔ `KILOGRAM` und `MILLILITER` ↔ `LITER`. Eine gemeinsame `UnitDimension` allein erlaubt keine Konvertierung; insbesondere bleiben Küchenmaße untereinander inkompatibel.
 
 ## Persistence
 
