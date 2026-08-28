@@ -21,6 +21,8 @@
                         <Label fx:id="nameLabel" styleClass="page-title"/>
                         <Label fx:id="standardServingLabel" styleClass="page-subtitle"/>
                     </VBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Bearbeiten" onAction="#editRecipe" styleClass="primary-button"/>
                 </HBox>
 
                 <HBox alignment="CENTER_LEFT" spacing="18.0" styleClass="card, compact-card">

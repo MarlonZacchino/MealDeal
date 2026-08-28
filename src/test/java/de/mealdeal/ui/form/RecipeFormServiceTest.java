@@ -68,6 +68,38 @@ class RecipeFormServiceTest {
     }
 
     @Test
+    void updatesAllRecipeValuesAndKeepsUuid() {
+        MemoryIngredientRepository ingredients = new MemoryIngredientRepository();
+        MemoryTasteRepository tastes = new MemoryTasteRepository();
+        MemoryRecipeRepository recipes = new MemoryRecipeRepository();
+        Ingredient pasta = new Ingredient("Pasta");
+        Taste savory = new Taste("Herzhaft");
+        ingredients.save(pasta);
+        tastes.save(savory);
+        RecipeFormService service = new RecipeFormService(recipes, ingredients, tastes);
+        UUID recipeId = UUID.fromString("00000000-0000-0000-0000-000000000123");
+
+        Recipe updated = service.updateAndSave(recipeId, new RecipeFormInput(
+                "Pasta al Limone", "4",
+                List.of(new IngredientFormInput("pasta", "750,25", Unit.GRAM)),
+                List.of("herzhaft", "Frisch"),
+                List.of("Kochen.", "Mit Zitrone abschmecken.", "Servieren.")));
+
+        assertEquals(recipeId, updated.getId());
+        assertEquals("Pasta al Limone", updated.getName());
+        assertEquals(4, updated.getStandardServingCount());
+        assertEquals(pasta, updated.getIngredients().getFirst().getIngredient());
+        assertEquals(new BigDecimal("750.25"),
+                updated.getIngredients().getFirst().getQuantity());
+        assertEquals(Unit.GRAM, updated.getIngredients().getFirst().getUnit());
+        assertEquals(List.of("Herzhaft", "Frisch"), updated.getTastes().stream()
+                .map(Taste::getName).toList());
+        assertEquals(List.of("Kochen.", "Mit Zitrone abschmecken.", "Servieren."),
+                updated.getSteps().stream().map(step -> step.getDescription()).toList());
+        assertEquals(updated, recipes.savedRecipes.getFirst());
+    }
+
+    @Test
     void reportsAllImportantValidationErrorsBeforePersistence() {
         List<String> events = new ArrayList<>();
         RecipeFormService service = new RecipeFormService(

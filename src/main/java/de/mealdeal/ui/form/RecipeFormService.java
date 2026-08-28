@@ -16,8 +16,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
-/** Validates form values, resolves central data and saves a newly created recipe. */
+/** Validates form values, resolves central data and saves a recipe. */
 public final class RecipeFormService {
 
     public static final String DEFAULT_SERVING_COUNT = "2";
@@ -26,7 +27,7 @@ public final class RecipeFormService {
     private final IngredientRepository ingredientRepository;
     private final TasteRepository tasteRepository;
 
-    /** Creates the form service with the repositories participating in creation. */
+    /** Creates the form service with the repositories participating in form persistence. */
     public RecipeFormService(RecipeRepository recipeRepository,
                              IngredientRepository ingredientRepository,
                              TasteRepository tasteRepository) {
@@ -40,6 +41,16 @@ public final class RecipeFormService {
 
     /** Validates and persists a complete new recipe, returning the saved aggregate. */
     public Recipe createAndSave(RecipeFormInput input) {
+        return validateResolveAndSave(null, input);
+    }
+
+    /** Validates and persists an edited recipe while retaining its UUID. */
+    public Recipe updateAndSave(UUID recipeId, RecipeFormInput input) {
+        return validateResolveAndSave(Objects.requireNonNull(
+                recipeId, "Recipe ID must not be null."), input);
+    }
+
+    private Recipe validateResolveAndSave(UUID recipeId, RecipeFormInput input) {
         ValidatedForm validated = validate(Objects.requireNonNull(
                 input, "Recipe form input must not be null."));
 
@@ -74,8 +85,11 @@ public final class RecipeFormService {
             steps.add(new RecipeStep(index + 1, validated.stepDescriptions().get(index)));
         }
 
-        Recipe recipe = new Recipe(validated.name(), validated.servingCount(),
-                recipeIngredients, steps, recipeTastes);
+        Recipe recipe = recipeId == null
+                ? new Recipe(validated.name(), validated.servingCount(),
+                        recipeIngredients, steps, recipeTastes)
+                : new Recipe(recipeId, validated.name(), validated.servingCount(),
+                        recipeIngredients, steps, recipeTastes);
         recipeRepository.save(recipe);
         return recipe;
     }

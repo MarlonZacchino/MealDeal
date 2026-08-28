@@ -3,6 +3,7 @@ package de.mealdeal.ui.navigation;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.ui.ApplicationContext;
 import de.mealdeal.ui.ViewLoadingException;
+import de.mealdeal.ui.controller.CreateRecipeController;
 import de.mealdeal.ui.controller.RecipeDetailController;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -46,6 +47,17 @@ public final class ViewNavigator {
                 throw new ViewLoadingException("Recipe detail view has an unexpected controller.");
             }
             detailController.showRecipe(recipe);
+        });
+    }
+
+    /** Opens the shared recipe form prefilled for editing the supplied recipe. */
+    public void navigateToRecipeEdit(Recipe recipe) {
+        Objects.requireNonNull(recipe, "Recipe must not be null.");
+        loadView(ViewType.CREATE_RECIPE, controller -> {
+            if (!(controller instanceof CreateRecipeController formController)) {
+                throw new ViewLoadingException("Recipe form has an unexpected controller.");
+            }
+            formController.editRecipe(recipe);
         });
     }
 

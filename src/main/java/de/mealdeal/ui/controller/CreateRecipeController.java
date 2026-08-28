@@ -1,6 +1,7 @@
 package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.repository.IngredientRepository;
@@ -27,7 +28,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/** Controls the form for creating and persisting a new recipe. */
+/** Controls the shared form for creating or editing a recipe. */
 public final class CreateRecipeController implements NavigationAware {
 
     private static final System.Logger LOGGER =
@@ -41,7 +42,12 @@ public final class CreateRecipeController implements NavigationAware {
     private final List<Ingredient> availableIngredients = new ArrayList<>();
 
     private ViewNavigator navigator;
+    private Recipe editingRecipe;
 
+    @FXML
+    private Label titleLabel;
+    @FXML
+    private Label subtitleLabel;
     @FXML
     private TextField nameField;
     @FXML
@@ -83,6 +89,18 @@ public final class CreateRecipeController implements NavigationAware {
         this.navigator = Objects.requireNonNull(navigator, "Navigator must not be null.");
     }
 
+    /** Switches the shared form to edit mode and fills every persisted recipe value. */
+    public void editRecipe(Recipe recipe) {
+        editingRecipe = Objects.requireNonNull(recipe, "Recipe must not be null.");
+        titleLabel.setText("Gericht bearbeiten");
+        subtitleLabel.setText("Passe Grunddaten, Zutaten, Geschmacksrichtungen und Zubereitung an.");
+        nameField.setText(recipe.getName());
+        servingCountField.setText(Integer.toString(recipe.getStandardServingCount()));
+        fillIngredients(recipe);
+        fillTastes(recipe);
+        fillSteps(recipe);
+    }
+
     @FXML
     private void addIngredientRow() {
         IngredientFormRow row = new IngredientFormRow(
@@ -122,8 +140,14 @@ public final class CreateRecipeController implements NavigationAware {
     private void saveRecipe() {
         clearMessage();
         try {
-            formService.createAndSave(readFormInput());
-            navigator.navigateTo(ViewType.RECIPES);
+            Recipe savedRecipe = editingRecipe == null
+                    ? formService.createAndSave(readFormInput())
+                    : formService.updateAndSave(editingRecipe.getId(), readFormInput());
+            if (editingRecipe == null) {
+                navigator.navigateTo(ViewType.RECIPES);
+            } else {
+                navigator.navigateToRecipeDetail(savedRecipe);
+            }
         } catch (RecipeFormValidationException exception) {
             showMessage(exception.getErrors().stream()
                     .map(error -> "• " + error)
@@ -137,7 +161,55 @@ public final class CreateRecipeController implements NavigationAware {
 
     @FXML
     private void cancel() {
-        navigator.navigateTo(ViewType.RECIPES);
+        if (editingRecipe == null) {
+            navigator.navigateTo(ViewType.RECIPES);
+        } else {
+            navigator.navigateToRecipeDetail(editingRecipe);
+        }
+    }
+
+    private void fillIngredients(Recipe recipe) {
+        ingredientRows.clear();
+        ingredientRowsContainer.getChildren().clear();
+        recipe.getIngredients().forEach(recipeIngredient -> {
+            IngredientFormRow row = new IngredientFormRow(
+                    availableIngredients, this::removeIngredientRow);
+            row.setValue(recipeIngredient);
+            ingredientRows.add(row);
+            ingredientRowsContainer.getChildren().add(row.container());
+        });
+        if (ingredientRows.isEmpty()) {
+            addIngredientRow();
+        } else {
+            updateIngredientRemoveButtons();
+        }
+    }
+
+    private void fillTastes(Recipe recipe) {
+        for (Taste taste : recipe.getTastes()) {
+            CheckBox option = findTasteCheckBox(taste.getName());
+            if (option == null) {
+                addTasteOption(taste.getName(), true);
+            } else {
+                option.setSelected(true);
+            }
+        }
+    }
+
+    private void fillSteps(Recipe recipe) {
+        stepRows.clear();
+        stepRowsContainer.getChildren().clear();
+        recipe.getSteps().forEach(step -> {
+            RecipeStepFormRow row = new RecipeStepFormRow(this::removeStepRow);
+            row.setDescription(step.getDescription());
+            stepRows.add(row);
+            stepRowsContainer.getChildren().add(row.container());
+        });
+        if (stepRows.isEmpty()) {
+            addStepRow();
+        } else {
+            renumberSteps();
+        }
     }
 
     private void loadReferenceData() {

@@ -67,6 +67,11 @@ public final class RecipeDetailController implements NavigationAware {
         navigator.navigateTo(ViewType.RECIPES);
     }
 
+    @FXML
+    private void editRecipe() {
+        navigator.navigateToRecipeEdit(recipe);
+    }
+
     private void configureServingSelection() {
         SpinnerValueFactory.IntegerSpinnerValueFactory values =
                 new SpinnerValueFactory.IntegerSpinnerValueFactory(

@@ -35,6 +35,10 @@ final class RecipeStepFormRow {
         return descriptionInput.getText();
     }
 
+    void setDescription(String description) {
+        descriptionInput.setText(description);
+    }
+
     HBox container() {
         return container;
     }

@@ -1,6 +1,7 @@
 package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.RecipeIngredient;
 import de.mealdeal.domain.Unit;
 import de.mealdeal.ui.form.IngredientFormInput;
 import javafx.collections.FXCollections;
@@ -56,6 +57,18 @@ final class IngredientFormRow {
     IngredientFormInput toInput() {
         return new IngredientFormInput(ingredientInput.getEditor().getText(),
                 quantityInput.getText(), unitInput.getValue());
+    }
+
+    void setValue(RecipeIngredient recipeIngredient) {
+        Ingredient selected = availableIngredients.stream()
+                .filter(ingredient -> ingredient.getId().equals(
+                        recipeIngredient.getIngredient().getId()))
+                .findFirst()
+                .orElse(recipeIngredient.getIngredient());
+        ingredientInput.setValue(selected);
+        ingredientInput.getEditor().setText(selected.getName());
+        quantityInput.setText(GermanRecipeDisplay.decimal(recipeIngredient.getQuantity()));
+        unitInput.setValue(recipeIngredient.getUnit());
     }
 
     HBox container() {
