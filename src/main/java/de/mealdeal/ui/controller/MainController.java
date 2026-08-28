@@ -14,7 +14,7 @@ import java.util.Objects;
 /** Handles navigation events for the persistent application sidebar. */
 public final class MainController {
 
-    private static final String ACTIVE_STYLE_CLASS = "active";
+    private static final String ACTIVE_STYLE_CLASS = "nav-button-active";
 
     private final ApplicationContext applicationContext;
     private final Map<ViewType, Button> navigationButtons = new EnumMap<>(ViewType.class);

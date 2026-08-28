@@ -1,33 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <ScrollPane xmlns:fx="http://javafx.com/fxml/1" fitToWidth="true" hbarPolicy="NEVER"
             styleClass="content-scroll">
     <content>
-        <VBox spacing="12.0" styleClass="page">
-            <padding>
-                <Insets top="44.0" right="44.0" bottom="44.0" left="44.0"/>
-            </padding>
-            <Label text="Was soll ich essen?" styleClass="page-title"/>
-            <Label text="Zwei Wege führen dich künftig zu passenden Gerichten."
-                   wrapText="true" styleClass="page-subtitle"/>
-            <FlowPane hgap="20.0" vgap="20.0" prefWrapLength="620.0" styleClass="card-grid">
-                <VBox prefWidth="280.0" minHeight="170.0" spacing="12.0" styleClass="action-card">
+        <StackPane alignment="TOP_CENTER" styleClass="page-shell">
+            <VBox maxWidth="1080.0" spacing="28.0" styleClass="page-container">
+                <VBox spacing="6.0" styleClass="page-header">
+                    <Label text="Was essen?" styleClass="page-title"/>
+                    <Label text="Finde ein Gericht nach Zutaten oder Geschmack."
+                           wrapText="true" styleClass="page-subtitle"/>
+                </VBox>
+                <VBox maxWidth="1.7976931348623157E308" spacing="12.0" styleClass="card, wide-card">
                     <Label text="Nach Zutaten" styleClass="card-title"/>
                     <Label text="Wähle vorhandene Zutaten und finde Gerichte, die dazu passen."
                            wrapText="true" styleClass="card-text"/>
                 </VBox>
-                <VBox prefWidth="280.0" minHeight="170.0" spacing="12.0" styleClass="action-card">
+                <VBox maxWidth="1.7976931348623157E308" spacing="12.0" styleClass="card, wide-card">
                     <Label text="Nach Geschmack" styleClass="card-title"/>
                     <Label text="Wähle Geschmacksrichtungen und entdecke passende Gerichte."
                            wrapText="true" styleClass="card-text"/>
                 </VBox>
-            </FlowPane>
-        </VBox>
+            </VBox>
+        </StackPane>
     </content>
 </ScrollPane>

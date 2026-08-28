@@ -14,8 +14,8 @@ public class MealDealApplication extends Application {
     private static final String APPLICATION_TITLE = "MealDeal";
     private static final double INITIAL_WINDOW_WIDTH = 1180;
     private static final double INITIAL_WINDOW_HEIGHT = 760;
-    private static final double MINIMUM_WINDOW_WIDTH = 960;
-    private static final double MINIMUM_WINDOW_HEIGHT = 640;
+    private static final double MINIMUM_WINDOW_WIDTH = 900;
+    private static final double MINIMUM_WINDOW_HEIGHT = 600;
 
     /**
      * Starts JavaFX and displays the application shell in the primary window.

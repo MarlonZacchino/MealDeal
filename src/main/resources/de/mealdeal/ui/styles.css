@@ -7,41 +7,44 @@
     -fx-background-color: #26382f;
 }
 
-.brand {
+.sidebar-title {
     -fx-text-fill: #ffffff;
-    -fx-font-size: 30px;
+    -fx-font-size: 27px;
     -fx-font-weight: bold;
 }
 
-.brand-subtitle {
+.sidebar-subtitle {
     -fx-text-fill: #c9d6ce;
-    -fx-font-size: 13px;
-    -fx-padding: 0 0 28px 0;
+    -fx-font-size: 12px;
+    -fx-padding: 0 0 18px 0;
 }
 
-.navigation-button {
+.nav-button {
     -fx-alignment: center-left;
     -fx-background-color: transparent;
     -fx-background-radius: 8px;
     -fx-cursor: hand;
-    -fx-font-size: 15px;
-    -fx-padding: 12px 14px;
+    -fx-font-size: 14px;
+    -fx-padding: 10px 12px;
     -fx-text-fill: #e7eee9;
 }
 
-.navigation-button:hover {
+.nav-button:hover {
     -fx-background-color: #354b40;
 }
 
-.navigation-button.active {
-    -fx-background-color: #dfe9df;
+.nav-button.nav-button-active {
+    -fx-background-color: #8eab94, #e3ebe3;
+    -fx-background-insets: 0, 0 0 0 4px;
     -fx-font-weight: bold;
     -fx-text-fill: #26382f;
 }
 
 .content-host,
 .content-scroll,
-.content-scroll > .viewport {
+.content-scroll > .viewport,
+.page-shell,
+.page-container {
     -fx-background-color: #f5f6f2;
 }
 
@@ -49,38 +52,51 @@
     -fx-border-color: transparent;
 }
 
-.page {
-    -fx-background-color: #f5f6f2;
+.page-shell {
+    -fx-padding: 36px;
 }
 
 .page-title {
-    -fx-font-size: 32px;
+    -fx-font-size: 31px;
     -fx-font-weight: bold;
     -fx-text-fill: #25332c;
 }
 
 .page-subtitle {
-    -fx-font-size: 16px;
+    -fx-font-size: 15px;
     -fx-text-fill: #617068;
-    -fx-padding: 0 0 18px 0;
 }
 
-.card-grid {
-    -fx-padding: 4px 0 0 0;
-}
-
-.action-card,
-.placeholder-box {
+.card {
     -fx-background-color: #ffffff;
     -fx-background-radius: 14px;
-    -fx-border-color: #e1e6e1;
+    -fx-border-color: #dfe5df;
     -fx-border-radius: 14px;
-    -fx-padding: 24px;
+    -fx-padding: 26px;
 }
 
-.card-title,
-.section-title {
+.search-card {
+    -fx-background-color: #edf3ed;
+    -fx-border-color: #d1ddd2;
+    -fx-padding: 30px;
+}
+
+.wide-card {
+    -fx-padding: 26px 28px;
+}
+
+.compact-card {
+    -fx-padding: 22px 26px;
+}
+
+.card-title {
     -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2d4036;
+}
+
+.section-title {
+    -fx-font-size: 18px;
     -fx-font-weight: bold;
     -fx-text-fill: #2d4036;
 }
@@ -96,25 +112,25 @@
     -fx-cursor: hand;
     -fx-font-size: 14px;
     -fx-font-weight: bold;
-    -fx-padding: 10px 14px;
+    -fx-padding: 11px 18px;
 }
 
 .primary-button {
-    -fx-background-color: #5f8068;
+    -fx-background-color: #56785f;
     -fx-text-fill: #ffffff;
 }
 
 .primary-button:hover {
-    -fx-background-color: #4d6d57;
+    -fx-background-color: #466750;
 }
 
 .secondary-button {
-    -fx-background-color: #e8efe8;
-    -fx-text-fill: #365040;
+    -fx-background-color: #dde8de;
+    -fx-text-fill: #324c3b;
 }
 
 .secondary-button:hover {
-    -fx-background-color: #dae6da;
+    -fx-background-color: #ceddce;
 }
 
 .day-chip {

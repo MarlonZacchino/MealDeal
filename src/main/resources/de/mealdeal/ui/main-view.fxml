@@ -12,27 +12,27 @@
             stylesheets="@styles.css"
             styleClass="root-shell">
     <left>
-        <VBox prefWidth="230.0" spacing="8.0" styleClass="sidebar">
+        <VBox prefWidth="205.0" minWidth="190.0" maxWidth="220.0" spacing="4.0" styleClass="sidebar">
             <padding>
-                <Insets top="32.0" right="20.0" bottom="24.0" left="20.0"/>
+                <Insets top="24.0" right="16.0" bottom="20.0" left="16.0"/>
             </padding>
-            <Label text="MealDeal" styleClass="brand"/>
-            <Label text="Einfach essen. Besser planen." wrapText="true" styleClass="brand-subtitle"/>
-            <VBox spacing="8.0" styleClass="navigation">
+            <Label text="MealDeal" styleClass="sidebar-title"/>
+            <Label text="Essen einfach planen." wrapText="true" styleClass="sidebar-subtitle"/>
+            <VBox spacing="4.0" styleClass="navigation-list">
                 <Button fx:id="homeButton" text="Start" maxWidth="1.7976931348623157E308"
-                        onAction="#showHome" styleClass="navigation-button"/>
-                <Button fx:id="recipesButton" text="Meine Gerichte" maxWidth="1.7976931348623157E308"
-                        onAction="#showRecipes" styleClass="navigation-button"/>
-                <Button fx:id="searchButton" text="Suche" maxWidth="1.7976931348623157E308"
-                        onAction="#showSearch" styleClass="navigation-button"/>
+                        onAction="#showHome" styleClass="nav-button"/>
+                <Button fx:id="recipesButton" text="Gerichte" maxWidth="1.7976931348623157E308"
+                        onAction="#showRecipes" styleClass="nav-button"/>
+                <Button fx:id="searchButton" text="Was essen?" maxWidth="1.7976931348623157E308"
+                        onAction="#showSearch" styleClass="nav-button"/>
                 <Button fx:id="weekPlanButton" text="Wochenplan" maxWidth="1.7976931348623157E308"
-                        onAction="#showWeekPlan" styleClass="navigation-button"/>
-                <Button fx:id="shoppingButton" text="Einkauf" maxWidth="1.7976931348623157E308"
-                        onAction="#showShopping" styleClass="navigation-button"/>
+                        onAction="#showWeekPlan" styleClass="nav-button"/>
+                <Button fx:id="shoppingButton" text="Einkaufsliste" maxWidth="1.7976931348623157E308"
+                        onAction="#showShopping" styleClass="nav-button"/>
             </VBox>
         </VBox>
     </left>
     <center>
-        <StackPane fx:id="contentHost" styleClass="content-host"/>
+        <StackPane fx:id="contentHost" alignment="TOP_CENTER" styleClass="content-host"/>
     </center>
 </BorderPane>

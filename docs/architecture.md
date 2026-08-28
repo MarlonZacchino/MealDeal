@@ -115,4 +115,8 @@ Domain und Repositories
 
 `MealDealApplication` öffnet genau eine primäre Stage. `MainController` hält die Seitenleiste dauerhaft sichtbar, während `ViewNavigator` nur den Inhaltsbereich austauscht und den aktiven Navigationseintrag markiert. Dadurch entstehen beim Wechsel zwischen Start, Gerichten, Suche, Wochenplan und Einkauf keine zusätzlichen Fenster.
 
+Jede Hauptansicht verwendet einen vertikal scrollbar ausgeführten Inhaltsbereich. Darin zentriert ein `StackPane` einen auf 1080 Pixel begrenzten Seitencontainer, der bei kleineren Fenstern automatisch schrumpft. Das Layout richtet sich ausschließlich nach dem verfügbaren Scene- und Pane-Bereich; Monitorauflösung, DPI-Prozentwerte oder feste Bildschirmkoordinaten fließen nicht in die Positionierung ein. So bleibt der Inhalt beim Maximieren, Verkleinern und Verschieben zwischen Monitoren stabil, ohne auf den primären Monitor zurückzuspringen.
+
+Auf der Startseite stehen Tages- und Wochenplanung entsprechend ihrer fachlichen Gewichtung als breite Karten direkt untereinander. Diese vertikale Reihenfolge bleibt auch bei schmaleren Fenstern eindeutig und verhindert ein unnötiges horizontales Auseinanderziehen.
+
 `ApplicationContext` übernimmt die bewusste manuelle Zusammensetzung der UI. Spätere Phasen können dort Services und Repository-Schnittstellen per Konstruktor an Controller übergeben, ohne ein Dependency-Injection-Framework einzuführen. Die aktuellen Platzhalter-Views greifen noch nicht auf Datenbank oder Fachservices zu.
