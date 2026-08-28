@@ -1,7 +1,9 @@
 package de.mealdeal.ui.navigation;
 
+import de.mealdeal.domain.Recipe;
 import de.mealdeal.ui.ApplicationContext;
 import de.mealdeal.ui.ViewLoadingException;
+import de.mealdeal.ui.controller.RecipeDetailController;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.layout.StackPane;
@@ -33,6 +35,21 @@ public final class ViewNavigator {
 
     /** Replaces the content in the current window with the requested view. */
     public void navigateTo(ViewType viewType) {
+        loadView(viewType, ignored -> { });
+    }
+
+    /** Opens the detail view for one recipe in the existing content area. */
+    public void navigateToRecipeDetail(Recipe recipe) {
+        Objects.requireNonNull(recipe, "Recipe must not be null.");
+        loadView(ViewType.RECIPE_DETAIL, controller -> {
+            if (!(controller instanceof RecipeDetailController detailController)) {
+                throw new ViewLoadingException("Recipe detail view has an unexpected controller.");
+            }
+            detailController.showRecipe(recipe);
+        });
+    }
+
+    private void loadView(ViewType viewType, Consumer<Object> controllerInitializer) {
         Objects.requireNonNull(viewType, "View type must not be null.");
         URL resource = ViewNavigator.class.getResource(viewType.getResourcePath());
         if (resource == null) {
@@ -44,6 +61,7 @@ public final class ViewNavigator {
         try {
             Parent view = loader.load();
             Object controller = loader.getController();
+            controllerInitializer.accept(controller);
             if (controller instanceof NavigationAware navigationAware) {
                 navigationAware.setNavigator(this);
             }

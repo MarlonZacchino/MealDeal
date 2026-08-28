@@ -119,6 +119,7 @@ public final class RecipesController implements NavigationAware {
         entry.setUserData(recipe.getId());
         entry.setAccessibleText("Gericht " + recipe.getName());
         entry.getStyleClass().add("recipe-list-item");
+        entry.setOnAction(ignored -> navigator.navigateToRecipeDetail(recipe));
         return entry;
     }
 

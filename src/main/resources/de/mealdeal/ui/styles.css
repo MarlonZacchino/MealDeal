@@ -246,3 +246,38 @@
 .form-actions {
     -fx-padding: 0 0 20px 0;
 }
+
+.detail-section-card {
+    -fx-padding: 24px 26px;
+}
+
+.detail-row {
+    -fx-alignment: top-left;
+    -fx-background-color: #f7f9f6;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px 14px;
+}
+
+.detail-row-text,
+.detail-step-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #415348;
+}
+
+.detail-quantity {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-min-width: 110px;
+    -fx-text-fill: #324c3b;
+}
+
+.detail-step-position {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-min-width: 28px;
+    -fx-text-fill: #56785f;
+}
+
+.serving-spinner {
+    -fx-font-size: 15px;
+}

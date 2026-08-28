@@ -11,16 +11,7 @@ final class GermanUnitStringConverter extends StringConverter<Unit> {
         if (unit == null) {
             return "";
         }
-        return switch (unit) {
-            case GRAM -> "g";
-            case KILOGRAM -> "kg";
-            case MILLILITER -> "ml";
-            case LITER -> "l";
-            case PIECE -> "Stück";
-            case TABLESPOON -> "EL";
-            case TEASPOON -> "TL";
-            case PINCH -> "Prise";
-        };
+        return GermanRecipeDisplay.unit(unit);
     }
 
     @Override
