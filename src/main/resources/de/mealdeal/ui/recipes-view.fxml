@@ -21,7 +21,8 @@
                                wrapText="true" styleClass="page-subtitle"/>
                     </VBox>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Button text="Neues Gericht" disable="true" styleClass="primary-button"/>
+                    <Button text="Neues Gericht" onAction="#openCreateRecipe"
+                            styleClass="primary-button"/>
                 </HBox>
 
                 <VBox fx:id="recipeListContainer" managed="false" visible="false"
@@ -33,7 +34,7 @@
                     <Label text="Noch keine Gerichte gespeichert." styleClass="card-title"/>
                     <Label text="Sobald du dein erstes Gericht anlegst, erscheint es hier."
                            wrapText="true" styleClass="card-text"/>
-                    <Button text="Erstes Gericht hinzufügen" disable="true"
+                    <Button text="Erstes Gericht hinzufügen" onAction="#openCreateRecipe"
                             styleClass="primary-button"/>
                 </VBox>
 

@@ -1,8 +1,13 @@
 package de.mealdeal.ui;
 
+import de.mealdeal.persistence.repository.IngredientRepository;
 import de.mealdeal.persistence.repository.RecipeRepository;
+import de.mealdeal.persistence.repository.TasteRepository;
 import de.mealdeal.persistence.sqlite.SqliteDatabase;
+import de.mealdeal.persistence.sqlite.SqliteIngredientRepository;
 import de.mealdeal.persistence.sqlite.SqliteRecipeRepository;
+import de.mealdeal.persistence.sqlite.SqliteTasteRepository;
+import de.mealdeal.ui.controller.CreateRecipeController;
 import de.mealdeal.ui.controller.HomeController;
 import de.mealdeal.ui.controller.MainController;
 import de.mealdeal.ui.controller.RecipesController;
@@ -24,17 +29,30 @@ public final class ApplicationContext {
 
     private static final String MAIN_VIEW_RESOURCE = "/de/mealdeal/ui/main-view.fxml";
     private final RecipeRepository recipeRepository;
+    private final IngredientRepository ingredientRepository;
+    private final TasteRepository tasteRepository;
 
     /** Creates the production composition backed by the configured SQLite file. */
     public ApplicationContext(Path databasePath) {
-        this(new SqliteRecipeRepository(new SqliteDatabase(
-                Objects.requireNonNull(databasePath, "Database path must not be null."))));
+        this(new SqliteDatabase(
+                Objects.requireNonNull(databasePath, "Database path must not be null.")));
     }
 
-    /** Creates a composition with an explicit repository, primarily for isolated tests. */
-    public ApplicationContext(RecipeRepository recipeRepository) {
+    private ApplicationContext(SqliteDatabase database) {
+        this(new SqliteRecipeRepository(database), new SqliteIngredientRepository(database),
+                new SqliteTasteRepository(database));
+    }
+
+    /** Creates a composition with explicit repositories, primarily for isolated tests. */
+    public ApplicationContext(RecipeRepository recipeRepository,
+                              IngredientRepository ingredientRepository,
+                              TasteRepository tasteRepository) {
         this.recipeRepository = Objects.requireNonNull(
                 recipeRepository, "Recipe repository must not be null.");
+        this.ingredientRepository = Objects.requireNonNull(
+                ingredientRepository, "Ingredient repository must not be null.");
+        this.tasteRepository = Objects.requireNonNull(
+                tasteRepository, "Taste repository must not be null.");
     }
 
     /** Loads the application's single main view. */
@@ -59,6 +77,10 @@ public final class ApplicationContext {
         }
         if (controllerType == RecipesController.class) {
             return new RecipesController(recipeRepository);
+        }
+        if (controllerType == CreateRecipeController.class) {
+            return new CreateRecipeController(
+                    recipeRepository, ingredientRepository, tasteRepository);
         }
         try {
             return controllerType.getDeclaredConstructor().newInstance();

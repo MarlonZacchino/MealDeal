@@ -28,6 +28,11 @@ public final class HomeController implements NavigationAware {
     }
 
     @FXML
+    private void openCreateRecipe() {
+        navigator.navigateTo(ViewType.CREATE_RECIPE);
+    }
+
+    @FXML
     private void openWeekPlan() {
         navigator.navigateTo(ViewType.WEEK_PLAN);
     }

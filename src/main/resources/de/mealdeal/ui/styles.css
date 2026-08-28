@@ -184,3 +184,65 @@
     -fx-font-size: 13px;
     -fx-text-fill: #748078;
 }
+
+.form-section-card {
+    -fx-padding: 24px 26px;
+}
+
+.form-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #415348;
+}
+
+.form-field {
+    -fx-max-width: infinity;
+}
+
+.serving-field {
+    -fx-min-width: 190px;
+}
+
+.form-row {
+    -fx-padding: 4px 0;
+}
+
+.form-message {
+    -fx-background-color: #f8e9e5;
+    -fx-background-radius: 10px;
+    -fx-border-color: #d9b8ae;
+    -fx-border-radius: 10px;
+    -fx-padding: 14px 16px;
+    -fx-text-fill: #7a392d;
+}
+
+.taste-option {
+    -fx-background-color: #edf2ec;
+    -fx-background-radius: 8px;
+    -fx-padding: 9px 12px;
+    -fx-text-fill: #324c3b;
+}
+
+.step-position {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-min-width: 28px;
+    -fx-padding: 9px 0 0 0;
+    -fx-text-fill: #415348;
+}
+
+.danger-button {
+    -fx-background-color: #f1e5e2;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-padding: 9px 13px;
+    -fx-text-fill: #78463b;
+}
+
+.danger-button:hover {
+    -fx-background-color: #e7d3ce;
+}
+
+.form-actions {
+    -fx-padding: 0 0 20px 0;
+}

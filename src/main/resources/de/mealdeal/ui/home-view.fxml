@@ -63,7 +63,7 @@
                         <HBox spacing="12.0" styleClass="button-row">
                             <Button text="Gerichte ansehen" onAction="#openRecipes"
                                     styleClass="primary-button"/>
-                            <Button text="Neues Gericht hinzufügen" onAction="#openRecipes"
+                            <Button text="Neues Gericht hinzufügen" onAction="#openCreateRecipe"
                                     styleClass="secondary-button"/>
                         </HBox>
                     </VBox>

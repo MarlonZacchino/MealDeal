@@ -78,9 +78,11 @@ public final class MainController {
     }
 
     private void markActiveView(ViewType activeView) {
+        ViewType activeNavigationView = activeView == ViewType.CREATE_RECIPE
+                ? ViewType.RECIPES : activeView;
         navigationButtons.forEach((viewType, button) -> {
             button.getStyleClass().remove(ACTIVE_STYLE_CLASS);
-            if (viewType == activeView) {
+            if (viewType == activeNavigationView) {
                 button.getStyleClass().add(ACTIVE_STYLE_CLASS);
             }
         });

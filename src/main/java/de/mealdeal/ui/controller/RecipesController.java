@@ -3,6 +3,9 @@ package de.mealdeal.ui.controller;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.repository.RecipeRepository;
+import de.mealdeal.ui.navigation.NavigationAware;
+import de.mealdeal.ui.navigation.ViewNavigator;
+import de.mealdeal.ui.navigation.ViewType;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -16,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 
 /** Loads recipes through the repository and renders their compact list state. */
-public final class RecipesController {
+public final class RecipesController implements NavigationAware {
 
     private static final System.Logger LOGGER = System.getLogger(RecipesController.class.getName());
     private static final double RECIPE_ENTRY_MAX_HEIGHT = 140;
@@ -27,6 +30,7 @@ public final class RecipesController {
 
     private final RecipeRepository recipeRepository;
     private final ToggleGroup selection = new ToggleGroup();
+    private ViewNavigator navigator;
 
     @FXML
     private VBox recipeListContainer;
@@ -43,6 +47,11 @@ public final class RecipesController {
                 recipeRepository, "Recipe repository must not be null.");
     }
 
+    @Override
+    public void setNavigator(ViewNavigator navigator) {
+        this.navigator = Objects.requireNonNull(navigator, "Navigator must not be null.");
+    }
+
     @FXML
     private void initialize() {
         refresh();
@@ -57,6 +66,11 @@ public final class RecipesController {
             LOGGER.log(System.Logger.Level.ERROR, "Could not load recipes.", exception);
             showLoadError();
         }
+    }
+
+    @FXML
+    private void openCreateRecipe() {
+        navigator.navigateTo(ViewType.CREATE_RECIPE);
     }
 
     List<Recipe> loadSortedRecipes() {

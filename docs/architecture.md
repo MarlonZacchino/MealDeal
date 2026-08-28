@@ -62,6 +62,8 @@ Schema-Versionen werden beim Öffnen über `PRAGMA user_version` schrittweise mi
 
 Ingredients und Tastes werden über ihre eigenen Repositories verwaltet und müssen vor einem referenzierenden Recipe existieren. Das vollständige Speichern oder Aktualisieren eines Recipe läuft in einer Transaktion. Dabei werden seine Beziehungs- und Schrittzeilen verständlich und atomar ersetzt; bei Fehlern erfolgt ein Rollback.
 
+Beim Erstellen über die UI werden neue Ingredients und Tastes deshalb zuerst über ihre eigenen Repositories gespeichert und erst danach das Recipe. Diese drei Repository-Aufrufe teilen bewusst keine übergreifende Transaktion: Schlägt der abschließende Recipe-Aufruf fehl, bleiben zuvor angelegte zentrale Einträge als weiterhin verwendbare Daten bestehen. Diese für Phase 2.3 gewählte Teilpersistenz vermeidet eine vorgezogene Unit-of-Work- beziehungsweise Connection-Refaktorierung; der Fehler wird in der UI ausdrücklich angezeigt.
+
 Die produktive Windows-Anwendung verwendet `%LOCALAPPDATA%\MealDeal\mealdeal.db` als lokalen, nicht roamingfähigen Datenbankpfad. `ApplicationDataPaths` prüft die Umgebungsvariable und legt das Anwendungsverzeichnis bei Bedarf an. Schlägt diese Startvorbereitung fehl, wird der Fehler ausdrücklich weitergegeben statt unbemerkt auf einen anderen Speicherort auszuweichen.
 
 ## Wochenplanung
@@ -121,6 +123,8 @@ Jede Hauptansicht verwendet einen vertikal scrollbar ausgeführten Inhaltsbereic
 
 Auf der Startseite stehen Tages- und Wochenplanung entsprechend ihrer fachlichen Gewichtung als breite Karten direkt untereinander. Diese vertikale Reihenfolge bleibt auch bei schmaleren Fenstern eindeutig und verhindert ein unnötiges horizontales Auseinanderziehen.
 
-`ApplicationContext` übernimmt die bewusste manuelle Zusammensetzung der UI. Er erstellt für den konfigurierten Datenbankpfad ein `SqliteRecipeRepository` und injiziert es über die Schnittstelle `RecipeRepository` in den `RecipesController`; ein Dependency-Injection-Framework ist dafür nicht erforderlich.
+`ApplicationContext` übernimmt die bewusste manuelle Zusammensetzung der UI. Er erstellt für den konfigurierten Datenbankpfad die SQLite-Implementierungen von `RecipeRepository`, `IngredientRepository` und `TasteRepository` auf einer gemeinsamen `SqliteDatabase` und injiziert die benötigten Schnittstellen in die Controller; ein Dependency-Injection-Framework ist dafür nicht erforderlich.
 
-Der `RecipesController` lädt die gespeicherten Rezepte beim Öffnen der Ansicht neu. Er sortiert sie deterministisch nach Name und bei Namensgleichheit nach UUID und erzeugt daraus kompakte, auswählbare UI-Einträge. Empty State und Ladefehler sind eigene sichtbare Zustände. SQL, Portionsberechnung und Suchlogik bleiben außerhalb des Controllers; die übrigen fachlichen Ansichten sind weiterhin Platzhalter.
+Der `RecipesController` lädt die gespeicherten Rezepte beim Öffnen der Ansicht neu. Er sortiert sie deterministisch nach Name und bei Namensgleichheit nach UUID und erzeugt daraus kompakte, auswählbare UI-Einträge. Empty State und Ladefehler sind eigene sichtbare Zustände.
+
+`CreateRecipeController` hält ausschließlich den dynamischen JavaFX-Formularzustand und die Navigation. `RecipeFormService` verarbeitet einen JavaFX-unabhängigen `RecipeFormInput`, validiert ihn vollständig, löst bestehende zentrale Daten namensbasiert auf und orchestriert die Repository-Aufrufe. Mengen akzeptieren positive Ganz- und Dezimalzahlen mit Komma oder Punkt als Dezimaltrennzeichen und werden ohne `double` oder `float` direkt als `BigDecimal` verarbeitet. Schritte werden aus ihrer sichtbaren, lückenlos nummerierten Reihenfolge erzeugt. SQL, Portionsberechnung und Suchlogik bleiben außerhalb der Controller; die übrigen fachlichen Ansichten sind weiterhin Platzhalter.
