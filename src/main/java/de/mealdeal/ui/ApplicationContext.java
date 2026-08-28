@@ -1,12 +1,17 @@
 package de.mealdeal.ui;
 
+import de.mealdeal.persistence.repository.RecipeRepository;
+import de.mealdeal.persistence.sqlite.SqliteDatabase;
+import de.mealdeal.persistence.sqlite.SqliteRecipeRepository;
 import de.mealdeal.ui.controller.HomeController;
 import de.mealdeal.ui.controller.MainController;
+import de.mealdeal.ui.controller.RecipesController;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 import java.util.Objects;
 
 /**
@@ -18,6 +23,19 @@ import java.util.Objects;
 public final class ApplicationContext {
 
     private static final String MAIN_VIEW_RESOURCE = "/de/mealdeal/ui/main-view.fxml";
+    private final RecipeRepository recipeRepository;
+
+    /** Creates the production composition backed by the configured SQLite file. */
+    public ApplicationContext(Path databasePath) {
+        this(new SqliteRecipeRepository(new SqliteDatabase(
+                Objects.requireNonNull(databasePath, "Database path must not be null."))));
+    }
+
+    /** Creates a composition with an explicit repository, primarily for isolated tests. */
+    public ApplicationContext(RecipeRepository recipeRepository) {
+        this.recipeRepository = Objects.requireNonNull(
+                recipeRepository, "Recipe repository must not be null.");
+    }
 
     /** Loads the application's single main view. */
     public Parent loadMainView() {
@@ -38,6 +56,9 @@ public final class ApplicationContext {
         }
         if (controllerType == HomeController.class) {
             return new HomeController();
+        }
+        if (controllerType == RecipesController.class) {
+            return new RecipesController(recipeRepository);
         }
         try {
             return controllerType.getDeclaredConstructor().newInstance();

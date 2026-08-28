@@ -4,7 +4,7 @@ MealDeal ist eine lokale Desktop-Anwendung für den privaten Gebrauch. Sie soll 
 
 ## Status
 
-Das Projekt befindet sich in einer frühen Entwicklungsphase. Technisches Fundament, Domain-Modell, SQLite-Persistenz, Portions- und Einheitenberechnungen, Recipe-Suche, Wochenplanung und fachliche Einkaufslistenberechnung sind eingerichtet. Das JavaFX-Anwendungsgerüst bietet bereits eine feste Seitenleiste und strukturelle Ansichten für Start, Gerichte, Suche, Wochenplan und Einkauf. Die fachlichen Funktionen dieser Ansichten werden in späteren Phasen angebunden.
+Das Projekt befindet sich in einer frühen Entwicklungsphase. Technisches Fundament, Domain-Modell, SQLite-Persistenz, Portions- und Einheitenberechnungen, Recipe-Suche, Wochenplanung und fachliche Einkaufslistenberechnung sind eingerichtet. Das JavaFX-Anwendungsgerüst bietet eine feste Seitenleiste und Ansichten für Start, Gerichte, Suche, Wochenplan und Einkauf. Die Ansicht „Gerichte“ lädt bereits gespeicherte Rezepte aus SQLite; Erstellen, Bearbeiten und Löschen folgen in späteren Phasen.
 
 ## Technologie-Stack
 
@@ -46,8 +46,10 @@ mvn javafx:run
 
 Der Start öffnet das Hauptfenster „MealDeal“. Über die linke Seitenleiste lassen sich alle derzeit angelegten Bereiche im selben Fenster aufrufen.
 
+Unter Windows speichert MealDeal seine lokale SQLite-Datenbank unter `%LOCALAPPDATA%\MealDeal\mealdeal.db`. Das Anwendungsverzeichnis wird beim Start bei Bedarf angelegt.
+
 ## Architekturprinzipien
 
-Das Projekt trennt vier Verantwortungsbereiche: Domänenmodell, Services, Persistenz und JavaFX-Oberfläche. Geschäftslogik bleibt unabhängig von JavaFX und wird automatisiert testbar entwickelt. SQL-Zugriffe werden später ausschließlich in der Persistenzschicht über JDBC und das Repository Pattern umgesetzt.
+Das Projekt trennt vier Verantwortungsbereiche: Domänenmodell, Services, Persistenz und JavaFX-Oberfläche. Geschäftslogik bleibt unabhängig von JavaFX und wird automatisiert testbar entwickelt. SQL-Zugriffe erfolgen ausschließlich in der Persistenzschicht über JDBC und das Repository Pattern.
 
 Weitere Grundlagen stehen in [docs/architecture.md](docs/architecture.md). Dauerhafte Entwicklungsregeln sind in [AGENTS.md](AGENTS.md) festgehalten.

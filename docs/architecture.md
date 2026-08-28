@@ -62,6 +62,8 @@ Schema-Versionen werden beim Öffnen über `PRAGMA user_version` schrittweise mi
 
 Ingredients und Tastes werden über ihre eigenen Repositories verwaltet und müssen vor einem referenzierenden Recipe existieren. Das vollständige Speichern oder Aktualisieren eines Recipe läuft in einer Transaktion. Dabei werden seine Beziehungs- und Schrittzeilen verständlich und atomar ersetzt; bei Fehlern erfolgt ein Rollback.
 
+Die produktive Windows-Anwendung verwendet `%LOCALAPPDATA%\MealDeal\mealdeal.db` als lokalen, nicht roamingfähigen Datenbankpfad. `ApplicationDataPaths` prüft die Umgebungsvariable und legt das Anwendungsverzeichnis bei Bedarf an. Schlägt diese Startvorbereitung fehl, wird der Fehler ausdrücklich weitergegeben statt unbemerkt auf einen anderen Speicherort auszuweichen.
+
 ## Wochenplanung
 
 `MealPlanEntry` verbindet über eine eigene UUID ein `LocalDate` mit einem bereits persistierten Recipe und einer individuellen Personenanzahl. Version 1 erlaubt per `UNIQUE(planned_date)` nur einen tatsächlichen Eintrag pro Tag; leere Tage werden nicht persistiert. Ein Recipe mit Planungshistorie ist durch `ON DELETE RESTRICT` vor versehentlichem Löschen geschützt.
@@ -119,4 +121,6 @@ Jede Hauptansicht verwendet einen vertikal scrollbar ausgeführten Inhaltsbereic
 
 Auf der Startseite stehen Tages- und Wochenplanung entsprechend ihrer fachlichen Gewichtung als breite Karten direkt untereinander. Diese vertikale Reihenfolge bleibt auch bei schmaleren Fenstern eindeutig und verhindert ein unnötiges horizontales Auseinanderziehen.
 
-`ApplicationContext` übernimmt die bewusste manuelle Zusammensetzung der UI. Spätere Phasen können dort Services und Repository-Schnittstellen per Konstruktor an Controller übergeben, ohne ein Dependency-Injection-Framework einzuführen. Die aktuellen Platzhalter-Views greifen noch nicht auf Datenbank oder Fachservices zu.
+`ApplicationContext` übernimmt die bewusste manuelle Zusammensetzung der UI. Er erstellt für den konfigurierten Datenbankpfad ein `SqliteRecipeRepository` und injiziert es über die Schnittstelle `RecipeRepository` in den `RecipesController`; ein Dependency-Injection-Framework ist dafür nicht erforderlich.
+
+Der `RecipesController` lädt die gespeicherten Rezepte beim Öffnen der Ansicht neu. Er sortiert sie deterministisch nach Name und bei Namensgleichheit nach UUID und erzeugt daraus kompakte, auswählbare UI-Einträge. Empty State und Ladefehler sind eigene sichtbare Zustände. SQL, Portionsberechnung und Suchlogik bleiben außerhalb des Controllers; die übrigen fachlichen Ansichten sind weiterhin Platzhalter.

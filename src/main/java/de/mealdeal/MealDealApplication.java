@@ -24,7 +24,8 @@ public class MealDealApplication extends Application {
      */
     @Override
     public void start(Stage primaryStage) {
-        ApplicationContext applicationContext = new ApplicationContext();
+        ApplicationContext applicationContext = new ApplicationContext(
+                ApplicationDataPaths.prepareDatabasePath());
         Parent mainView = applicationContext.loadMainView();
         Scene scene = new Scene(mainView, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
 
