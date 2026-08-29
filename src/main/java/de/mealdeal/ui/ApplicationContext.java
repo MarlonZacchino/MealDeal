@@ -9,10 +9,12 @@ import de.mealdeal.persistence.sqlite.SqliteRecipeRepository;
 import de.mealdeal.persistence.sqlite.SqliteTasteRepository;
 import de.mealdeal.ui.controller.CreateRecipeController;
 import de.mealdeal.ui.controller.HomeController;
+import de.mealdeal.ui.controller.IngredientSearchController;
 import de.mealdeal.ui.controller.MainController;
 import de.mealdeal.ui.controller.RecipeDetailController;
 import de.mealdeal.ui.controller.RecipesController;
 import de.mealdeal.service.RecipeScaler;
+import de.mealdeal.service.RecipeSearchService;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 
@@ -34,6 +36,7 @@ public final class ApplicationContext {
     private final IngredientRepository ingredientRepository;
     private final TasteRepository tasteRepository;
     private final RecipeScaler recipeScaler = new RecipeScaler();
+    private final RecipeSearchService recipeSearchService = new RecipeSearchService();
 
     /** Creates the production composition backed by the configured SQLite file. */
     public ApplicationContext(Path databasePath) {
@@ -83,6 +86,10 @@ public final class ApplicationContext {
         }
         if (controllerType == RecipeDetailController.class) {
             return new RecipeDetailController(recipeRepository, recipeScaler);
+        }
+        if (controllerType == IngredientSearchController.class) {
+            return new IngredientSearchController(
+                    ingredientRepository, recipeRepository, recipeSearchService);
         }
         if (controllerType == CreateRecipeController.class) {
             return new CreateRecipeController(

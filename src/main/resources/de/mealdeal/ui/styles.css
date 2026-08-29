@@ -281,3 +281,92 @@
 .serving-spinner {
     -fx-font-size: 15px;
 }
+
+.search-selection-card {
+    -fx-padding: 24px 26px;
+}
+
+.selection-count {
+    -fx-background-color: #edf2ec;
+    -fx-background-radius: 999px;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 7px 11px;
+    -fx-text-fill: #415348;
+}
+
+.ingredient-option {
+    -fx-background-color: #edf2ec;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-padding: 9px 13px;
+    -fx-text-fill: #324c3b;
+}
+
+.ingredient-option:hover {
+    -fx-background-color: #dce8dd;
+}
+
+.selected-ingredients-box {
+    -fx-background-color: #f7f9f6;
+    -fx-background-radius: 10px;
+    -fx-padding: 14px 16px;
+}
+
+.selected-ingredient-chip {
+    -fx-background-color: #dce8dd;
+    -fx-background-radius: 999px;
+    -fx-cursor: hand;
+    -fx-padding: 8px 12px;
+    -fx-text-fill: #2d4936;
+}
+
+.selected-ingredient-chip:hover {
+    -fx-background-color: #cbdccb;
+}
+
+.search-state-card {
+    -fx-padding: 36px 28px;
+}
+
+.search-result-item {
+    -fx-alignment: center-left;
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12px;
+    -fx-border-color: #dfe5df;
+    -fx-border-radius: 12px;
+    -fx-cursor: hand;
+    -fx-padding: 18px 22px;
+}
+
+.search-result-item:hover {
+    -fx-background-color: #f1f5f0;
+    -fx-border-color: #cbd8cc;
+}
+
+.match-quality {
+    -fx-background-radius: 999px;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 5px 9px;
+}
+
+.match-perfect {
+    -fx-background-color: #d9ebdc;
+    -fx-text-fill: #285f35;
+}
+
+.match-good {
+    -fx-background-color: #f2e8c7;
+    -fx-text-fill: #735c13;
+}
+
+.match-partial {
+    -fx-background-color: #ece8e3;
+    -fx-text-fill: #665d54;
+}
+
+.search-missing {
+    -fx-font-size: 13px;
+    -fx-text-fill: #8a5b4d;
+}

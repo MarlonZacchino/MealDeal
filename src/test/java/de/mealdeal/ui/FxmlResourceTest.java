@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FxmlResourceTest {
 
@@ -43,6 +44,18 @@ class FxmlResourceTest {
                 .count();
 
         assertEquals(ViewType.values().length, distinctPaths);
+    }
+
+    @Test
+    void ingredientSearchViewDefinesAVisibleEmptyResultState() throws Exception {
+        try (InputStream input = FxmlResourceTest.class.getResourceAsStream(
+                "/de/mealdeal/ui/search-view.fxml")) {
+            assertNotNull(input);
+            String fxml = new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+
+            assertTrue(fxml.contains("fx:id=\"emptyState\""));
+            assertTrue(fxml.contains("Keine passenden Gerichte gefunden"));
+        }
     }
 
     private static Stream<String> allFxmlResources() {
