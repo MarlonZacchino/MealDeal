@@ -265,12 +265,74 @@
     -fx-font-size: 15px;
 }
 
-.day-chip {
-    -fx-background-color: -md-surface-alt;
-    -fx-background-radius: 10px;
+.meal-plan-week-range {
     -fx-font-size: 16px;
-    -fx-padding: 12px 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 0 0 0;
+    -fx-text-fill: -md-accent;
+}
+
+.meal-plan-day-card {
+    -fx-padding: 28px 30px;
+}
+
+.meal-plan-day-today {
+    -fx-background-color: -md-accent-soft;
+    -fx-border-color: -md-accent;
+    -fx-border-width: 2px;
+}
+
+.meal-plan-day-name {
+    -fx-font-size: 23px;
+    -fx-font-weight: bold;
     -fx-text-fill: -md-text;
+}
+
+.meal-plan-date {
+    -fx-font-size: 16px;
+    -fx-text-fill: -md-text-muted;
+}
+
+.meal-plan-today-badge {
+    -fx-background-color: -md-accent;
+    -fx-background-radius: 999px;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 7px 12px;
+    -fx-text-fill: -md-on-accent;
+}
+
+.meal-plan-empty-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.meal-plan-recipe-link {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+    -fx-font-size: 21px;
+    -fx-font-weight: bold;
+    -fx-padding: 0;
+    -fx-text-fill: -md-accent;
+}
+
+.meal-plan-recipe-link:hover {
+    -fx-underline: true;
+}
+
+.meal-plan-controls {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 12px;
+    -fx-padding: 16px 18px;
+}
+
+.meal-plan-recipe-picker {
+    -fx-pref-width: 340px;
+}
+
+.meal-plan-serving-spinner {
+    -fx-pref-width: 130px;
 }
 
 .recipe-state-card {

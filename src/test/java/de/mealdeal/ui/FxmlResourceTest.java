@@ -107,6 +107,20 @@ class FxmlResourceTest {
         assertTrue(css.contains("-fx-min-height: 44px"));
     }
 
+    @Test
+    void weekPlanViewDefinesFunctionalCurrentWeekStates() throws Exception {
+        String fxml = readResource("/de/mealdeal/ui/week-plan-view.fxml");
+        String css = readResource("/de/mealdeal/ui/styles.css");
+
+        assertTrue(fxml.contains("fx:controller=\"de.mealdeal.ui.controller.WeekPlanController\""));
+        assertTrue(fxml.contains("fx:id=\"weekRangeLabel\""));
+        assertTrue(fxml.contains("fx:id=\"dayCardsContainer\""));
+        assertTrue(fxml.contains("fx:id=\"errorState\""));
+        assertTrue(fxml.contains("onAction=\"#refresh\""));
+        assertTrue(css.contains(".meal-plan-day-today"));
+        assertTrue(css.contains(".meal-plan-controls"));
+    }
+
     private static String readResource(String path) throws Exception {
         try (InputStream input = FxmlResourceTest.class.getResourceAsStream(path)) {
             assertNotNull(input, () -> "Missing resource: " + path);
