@@ -16,6 +16,7 @@ import de.mealdeal.ui.controller.RecipesController;
 import de.mealdeal.service.CombinedRecipeSearchService;
 import de.mealdeal.service.RecipeScaler;
 import de.mealdeal.service.RecipeSearchService;
+import de.mealdeal.ui.theme.ThemeService;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 
@@ -40,28 +41,40 @@ public final class ApplicationContext {
     private final RecipeSearchService recipeSearchService = new RecipeSearchService();
     private final CombinedRecipeSearchService combinedSearchService =
             new CombinedRecipeSearchService(recipeSearchService);
+    private final ThemeService themeService;
 
     /** Creates the production composition backed by the configured SQLite file. */
     public ApplicationContext(Path databasePath) {
         this(new SqliteDatabase(
-                Objects.requireNonNull(databasePath, "Database path must not be null.")));
+                        Objects.requireNonNull(databasePath, "Database path must not be null.")),
+                new ThemeService(databasePath.resolveSibling(ThemeService.SETTINGS_FILE_NAME)));
     }
 
-    private ApplicationContext(SqliteDatabase database) {
+    private ApplicationContext(SqliteDatabase database, ThemeService themeService) {
         this(new SqliteRecipeRepository(database), new SqliteIngredientRepository(database),
-                new SqliteTasteRepository(database));
+                new SqliteTasteRepository(database), themeService);
     }
 
     /** Creates a composition with explicit repositories, primarily for isolated tests. */
     public ApplicationContext(RecipeRepository recipeRepository,
                               IngredientRepository ingredientRepository,
                               TasteRepository tasteRepository) {
+        this(recipeRepository, ingredientRepository, tasteRepository, new ThemeService());
+    }
+
+    /** Creates a composition with explicit repositories and theme service. */
+    public ApplicationContext(RecipeRepository recipeRepository,
+                              IngredientRepository ingredientRepository,
+                              TasteRepository tasteRepository,
+                              ThemeService themeService) {
         this.recipeRepository = Objects.requireNonNull(
                 recipeRepository, "Recipe repository must not be null.");
         this.ingredientRepository = Objects.requireNonNull(
                 ingredientRepository, "Ingredient repository must not be null.");
         this.tasteRepository = Objects.requireNonNull(
                 tasteRepository, "Taste repository must not be null.");
+        this.themeService = Objects.requireNonNull(
+                themeService, "Theme service must not be null.");
     }
 
     /** Loads the application's single main view. */
@@ -79,7 +92,7 @@ public final class ApplicationContext {
     public Object createController(Class<?> controllerType) {
         Objects.requireNonNull(controllerType, "Controller type must not be null.");
         if (controllerType == MainController.class) {
-            return new MainController(this);
+            return new MainController(this, themeService);
         }
         if (controllerType == HomeController.class) {
             return new HomeController();

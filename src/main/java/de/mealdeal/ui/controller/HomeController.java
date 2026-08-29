@@ -6,39 +6,52 @@ import de.mealdeal.ui.navigation.ViewType;
 import javafx.fxml.FXML;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /** Routes the start-page shortcut buttons to existing main views. */
 public final class HomeController implements NavigationAware {
 
-    private ViewNavigator navigator;
+    private Consumer<ViewType> navigation;
+
+    public HomeController() {
+        navigation = ignored -> {
+            throw new IllegalStateException("Navigator has not been configured.");
+        };
+    }
+
+    HomeController(Consumer<ViewType> navigation) {
+        this.navigation = Objects.requireNonNull(navigation, "Navigation must not be null.");
+    }
 
     @Override
     public void setNavigator(ViewNavigator navigator) {
-        this.navigator = Objects.requireNonNull(navigator, "Navigator must not be null.");
+        ViewNavigator configuredNavigator = Objects.requireNonNull(
+                navigator, "Navigator must not be null.");
+        navigation = configuredNavigator::navigateTo;
     }
 
     @FXML
-    private void openSearch() {
-        navigator.navigateTo(ViewType.SEARCH);
+    void openSearch() {
+        navigation.accept(ViewType.SEARCH);
     }
 
     @FXML
     private void openRecipes() {
-        navigator.navigateTo(ViewType.RECIPES);
+        navigation.accept(ViewType.RECIPES);
     }
 
     @FXML
     private void openCreateRecipe() {
-        navigator.navigateTo(ViewType.CREATE_RECIPE);
+        navigation.accept(ViewType.CREATE_RECIPE);
     }
 
     @FXML
     private void openWeekPlan() {
-        navigator.navigateTo(ViewType.WEEK_PLAN);
+        navigation.accept(ViewType.WEEK_PLAN);
     }
 
     @FXML
     private void openShopping() {
-        navigator.navigateTo(ViewType.SHOPPING);
+        navigation.accept(ViewType.SHOPPING);
     }
 }

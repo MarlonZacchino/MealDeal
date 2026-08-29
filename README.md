@@ -44,9 +44,9 @@ mvn clean test
 mvn javafx:run
 ```
 
-Der Start öffnet das Hauptfenster „MealDeal“. Über die linke Seitenleiste lassen sich alle derzeit angelegten Bereiche im selben Fenster aufrufen.
+Der Start öffnet das Hauptfenster „MealDeal“. Über die linke Seitenleiste lassen sich alle derzeit angelegten Bereiche im selben Fenster aufrufen. Dort kann außerdem ohne Neustart zwischen Light und Dark Mode gewechselt werden.
 
-Unter Windows speichert MealDeal seine lokale SQLite-Datenbank unter `%LOCALAPPDATA%\MealDeal\mealdeal.db`. Das Anwendungsverzeichnis wird beim Start bei Bedarf angelegt.
+Unter Windows speichert MealDeal seine lokale SQLite-Datenbank unter `%LOCALAPPDATA%\MealDeal\mealdeal.db`. Die lokale Theme-Auswahl liegt daneben in `theme.properties` und wird beim nächsten Start wiederhergestellt. Das Anwendungsverzeichnis wird beim Start bei Bedarf angelegt.
 
 ## Architekturprinzipien
 

@@ -3,18 +3,21 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml/1"
+            fx:id="rootShell"
             fx:controller="de.mealdeal.ui.controller.MainController"
             stylesheets="@styles.css"
             styleClass="root-shell">
     <left>
-        <VBox prefWidth="205.0" minWidth="190.0" maxWidth="220.0" spacing="4.0" styleClass="sidebar">
+        <VBox prefWidth="235.0" minWidth="220.0" maxWidth="250.0" spacing="6.0" styleClass="sidebar">
             <padding>
-                <Insets top="24.0" right="16.0" bottom="20.0" left="16.0"/>
+                <Insets top="28.0" right="18.0" bottom="22.0" left="18.0"/>
             </padding>
             <Label text="MealDeal" styleClass="sidebar-title"/>
             <Label text="Essen einfach planen." wrapText="true" styleClass="sidebar-subtitle"/>
@@ -30,6 +33,10 @@
                 <Button fx:id="shoppingButton" text="Einkaufsliste" maxWidth="1.7976931348623157E308"
                         onAction="#showShopping" styleClass="nav-button"/>
             </VBox>
+            <Region VBox.vgrow="ALWAYS"/>
+            <ToggleButton fx:id="themeToggle" text="Light Mode"
+                          maxWidth="1.7976931348623157E308"
+                          onAction="#toggleTheme" styleClass="theme-toggle"/>
         </VBox>
     </left>
     <center>

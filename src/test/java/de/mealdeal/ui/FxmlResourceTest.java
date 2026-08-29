@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -73,6 +74,43 @@ class FxmlResourceTest {
             assertTrue(fxml.contains("fitToWidth=\"true\""));
             assertTrue(fxml.contains("maxWidth=\"1240.0\""));
             assertTrue(fxml.contains("Noch keine Zubereitung hinterlegt."));
+        }
+    }
+
+    @Test
+    void homeUsesOneCentralActionForCombinedSearch() throws Exception {
+        String fxml = readResource("/de/mealdeal/ui/home-view.fxml");
+
+        assertTrue(fxml.contains("text=\"Gericht finden\""));
+        assertEquals(1, fxml.split("onAction=\"#openSearch\"", -1).length - 1);
+        assertFalse(fxml.contains("Nach Zutaten suchen"));
+        assertFalse(fxml.contains("Nach Geschmack suchen"));
+    }
+
+    @Test
+    void mainViewDefinesPersistentSidebarThemeToggle() throws Exception {
+        String fxml = readResource(MAIN_VIEW);
+
+        assertTrue(fxml.contains("fx:id=\"rootShell\""));
+        assertTrue(fxml.contains("fx:id=\"themeToggle\""));
+        assertTrue(fxml.contains("onAction=\"#toggleTheme\""));
+        assertTrue(fxml.contains("VBox.vgrow=\"ALWAYS\""));
+    }
+
+    @Test
+    void stylesheetDefinesCentralWineRedLightAndDarkPalettes() throws Exception {
+        String css = readResource("/de/mealdeal/ui/styles.css");
+
+        assertTrue(css.contains("-md-accent: #6f1d35"));
+        assertTrue(css.contains(".root-shell.theme-dark"));
+        assertTrue(css.contains("-fx-font-size: 36px"));
+        assertTrue(css.contains("-fx-min-height: 44px"));
+    }
+
+    private static String readResource(String path) throws Exception {
+        try (InputStream input = FxmlResourceTest.class.getResourceAsStream(path)) {
+            assertNotNull(input, () -> "Missing resource: " + path);
+            return new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 
