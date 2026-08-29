@@ -58,6 +58,8 @@ class FxmlResourceTest {
             assertTrue(fxml.contains("fx:id=\"tasteAndMode\""));
             assertTrue(fxml.contains("fx:id=\"tasteOrMode\""));
             assertTrue(fxml.contains("fx:id=\"tasteRankingMode\""));
+            assertTrue(fxml.contains("onAction=\"#resetFilters\""));
+            assertTrue(fxml.contains("onAction=\"#search\""));
         }
     }
 

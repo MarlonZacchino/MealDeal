@@ -61,6 +61,11 @@ public final class TasteSearchModel {
         return List.copyOf(selectedTastes);
     }
 
+    /** Removes every selected taste. */
+    public void clear() {
+        selectedTastes.clear();
+    }
+
     /** Loads recipes and delegates the selected mode unchanged to RecipeSearchService. */
     public List<TasteSearchResult> search(TasteFilterMode mode) {
         Objects.requireNonNull(mode, "Taste filter mode must not be null.");

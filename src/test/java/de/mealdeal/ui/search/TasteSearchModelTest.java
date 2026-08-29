@@ -102,6 +102,17 @@ class TasteSearchModelTest {
         assertEquals(0, recipes.findAllCalls);
     }
 
+    @Test
+    void clearsEverySelectedTaste() {
+        TasteSearchModel model = model(List.of(savory, spicy), List.of());
+        model.select(savory);
+        model.select(spicy);
+
+        model.clear();
+
+        assertTrue(model.getSelectedTastes().isEmpty());
+    }
+
     private TasteSearchModel selectedModel(List<Recipe> recipes, Taste... tastes) {
         TasteSearchModel model = model(List.of(tastes), recipes);
         for (Taste taste : tastes) {

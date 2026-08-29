@@ -390,3 +390,18 @@
     -fx-font-size: 12px;
     -fx-text-fill: #68756e;
 }
+
+.search-actions {
+    -fx-background-color: #edf3ed;
+    -fx-background-radius: 12px;
+    -fx-border-color: #d1ddd2;
+    -fx-border-radius: 12px;
+    -fx-padding: 16px 18px;
+}
+
+.search-filter-name {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-min-width: 82px;
+    -fx-text-fill: #415348;
+}

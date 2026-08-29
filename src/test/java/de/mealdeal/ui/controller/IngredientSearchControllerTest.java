@@ -5,6 +5,7 @@ import de.mealdeal.domain.Taste;
 import de.mealdeal.persistence.repository.IngredientRepository;
 import de.mealdeal.persistence.repository.RecipeRepository;
 import de.mealdeal.persistence.repository.TasteRepository;
+import de.mealdeal.service.CombinedRecipeSearchService;
 import de.mealdeal.service.RecipeSearchService;
 import de.mealdeal.ui.search.IngredientSearchModel;
 import de.mealdeal.ui.search.TasteSearchModel;
@@ -24,14 +25,15 @@ class IngredientSearchControllerTest {
         Recipe recipe = new Recipe("Kartoffelsuppe", 2, List.of(), List.of(),
                 List.of(new Taste("Herzhaft")));
         AtomicReference<Recipe> navigatedRecipe = new AtomicReference<>();
+        EmptyRecipeRepository recipes = new EmptyRecipeRepository();
+        RecipeSearchService searchService = new RecipeSearchService();
         IngredientSearchModel model = new IngredientSearchModel(
-                new EmptyIngredientRepository(), new EmptyRecipeRepository(),
-                new RecipeSearchService());
+                new EmptyIngredientRepository(), recipes, searchService);
         TasteSearchModel tasteModel = new TasteSearchModel(
-                new EmptyTasteRepository(), new EmptyRecipeRepository(),
-                new RecipeSearchService());
+                new EmptyTasteRepository(), recipes, searchService);
         IngredientSearchController controller =
-                new IngredientSearchController(model, tasteModel, navigatedRecipe::set);
+                new IngredientSearchController(model, tasteModel, recipes,
+                        new CombinedRecipeSearchService(searchService), navigatedRecipe::set);
 
         controller.openRecipe(recipe);
 

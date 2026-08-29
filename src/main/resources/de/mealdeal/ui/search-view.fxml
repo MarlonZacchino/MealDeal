@@ -8,6 +8,7 @@
 <?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -43,10 +44,6 @@
                         <Label text="Deine Auswahl" styleClass="form-label"/>
                         <FlowPane fx:id="selectedIngredientsContainer" hgap="10.0" vgap="10.0"/>
                     </VBox>
-                    <HBox alignment="CENTER_RIGHT">
-                        <Button fx:id="ingredientSearchButton" text="Nach Zutaten suchen"
-                                onAction="#searchIngredients" styleClass="primary-button"/>
-                    </HBox>
                 </VBox>
 
                 <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
@@ -97,11 +94,15 @@
                         </HBox>
                     </VBox>
 
-                    <HBox alignment="CENTER_RIGHT">
-                        <Button fx:id="tasteSearchButton" text="Nach Geschmack suchen"
-                                onAction="#searchTastes" styleClass="primary-button"/>
-                    </HBox>
                 </VBox>
+
+                <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="search-actions">
+                    <Button text="Alle Filter zurücksetzen" onAction="#resetFilters"
+                            styleClass="secondary-button"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Passende Gerichte anzeigen" onAction="#search"
+                            styleClass="primary-button"/>
+                </HBox>
 
                 <VBox spacing="14.0">
                     <Label text="Ergebnisse" styleClass="section-title"/>
@@ -110,7 +111,7 @@
                     <VBox fx:id="initialState" alignment="CENTER" spacing="8.0"
                           styleClass="card, wide-card, search-state-card">
                         <Label text="Bereit für deine Suche" styleClass="card-title"/>
-                        <Label text="Wähle Zutaten oder Geschmacksrichtungen und starte die passende Suche."
+                        <Label text="Wähle Zutaten, Geschmacksrichtungen oder beides und starte die Suche."
                                wrapText="true" styleClass="card-text"/>
                     </VBox>
 

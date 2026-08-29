@@ -66,6 +66,11 @@ public final class IngredientSearchModel {
         return List.copyOf(selectedIngredients);
     }
 
+    /** Removes every selected ingredient. */
+    public void clear() {
+        selectedIngredients.clear();
+    }
+
     /** Loads recipes and delegates matching and ranking unchanged to RecipeSearchService. */
     public List<IngredientSearchResult> search() {
         if (selectedIngredients.isEmpty()) {

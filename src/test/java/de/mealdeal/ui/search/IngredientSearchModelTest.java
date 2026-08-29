@@ -99,6 +99,17 @@ class IngredientSearchModelTest {
                 .map(Ingredient::getName).toList());
     }
 
+    @Test
+    void clearsEverySelectedIngredient() {
+        IngredientSearchModel model = model(List.of(), List.of());
+        model.select(new Ingredient("Pasta"));
+        model.select(new Ingredient("Tomate"));
+
+        model.clear();
+
+        assertTrue(model.getSelectedIngredients().isEmpty());
+    }
+
     private static IngredientSearchModel model(List<Ingredient> ingredients,
                                                List<Recipe> recipes) {
         return new IngredientSearchModel(new StubIngredientRepository(ingredients),
