@@ -8,6 +8,7 @@ import de.mealdeal.domain.RecipeStep;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.domain.Unit;
 import de.mealdeal.persistence.PersistenceException;
+import de.mealdeal.persistence.RecipeDeletionRestrictedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -132,7 +133,7 @@ class SqliteMealPlanRepositoryIntegrationTest {
         MealPlanEntry entry = new MealPlanEntry(LocalDate.of(2026, 9, 1), pastaRecipe, 2);
         mealPlanRepository.save(entry);
 
-        assertThrows(PersistenceException.class,
+        assertThrows(RecipeDeletionRestrictedException.class,
                 () -> recipeRepository.deleteById(pastaRecipe.getId()));
 
         assertTrue(recipeRepository.findById(pastaRecipe.getId()).isPresent());

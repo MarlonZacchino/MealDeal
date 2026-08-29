@@ -2,11 +2,17 @@ package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.persistence.PersistenceException;
+import de.mealdeal.persistence.RecipeDeletionRestrictedException;
+import de.mealdeal.persistence.repository.RecipeRepository;
 import de.mealdeal.service.RecipeScaler;
 import de.mealdeal.ui.navigation.NavigationAware;
 import de.mealdeal.ui.navigation.ViewNavigator;
 import de.mealdeal.ui.navigation.ViewType;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
@@ -14,12 +20,16 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 
 /** Renders one recipe and updates its displayed quantities for a serving count. */
 public final class RecipeDetailController implements NavigationAware {
 
+    private static final System.Logger LOGGER =
+            System.getLogger(RecipeDetailController.class.getName());
     private static final int MAX_SERVING_COUNT = 999;
 
+    private final RecipeRepository recipeRepository;
     private final RecipeScaler recipeScaler;
     private ViewNavigator navigator;
     private Recipe recipe;
@@ -37,8 +47,10 @@ public final class RecipeDetailController implements NavigationAware {
     @FXML
     private VBox stepsContainer;
 
-    /** Creates the detail controller with the application's scaling service. */
-    public RecipeDetailController(RecipeScaler recipeScaler) {
+    /** Creates the detail controller with deletion persistence and scaling dependencies. */
+    public RecipeDetailController(RecipeRepository recipeRepository, RecipeScaler recipeScaler) {
+        this.recipeRepository = Objects.requireNonNull(
+                recipeRepository, "Recipe repository must not be null.");
         this.recipeScaler = Objects.requireNonNull(recipeScaler, "Recipe scaler must not be null.");
     }
 
@@ -70,6 +82,58 @@ public final class RecipeDetailController implements NavigationAware {
     @FXML
     private void editRecipe() {
         navigator.navigateToRecipeEdit(recipe);
+    }
+
+    @FXML
+    private void deleteRecipe() {
+        try {
+            DeletionOutcome outcome = deleteAfterConfirmation(recipe, this::confirmDeletion);
+            if (outcome == DeletionOutcome.DELETED || outcome == DeletionOutcome.NOT_FOUND) {
+                navigator.navigateTo(ViewType.RECIPES);
+            }
+        } catch (RecipeDeletionRestrictedException exception) {
+            LOGGER.log(System.Logger.Level.WARNING,
+                    "Recipe is still referenced by a meal plan entry.", exception);
+            showError("Gericht wird noch verwendet",
+                    "Dieses Gericht ist noch im Wochenplan eingetragen und kann deshalb nicht "
+                            + "gelöscht werden. Entferne zuerst die entsprechende Planung.");
+        } catch (PersistenceException exception) {
+            LOGGER.log(System.Logger.Level.ERROR, "Could not delete recipe.", exception);
+            showError("Gericht konnte nicht gelöscht werden",
+                    "Beim Löschen ist ein Datenbankfehler aufgetreten. Bitte versuche es erneut.");
+        }
+    }
+
+    DeletionOutcome deleteAfterConfirmation(Recipe target, BooleanSupplier confirmation) {
+        Objects.requireNonNull(target, "Recipe must not be null.");
+        Objects.requireNonNull(confirmation, "Confirmation must not be null.");
+        if (!confirmation.getAsBoolean()) {
+            return DeletionOutcome.CANCELLED;
+        }
+        return recipeRepository.deleteById(target.getId())
+                ? DeletionOutcome.DELETED : DeletionOutcome.NOT_FOUND;
+    }
+
+    private boolean confirmDeletion() {
+        ButtonType deleteButton = new ButtonType(
+                "Löschen", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButton = new ButtonType(
+                "Abbrechen", ButtonBar.ButtonData.CANCEL_CLOSE);
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
+                "Zutaten und Geschmacksrichtungen bleiben erhalten.",
+                cancelButton, deleteButton);
+        confirmation.initOwner(nameLabel.getScene().getWindow());
+        confirmation.setTitle("Gericht löschen");
+        confirmation.setHeaderText("„" + recipe.getName() + "“ wirklich löschen?");
+        return confirmation.showAndWait().filter(deleteButton::equals).isPresent();
+    }
+
+    private void showError(String title, String message) {
+        Alert error = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        error.initOwner(nameLabel.getScene().getWindow());
+        error.setTitle(title);
+        error.setHeaderText(title);
+        error.showAndWait();
     }
 
     private void configureServingSelection() {
@@ -131,5 +195,11 @@ public final class RecipeDetailController implements NavigationAware {
 
     private static String servingText(int count) {
         return count + (count == 1 ? " Person" : " Personen");
+    }
+
+    enum DeletionOutcome {
+        CANCELLED,
+        DELETED,
+        NOT_FOUND
     }
 }

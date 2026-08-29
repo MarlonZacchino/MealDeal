@@ -82,7 +82,7 @@ public final class ApplicationContext {
             return new RecipesController(recipeRepository);
         }
         if (controllerType == RecipeDetailController.class) {
-            return new RecipeDetailController(recipeScaler);
+            return new RecipeDetailController(recipeRepository, recipeScaler);
         }
         if (controllerType == CreateRecipeController.class) {
             return new CreateRecipeController(

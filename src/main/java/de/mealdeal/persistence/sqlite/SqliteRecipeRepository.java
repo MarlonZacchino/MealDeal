@@ -7,6 +7,7 @@ import de.mealdeal.domain.RecipeStep;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.domain.Unit;
 import de.mealdeal.persistence.PersistenceException;
+import de.mealdeal.persistence.RecipeDeletionRestrictedException;
 import de.mealdeal.persistence.repository.RecipeRepository;
 
 import java.math.BigDecimal;
@@ -27,6 +28,7 @@ import java.util.UUID;
  */
 public final class SqliteRecipeRepository implements RecipeRepository {
 
+    private static final int SQLITE_CONSTRAINT_ERROR_CODE = 19;
     private final SqliteDatabase database;
 
     public SqliteRecipeRepository(SqliteDatabase database) {
@@ -90,8 +92,19 @@ public final class SqliteRecipeRepository implements RecipeRepository {
             statement.setString(1, id.toString());
             return statement.executeUpdate() > 0;
         } catch (SQLException exception) {
+            if (isForeignKeyConstraint(exception)) {
+                throw new RecipeDeletionRestrictedException(
+                        "Recipe is still referenced and cannot be deleted.", exception);
+            }
             throw new PersistenceException("Could not delete recipe.", exception);
         }
+    }
+
+    private static boolean isForeignKeyConstraint(SQLException exception) {
+        String message = exception.getMessage();
+        return exception.getErrorCode() == SQLITE_CONSTRAINT_ERROR_CODE
+                && message != null
+                && message.toLowerCase(java.util.Locale.ROOT).contains("foreign key");
     }
 
     private static void saveRecipeRow(Connection connection, Recipe recipe) throws SQLException {

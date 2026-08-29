@@ -22,6 +22,7 @@
                         <Label fx:id="standardServingLabel" styleClass="page-subtitle"/>
                     </VBox>
                     <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Löschen" onAction="#deleteRecipe" styleClass="danger-button"/>
                     <Button text="Bearbeiten" onAction="#editRecipe" styleClass="primary-button"/>
                 </HBox>
 
