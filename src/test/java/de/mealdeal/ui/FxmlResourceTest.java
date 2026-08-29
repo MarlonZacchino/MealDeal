@@ -55,6 +55,9 @@ class FxmlResourceTest {
 
             assertTrue(fxml.contains("fx:id=\"emptyState\""));
             assertTrue(fxml.contains("Keine passenden Gerichte gefunden"));
+            assertTrue(fxml.contains("fx:id=\"tasteAndMode\""));
+            assertTrue(fxml.contains("fx:id=\"tasteOrMode\""));
+            assertTrue(fxml.contains("fx:id=\"tasteRankingMode\""));
         }
     }
 

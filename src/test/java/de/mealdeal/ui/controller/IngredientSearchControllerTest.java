@@ -4,8 +4,10 @@ import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.persistence.repository.IngredientRepository;
 import de.mealdeal.persistence.repository.RecipeRepository;
+import de.mealdeal.persistence.repository.TasteRepository;
 import de.mealdeal.service.RecipeSearchService;
 import de.mealdeal.ui.search.IngredientSearchModel;
+import de.mealdeal.ui.search.TasteSearchModel;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -25,12 +27,22 @@ class IngredientSearchControllerTest {
         IngredientSearchModel model = new IngredientSearchModel(
                 new EmptyIngredientRepository(), new EmptyRecipeRepository(),
                 new RecipeSearchService());
+        TasteSearchModel tasteModel = new TasteSearchModel(
+                new EmptyTasteRepository(), new EmptyRecipeRepository(),
+                new RecipeSearchService());
         IngredientSearchController controller =
-                new IngredientSearchController(model, navigatedRecipe::set);
+                new IngredientSearchController(model, tasteModel, navigatedRecipe::set);
 
         controller.openRecipe(recipe);
 
         assertSame(recipe, navigatedRecipe.get());
+    }
+
+    private static final class EmptyTasteRepository implements TasteRepository {
+        @Override public void save(Taste taste) { throw new UnsupportedOperationException(); }
+        @Override public Optional<Taste> findById(UUID id) { return Optional.empty(); }
+        @Override public List<Taste> findAll() { return List.of(); }
+        @Override public boolean deleteById(UUID id) { throw new UnsupportedOperationException(); }
     }
 
     private static final class EmptyIngredientRepository implements IngredientRepository {

@@ -2,8 +2,10 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
@@ -17,7 +19,7 @@
             <VBox maxWidth="1080.0" spacing="28.0" styleClass="page-container">
                 <VBox spacing="6.0" styleClass="page-header">
                     <Label text="Was essen?" styleClass="page-title"/>
-                    <Label text="Finde passende Gerichte mit Zutaten, die du bereits hast."
+                    <Label text="Finde passende Gerichte nach Zutaten oder Geschmack."
                            wrapText="true" styleClass="page-subtitle"/>
                 </VBox>
 
@@ -42,8 +44,62 @@
                         <FlowPane fx:id="selectedIngredientsContainer" hgap="10.0" vgap="10.0"/>
                     </VBox>
                     <HBox alignment="CENTER_RIGHT">
-                        <Button fx:id="searchButton" text="Gerichte finden"
-                                onAction="#search" styleClass="primary-button"/>
+                        <Button fx:id="ingredientSearchButton" text="Nach Zutaten suchen"
+                                onAction="#searchIngredients" styleClass="primary-button"/>
+                    </HBox>
+                </VBox>
+
+                <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
+                      styleClass="card, wide-card, search-selection-card">
+                    <fx:define>
+                        <ToggleGroup fx:id="tasteModeGroup"/>
+                    </fx:define>
+                    <HBox alignment="CENTER_LEFT" spacing="12.0">
+                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                            <Label text="Geschmack auswählen" styleClass="card-title"/>
+                            <Label text="Wähle Geschmacksrichtungen und entscheide, wie genau sie passen sollen."
+                                   wrapText="true" styleClass="card-text"/>
+                        </VBox>
+                        <Label fx:id="tasteSelectionCountLabel" styleClass="selection-count"/>
+                    </HBox>
+                    <TextField fx:id="tasteFilterField"
+                               promptText="Geschmacksrichtungen durchsuchen …"/>
+                    <FlowPane fx:id="availableTastesContainer" hgap="10.0" vgap="10.0"/>
+                    <VBox spacing="10.0" styleClass="selected-ingredients-box">
+                        <Label text="Deine Auswahl" styleClass="form-label"/>
+                        <FlowPane fx:id="selectedTastesContainer" hgap="10.0" vgap="10.0"/>
+                    </VBox>
+
+                    <VBox spacing="10.0">
+                        <Label text="Suchmodus" styleClass="form-label"/>
+                        <HBox spacing="10.0">
+                            <VBox minWidth="0.0" spacing="5.0" HBox.hgrow="ALWAYS"
+                                  styleClass="taste-mode-card">
+                                <RadioButton fx:id="tasteAndMode" text="Alle (AND)"
+                                             toggleGroup="$tasteModeGroup"/>
+                                <Label text="Das Gericht enthält jede ausgewählte Geschmacksrichtung."
+                                       wrapText="true" styleClass="mode-description"/>
+                            </VBox>
+                            <VBox minWidth="0.0" spacing="5.0" HBox.hgrow="ALWAYS"
+                                  styleClass="taste-mode-card">
+                                <RadioButton fx:id="tasteOrMode" text="Mindestens eine (OR)"
+                                             toggleGroup="$tasteModeGroup"/>
+                                <Label text="Das Gericht enthält mindestens eine der ausgewählten Richtungen."
+                                       wrapText="true" styleClass="mode-description"/>
+                            </VBox>
+                            <VBox minWidth="0.0" spacing="5.0" HBox.hgrow="ALWAYS"
+                                  styleClass="taste-mode-card">
+                                <RadioButton fx:id="tasteRankingMode" text="Beste Treffer (RANKING)"
+                                             selected="true" toggleGroup="$tasteModeGroup"/>
+                                <Label text="Alle Treffer werden nach ihrer Übereinstimmung sortiert."
+                                       wrapText="true" styleClass="mode-description"/>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+
+                    <HBox alignment="CENTER_RIGHT">
+                        <Button fx:id="tasteSearchButton" text="Nach Geschmack suchen"
+                                onAction="#searchTastes" styleClass="primary-button"/>
                     </HBox>
                 </VBox>
 
@@ -54,7 +110,7 @@
                     <VBox fx:id="initialState" alignment="CENTER" spacing="8.0"
                           styleClass="card, wide-card, search-state-card">
                         <Label text="Bereit für deine Suche" styleClass="card-title"/>
-                        <Label text="Wähle Zutaten aus und starte anschließend die Suche."
+                        <Label text="Wähle Zutaten oder Geschmacksrichtungen und starte die passende Suche."
                                wrapText="true" styleClass="card-text"/>
                     </VBox>
 
@@ -62,7 +118,7 @@
                           managed="false" visible="false"
                           styleClass="card, wide-card, search-state-card">
                         <Label text="Keine passenden Gerichte gefunden" styleClass="card-title"/>
-                        <Label text="Entferne eine Zutat oder probiere eine andere Auswahl."
+                        <Label text="Verändere deine Auswahl oder probiere einen anderen Suchmodus."
                                wrapText="true" styleClass="card-text"/>
                     </VBox>
 

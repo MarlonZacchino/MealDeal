@@ -89,7 +89,8 @@ public final class ApplicationContext {
         }
         if (controllerType == IngredientSearchController.class) {
             return new IngredientSearchController(
-                    ingredientRepository, recipeRepository, recipeSearchService);
+                    ingredientRepository, tasteRepository, recipeRepository,
+                    recipeSearchService);
         }
         if (controllerType == CreateRecipeController.class) {
             return new CreateRecipeController(
