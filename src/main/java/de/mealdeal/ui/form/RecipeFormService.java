@@ -104,7 +104,7 @@ public final class RecipeFormService {
         int servingCount = parseServingCount(input.standardServingCount(), errors);
         List<ValidatedIngredient> ingredients = validateIngredients(input.ingredients(), errors);
         List<String> tasteNames = validateTastes(input.tasteNames(), errors);
-        List<String> steps = validateSteps(input.stepDescriptions(), errors);
+        List<String> steps = validateSteps(input.stepDescriptions());
 
         if (!errors.isEmpty()) {
             throw new RecipeFormValidationException(errors);
@@ -171,21 +171,11 @@ public final class RecipeFormService {
         return distinctNames(names);
     }
 
-    private static List<String> validateSteps(List<String> inputs, List<String> errors) {
-        if (inputs.isEmpty()) {
-            errors.add("Füge mindestens einen Zubereitungsschritt hinzu.");
-            return List.of();
-        }
-        List<String> steps = new ArrayList<>();
-        for (int index = 0; index < inputs.size(); index++) {
-            String description = stripped(inputs.get(index));
-            if (description.isEmpty()) {
-                errors.add("Schritt " + (index + 1) + ": Bitte gib eine Beschreibung ein.");
-            } else {
-                steps.add(description);
-            }
-        }
-        return List.copyOf(steps);
+    private static List<String> validateSteps(List<String> inputs) {
+        return inputs.stream()
+                .map(RecipeFormService::stripped)
+                .filter(description -> !description.isEmpty())
+                .toList();
     }
 
     private static Ingredient findIngredient(List<Ingredient> ingredients, String name) {

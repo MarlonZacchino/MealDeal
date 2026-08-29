@@ -73,7 +73,7 @@
                     <HBox alignment="CENTER_LEFT" spacing="12.0">
                         <VBox spacing="4.0">
                             <Label text="Zubereitung" styleClass="card-title"/>
-                            <Label text="Die Reihenfolge wird automatisch nummeriert."
+                            <Label text="Optional: Hinzugefügte Schritte werden automatisch nummeriert."
                                    wrapText="true" styleClass="card-text"/>
                         </VBox>
                         <Region HBox.hgrow="ALWAYS"/>

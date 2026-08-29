@@ -14,7 +14,7 @@
             fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
     <content>
         <StackPane alignment="TOP_CENTER" styleClass="page-shell">
-            <VBox maxWidth="1080.0" spacing="24.0" styleClass="page-container">
+            <VBox maxWidth="1240.0" spacing="24.0" styleClass="page-container">
                 <HBox alignment="CENTER_LEFT" spacing="18.0" styleClass="page-header">
                     <Button text="Zurück" onAction="#backToRecipes" styleClass="secondary-button"/>
                     <VBox spacing="5.0">
@@ -49,6 +49,8 @@
 
                 <VBox spacing="14.0" styleClass="card, detail-section-card">
                     <Label text="Zubereitung" styleClass="section-title"/>
+                    <Label fx:id="emptyStepsLabel" text="Noch keine Zubereitung hinterlegt."
+                           managed="false" visible="false" styleClass="card-text"/>
                     <VBox fx:id="stepsContainer" spacing="8.0"/>
                 </VBox>
             </VBox>

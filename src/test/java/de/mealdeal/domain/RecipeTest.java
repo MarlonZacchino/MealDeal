@@ -82,6 +82,14 @@ class RecipeTest {
     }
 
     @Test
+    void allowsRecipeWithoutPreparationSteps() {
+        Recipe recipe = new Recipe("Pasta", List.of(recipeIngredient),
+                List.of(), List.of(savory));
+
+        assertEquals(List.of(), recipe.getSteps());
+    }
+
+    @Test
     void rejectsDuplicateStepPositions() {
         RecipeStep duplicatePosition = new RecipeStep(1, "Serve pasta.");
 

@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RecipeFormServiceIntegrationTest {
 
@@ -68,5 +69,38 @@ class RecipeFormServiceIntegrationTest {
         assertEquals(List.of("Schneiden.", "Backen."), loaded.getSteps().stream()
                 .map(value -> value.getDescription()).toList());
         assertEquals(1, recipes.findAll().size());
+    }
+
+    @Test
+    void persistsRecipeWithoutStepsAndAllowsAddingThemLater() {
+        SqliteDatabase database = new SqliteDatabase(
+                temporaryDirectory.resolve("optional-steps.db"));
+        var ingredients = new SqliteIngredientRepository(database);
+        var tastes = new SqliteTasteRepository(database);
+        var recipes = new SqliteRecipeRepository(database);
+        RecipeFormService service = new RecipeFormService(recipes, ingredients, tastes);
+        Recipe created = service.createAndSave(new RecipeFormInput("Brotzeit", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.PIECE)),
+                List.of("Herzhaft"), List.of()));
+
+        Recipe loadedWithoutSteps = recipes.findById(created.getId()).orElseThrow();
+        assertTrue(loadedWithoutSteps.getSteps().isEmpty());
+
+        service.updateAndSave(created.getId(), new RecipeFormInput("Brotzeit", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.PIECE)),
+                List.of("Herzhaft"), List.of("Anrichten.", "Servieren.")));
+
+        Recipe loadedWithSteps = recipes.findById(created.getId()).orElseThrow();
+        assertEquals(created.getId(), loadedWithSteps.getId());
+        assertEquals(List.of(1, 2), loadedWithSteps.getSteps().stream()
+                .map(step -> step.getPosition()).toList());
+        assertEquals(List.of("Anrichten.", "Servieren."), loadedWithSteps.getSteps().stream()
+                .map(step -> step.getDescription()).toList());
+
+        service.updateAndSave(created.getId(), new RecipeFormInput("Brotzeit", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.PIECE)),
+                List.of("Herzhaft"), List.of()));
+
+        assertTrue(recipes.findById(created.getId()).orElseThrow().getSteps().isEmpty());
     }
 }

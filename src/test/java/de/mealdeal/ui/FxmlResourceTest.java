@@ -61,6 +61,19 @@ class FxmlResourceTest {
         }
     }
 
+    @Test
+    void recipeDetailUsesWiderResponsiveContentAndOptionalPreparationState() throws Exception {
+        try (InputStream input = FxmlResourceTest.class.getResourceAsStream(
+                "/de/mealdeal/ui/recipe-detail-view.fxml")) {
+            assertNotNull(input);
+            String fxml = new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+
+            assertTrue(fxml.contains("fitToWidth=\"true\""));
+            assertTrue(fxml.contains("maxWidth=\"1240.0\""));
+            assertTrue(fxml.contains("Noch keine Zubereitung hinterlegt."));
+        }
+    }
+
     private static Stream<String> allFxmlResources() {
         return Stream.concat(
                 Stream.of(MAIN_VIEW),

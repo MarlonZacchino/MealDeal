@@ -47,7 +47,4 @@ final class RecipeStepFormRow {
         positionLabel.setText(position + ".");
     }
 
-    void setRemovalDisabled(boolean disabled) {
-        removeButton.setDisable(disabled);
-    }
 }

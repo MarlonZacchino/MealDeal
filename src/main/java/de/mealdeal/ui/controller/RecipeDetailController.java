@@ -46,6 +46,8 @@ public final class RecipeDetailController implements NavigationAware {
     private VBox ingredientsContainer;
     @FXML
     private VBox stepsContainer;
+    @FXML
+    private Label emptyStepsLabel;
 
     /** Creates the detail controller with deletion persistence and scaling dependencies. */
     public RecipeDetailController(RecipeRepository recipeRepository, RecipeScaler recipeScaler) {
@@ -159,8 +161,10 @@ public final class RecipeDetailController implements NavigationAware {
 
     private void renderSteps() {
         stepsContainer.getChildren().clear();
-        if (recipe.getSteps().isEmpty()) {
-            stepsContainer.getChildren().add(emptyLabel("Keine Schritte angegeben."));
+        boolean empty = recipe.getSteps().isEmpty();
+        emptyStepsLabel.setManaged(empty);
+        emptyStepsLabel.setVisible(empty);
+        if (empty) {
             return;
         }
         recipe.getSteps().forEach(step -> {

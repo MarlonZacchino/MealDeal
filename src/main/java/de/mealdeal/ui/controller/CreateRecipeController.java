@@ -80,7 +80,6 @@ public final class CreateRecipeController implements NavigationAware {
     private void initialize() {
         servingCountField.setText(RecipeFormService.DEFAULT_SERVING_COUNT);
         addIngredientRow();
-        addStepRow();
         loadReferenceData();
     }
 
@@ -205,11 +204,7 @@ public final class CreateRecipeController implements NavigationAware {
             stepRows.add(row);
             stepRowsContainer.getChildren().add(row.container());
         });
-        if (stepRows.isEmpty()) {
-            addStepRow();
-        } else {
-            renumberSteps();
-        }
+        renumberSteps();
     }
 
     private void loadReferenceData() {
@@ -253,9 +248,6 @@ public final class CreateRecipeController implements NavigationAware {
     }
 
     private void removeStepRow(RecipeStepFormRow row) {
-        if (stepRows.size() <= 1) {
-            return;
-        }
         stepRows.remove(row);
         stepRowsContainer.getChildren().remove(row.container());
         renumberSteps();
@@ -269,7 +261,6 @@ public final class CreateRecipeController implements NavigationAware {
     private void renumberSteps() {
         for (int index = 0; index < stepRows.size(); index++) {
             stepRows.get(index).setPosition(index + 1);
-            stepRows.get(index).setRemovalDisabled(stepRows.size() == 1);
         }
     }
 

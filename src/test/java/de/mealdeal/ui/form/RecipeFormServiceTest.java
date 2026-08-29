@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -65,6 +66,20 @@ class RecipeFormServiceTest {
 
         assertEquals(List.of("ingredient:Pasta", "taste:Cremig", "recipe:Pasta mit Sauce"),
                 events);
+    }
+
+    @Test
+    void createsRecipeWithoutPreparationSteps() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+        RecipeFormInput input = new RecipeFormInput("Brotzeit", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.PIECE)),
+                List.of("Herzhaft"), List.of("  "));
+
+        Recipe recipe = service.createAndSave(input);
+
+        assertTrue(recipe.getSteps().isEmpty());
     }
 
     @Test
@@ -118,7 +133,7 @@ class RecipeFormServiceTest {
         assertTrue(exception.getErrors().stream().anyMatch(error -> error.contains("Menge")));
         assertTrue(exception.getErrors().stream().anyMatch(error -> error.contains("Einheit")));
         assertTrue(exception.getErrors().stream().anyMatch(error -> error.contains("Geschmacksrichtung")));
-        assertTrue(exception.getErrors().stream().anyMatch(error -> error.contains("Schritt 1")));
+        assertFalse(exception.getErrors().stream().anyMatch(error -> error.contains("Schritt")));
         assertTrue(events.isEmpty());
     }
 
