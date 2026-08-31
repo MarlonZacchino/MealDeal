@@ -121,6 +121,25 @@ class FxmlResourceTest {
         assertTrue(css.contains(".meal-plan-controls"));
     }
 
+    @Test
+    void shoppingListViewDefinesTodayWeekAndResultStates() throws Exception {
+        String fxml = readResource("/de/mealdeal/ui/shopping-view.fxml");
+        String css = readResource("/de/mealdeal/ui/styles.css");
+
+        assertTrue(fxml.contains(
+                "fx:controller=\"de.mealdeal.ui.controller.ShoppingListController\""));
+        assertTrue(fxml.contains("fx:id=\"todayMode\""));
+        assertTrue(fxml.contains("onAction=\"#showToday\""));
+        assertTrue(fxml.contains("fx:id=\"weekMode\""));
+        assertTrue(fxml.contains("onAction=\"#showCurrentWeek\""));
+        assertTrue(fxml.contains("fx:id=\"itemsContainer\""));
+        assertTrue(fxml.contains("fx:id=\"emptyState\""));
+        assertTrue(fxml.contains("Für heute ist nichts einzukaufen."));
+        assertTrue(fxml.contains("fx:id=\"errorState\""));
+        assertTrue(css.contains(".shopping-mode-button:selected"));
+        assertTrue(css.contains(".shopping-list-row"));
+    }
+
     private static String readResource(String path) throws Exception {
         try (InputStream input = FxmlResourceTest.class.getResourceAsStream(path)) {
             assertNotNull(input, () -> "Missing resource: " + path);

@@ -335,6 +335,83 @@
     -fx-pref-width: 130px;
 }
 
+.shopping-mode-card {
+    -fx-background-color: -md-accent-soft;
+}
+
+.shopping-mode-switch {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 12px;
+    -fx-padding: 7px;
+}
+
+.shopping-mode-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 9px;
+    -fx-cursor: hand;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 11px 22px;
+    -fx-text-fill: -md-text;
+}
+
+.shopping-mode-button:hover {
+    -fx-background-color: -md-surface-hover;
+}
+
+.shopping-mode-button:selected {
+    -fx-background-color: -md-accent;
+    -fx-text-fill: -md-on-accent;
+}
+
+.shopping-results-card {
+    -fx-padding: 26px 30px 30px 30px;
+}
+
+.shopping-list-header,
+.shopping-list-row {
+    -fx-padding: 13px 17px;
+}
+
+.shopping-list-header {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text-muted;
+}
+
+.shopping-list-row {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 11px;
+}
+
+.shopping-list-ingredient,
+.shopping-list-amount,
+.shopping-list-unit {
+    -fx-font-size: 17px;
+    -fx-text-fill: -md-text;
+}
+
+.shopping-list-ingredient {
+    -fx-font-weight: bold;
+}
+
+.shopping-list-header-ingredient {
+    -fx-max-width: infinity;
+}
+
+.shopping-list-amount {
+    -fx-alignment: center-right;
+    -fx-min-width: 105px;
+}
+
+.shopping-list-unit {
+    -fx-min-width: 85px;
+}
+
+.shopping-state {
+    -fx-padding: 48px 28px;
+}
+
 .recipe-state-card {
     -fx-alignment: center;
     -fx-padding: 48px 34px;

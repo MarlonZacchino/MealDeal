@@ -17,10 +17,12 @@ import de.mealdeal.ui.controller.IngredientSearchController;
 import de.mealdeal.ui.controller.MainController;
 import de.mealdeal.ui.controller.RecipeDetailController;
 import de.mealdeal.ui.controller.RecipesController;
+import de.mealdeal.ui.controller.ShoppingListController;
 import de.mealdeal.ui.controller.WeekPlanController;
 import de.mealdeal.service.CombinedRecipeSearchService;
 import de.mealdeal.service.RecipeScaler;
 import de.mealdeal.service.RecipeSearchService;
+import de.mealdeal.service.ShoppingListService;
 import de.mealdeal.service.WeeklyMealPlanService;
 import de.mealdeal.ui.theme.ThemeService;
 import javafx.fxml.FXMLLoader;
@@ -54,6 +56,7 @@ public final class ApplicationContext {
             new CombinedRecipeSearchService(recipeSearchService);
     private final ThemeService themeService;
     private final WeeklyMealPlanService weeklyMealPlanService;
+    private final ShoppingListService shoppingListService;
 
     /**
      * Preserves the earlier isolated-test composition without requiring a meal-plan fixture.
@@ -115,6 +118,7 @@ public final class ApplicationContext {
                 themeService, "Theme service must not be null.");
         this.weeklyMealPlanService = new WeeklyMealPlanService(
                 this.mealPlanRepository, this.recipeRepository);
+        this.shoppingListService = new ShoppingListService(this.mealPlanRepository);
     }
 
     /** Loads the application's single main view. */
@@ -154,6 +158,9 @@ public final class ApplicationContext {
         }
         if (controllerType == WeekPlanController.class) {
             return new WeekPlanController(weeklyMealPlanService);
+        }
+        if (controllerType == ShoppingListController.class) {
+            return new ShoppingListController(shoppingListService);
         }
         try {
             return controllerType.getDeclaredConstructor().newInstance();
