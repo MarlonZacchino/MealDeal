@@ -1,6 +1,7 @@
 package de.mealdeal.persistence.sqlite;
 
 import de.mealdeal.domain.MealPlanEntry;
+import de.mealdeal.domain.MealRole;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.repository.MealPlanRepository;
@@ -17,15 +18,18 @@ import java.util.UUID;
 public final class SqliteMealPlanRepository implements MealPlanRepository {
 
     private static final String SELECT_COLUMNS =
-            "SELECT id, planned_date, recipe_id, serving_count FROM meal_plan_entries";
+            "SELECT id, planned_date, recipe_id, serving_count, meal_role, position "
+                    + "FROM meal_plan_entries";
     private static final String SAVE_SQL = """
-            INSERT INTO meal_plan_entries (id, planned_date, recipe_id, serving_count)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT DO UPDATE SET
-                id = excluded.id,
+            INSERT INTO meal_plan_entries
+                (id, planned_date, recipe_id, serving_count, meal_role, position)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
                 planned_date = excluded.planned_date,
                 recipe_id = excluded.recipe_id,
-                serving_count = excluded.serving_count
+                serving_count = excluded.serving_count,
+                meal_role = excluded.meal_role,
+                position = excluded.position
             """;
 
     private final SqliteDatabase database;
@@ -93,7 +97,8 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
     @Override
     public Optional<MealPlanEntry> findByDate(LocalDate date) {
         Objects.requireNonNull(date, "Meal plan date must not be null.");
-        return findOne(SELECT_COLUMNS + " WHERE planned_date = ?", date.toString());
+        return findOne(SELECT_COLUMNS + " WHERE planned_date = ? AND meal_role = 'MAIN'",
+                date.toString());
     }
 
     @Override
@@ -105,7 +110,9 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
         }
 
         String sql = SELECT_COLUMNS
-                + " WHERE planned_date BETWEEN ? AND ? ORDER BY planned_date, id";
+                + " WHERE planned_date BETWEEN ? AND ?"
+                + " ORDER BY planned_date,"
+                + " CASE meal_role WHEN 'MAIN' THEN 0 ELSE 1 END, position, id";
         List<EntryRow> rows = new ArrayList<>();
         try (var connection = database.openConnection();
              var statement = connection.prepareStatement(sql)) {
@@ -171,6 +178,8 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
         statement.setString(2, entry.getDate().toString());
         statement.setString(3, entry.getRecipe().getId().toString());
         statement.setInt(4, entry.getServingCount());
+        statement.setString(5, entry.getMealRole().name());
+        statement.setInt(6, entry.getPosition());
         statement.executeUpdate();
     }
 
@@ -186,7 +195,8 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
         Recipe recipe = recipeRepository.findById(row.recipeId())
                 .orElseThrow(() -> new PersistenceException(
                         "Meal plan entry references an unknown recipe."));
-        return new MealPlanEntry(row.id(), row.date(), recipe, row.servingCount());
+        return new MealPlanEntry(row.id(), row.date(), recipe, row.servingCount(),
+                row.mealRole(), row.position());
     }
 
     private static EntryRow readRow(java.sql.ResultSet resultSet) throws SQLException {
@@ -194,9 +204,12 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
                 UUID.fromString(resultSet.getString("id")),
                 LocalDate.parse(resultSet.getString("planned_date")),
                 UUID.fromString(resultSet.getString("recipe_id")),
-                resultSet.getInt("serving_count"));
+                resultSet.getInt("serving_count"),
+                MealRole.valueOf(resultSet.getString("meal_role")),
+                resultSet.getInt("position"));
     }
 
-    private record EntryRow(UUID id, LocalDate date, UUID recipeId, int servingCount) {
+    private record EntryRow(UUID id, LocalDate date, UUID recipeId, int servingCount,
+                            MealRole mealRole, int position) {
     }
 }

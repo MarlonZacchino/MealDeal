@@ -1,6 +1,7 @@
 package de.mealdeal.service;
 
 import de.mealdeal.domain.MealPlanEntry;
+import de.mealdeal.domain.MealRole;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.WeekRange;
 import de.mealdeal.persistence.repository.MealPlanRepository;
@@ -58,6 +59,9 @@ public final class WeeklyMealPlanService {
         WeekRange week = weekService.weekContaining(today);
         Map<LocalDate, MealPlanEntry> entriesByDate = mealPlanRepository.findBetween(
                         week.getStartDate(), week.getEndDate()).stream()
+                // The current UI still represents one main dish per day; sides are persisted
+                // for the follow-up UI phase and deliberately do not replace that main entry.
+                .filter(entry -> entry.getMealRole() == MealRole.MAIN)
                 .collect(Collectors.toUnmodifiableMap(
                         MealPlanEntry::getDate, Function.identity()));
 
@@ -111,6 +115,11 @@ public final class WeeklyMealPlanService {
                     draft.servingCount())) {
                 entriesToSave.add(new MealPlanEntry(
                         draft.date(), selectedRecipe, draft.servingCount()));
+                if (persistedEntry != null) {
+                    // Replacing the MAIN must release its partial unique-index slot
+                    // inside the same repository transaction.
+                    entryIdsToDelete.add(persistedEntry.getId());
+                }
             }
         }
 
@@ -123,7 +132,9 @@ public final class WeeklyMealPlanService {
     public MealPlanEntry plan(LocalDate date, Recipe recipe, int servingCount) {
         requireCurrentWeekDate(date);
         MealPlanEntry entry = new MealPlanEntry(date, recipe, servingCount);
-        mealPlanRepository.save(entry);
+        mealPlanRepository.findByDate(date).ifPresentOrElse(
+                existing -> mealPlanRepository.applyChanges(List.of(entry), List.of(existing.getId())),
+                () -> mealPlanRepository.save(entry));
         return entry;
     }
 

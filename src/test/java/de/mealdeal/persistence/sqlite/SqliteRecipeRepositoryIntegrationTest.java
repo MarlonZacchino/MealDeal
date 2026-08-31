@@ -1,6 +1,7 @@
 package de.mealdeal.persistence.sqlite;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
 import de.mealdeal.domain.RecipeStep;
@@ -82,6 +83,22 @@ class SqliteRecipeRepositoryIntegrationTest {
 
         assertEquals(Unit.SLICE, recipeRepository.findById(recipe.getId()).orElseThrow()
                 .getIngredients().getFirst().getUnit());
+    }
+
+    @Test
+    void savesAndLoadsMandatoryDishType() {
+        Recipe sideRecipe = new Recipe("Garlic bread", 2,
+                List.of(new RecipeIngredient(pasta, BigDecimal.ONE, Unit.SLICE)),
+                List.of(), List.of(savory), DishType.SIDE);
+        Recipe mainRecipe = recipeNamed("Pasta");
+
+        recipeRepository.save(sideRecipe);
+        recipeRepository.save(mainRecipe);
+
+        assertEquals(DishType.SIDE, recipeRepository.findById(sideRecipe.getId())
+                .orElseThrow().getDishType());
+        assertEquals(DishType.MAIN, recipeRepository.findById(mainRecipe.getId())
+                .orElseThrow().getDishType());
     }
 
     @Test

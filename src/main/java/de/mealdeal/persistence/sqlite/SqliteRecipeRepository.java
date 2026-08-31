@@ -1,6 +1,7 @@
 package de.mealdeal.persistence.sqlite;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
@@ -113,8 +114,8 @@ public final class SqliteRecipeRepository implements RecipeRepository {
                 INSERT INTO recipes (
                     id, name, standard_serving_count, preparation_time_minutes,
                     cooking_time_minutes, calories_kcal, protein_grams,
-                    carbohydrate_grams, fat_grams)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    carbohydrate_grams, fat_grams, dish_type)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     name = excluded.name,
                     standard_serving_count = excluded.standard_serving_count,
@@ -123,7 +124,8 @@ public final class SqliteRecipeRepository implements RecipeRepository {
                     calories_kcal = excluded.calories_kcal,
                     protein_grams = excluded.protein_grams,
                     carbohydrate_grams = excluded.carbohydrate_grams,
-                    fat_grams = excluded.fat_grams
+                    fat_grams = excluded.fat_grams,
+                    dish_type = excluded.dish_type
                 """;
         try (var statement = connection.prepareStatement(sql)) {
             statement.setString(1, recipe.getId().toString());
@@ -132,6 +134,7 @@ public final class SqliteRecipeRepository implements RecipeRepository {
             setOptionalTime(statement, 4, recipe.getPreparationTimeMinutes());
             setOptionalTime(statement, 5, recipe.getCookingTimeMinutes());
             setNutrition(statement, recipe.getNutritionInfo().orElse(null));
+            statement.setString(10, recipe.getDishType().name());
             statement.executeUpdate();
         }
     }
@@ -199,7 +202,7 @@ public final class SqliteRecipeRepository implements RecipeRepository {
         String sql = """
                 SELECT name, standard_serving_count, preparation_time_minutes,
                        cooking_time_minutes, calories_kcal, protein_grams,
-                       carbohydrate_grams, fat_grams
+                       carbohydrate_grams, fat_grams, dish_type
                 FROM recipes WHERE id = ?
                 """;
         try (var statement = connection.prepareStatement(sql)) {
@@ -215,7 +218,8 @@ public final class SqliteRecipeRepository implements RecipeRepository {
                         loadTastes(connection, id),
                         nullableInteger(resultSet, "preparation_time_minutes"),
                         nullableInteger(resultSet, "cooking_time_minutes"),
-                        nutritionInfo(resultSet)));
+                        nutritionInfo(resultSet),
+                        DishType.valueOf(resultSet.getString("dish_type"))));
             }
         }
     }

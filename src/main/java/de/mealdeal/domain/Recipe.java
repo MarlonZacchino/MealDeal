@@ -30,6 +30,7 @@ public final class Recipe {
     private final OptionalInt cookingTimeMinutes;
     private final OptionalInt totalTimeMinutes;
     private final Optional<NutritionInfo> nutritionInfo;
+    private final DishType dishType;
 
     /**
      * Creates a recipe for the default serving count of two.
@@ -42,7 +43,14 @@ public final class Recipe {
     public Recipe(String name, List<RecipeIngredient> ingredients,
                   List<RecipeStep> steps, List<Taste> tastes) {
         this(UUID.randomUUID(), name, DEFAULT_SERVING_COUNT, ingredients, steps, tastes,
-                null, null);
+                null, null, null, DishType.MAIN);
+    }
+
+    /** Creates a recipe for the default serving count with its mandatory dish type. */
+    public Recipe(String name, List<RecipeIngredient> ingredients,
+                  List<RecipeStep> steps, List<Taste> tastes, DishType dishType) {
+        this(UUID.randomUUID(), name, DEFAULT_SERVING_COUNT, ingredients, steps, tastes,
+                null, null, null, dishType);
     }
 
     /**
@@ -58,7 +66,7 @@ public final class Recipe {
                   List<RecipeIngredient> ingredients, List<RecipeStep> steps,
                   List<Taste> tastes) {
         this(UUID.randomUUID(), name, standardServingCount, ingredients, steps, tastes,
-                null, null);
+                null, null, null, DishType.MAIN);
     }
 
     /**
@@ -72,7 +80,7 @@ public final class Recipe {
                   List<Taste> tastes, Integer preparationTimeMinutes,
                   Integer cookingTimeMinutes) {
         this(UUID.randomUUID(), name, standardServingCount, ingredients, steps, tastes,
-                preparationTimeMinutes, cookingTimeMinutes);
+                preparationTimeMinutes, cookingTimeMinutes, null, DishType.MAIN);
     }
 
     /** Creates a recipe with optional times and per-serving nutrition information. */
@@ -81,7 +89,15 @@ public final class Recipe {
                   List<Taste> tastes, Integer preparationTimeMinutes,
                   Integer cookingTimeMinutes, NutritionInfo nutritionInfo) {
         this(UUID.randomUUID(), name, standardServingCount, ingredients, steps, tastes,
-                preparationTimeMinutes, cookingTimeMinutes, nutritionInfo);
+                preparationTimeMinutes, cookingTimeMinutes, nutritionInfo, DishType.MAIN);
+    }
+
+    /** Creates a recipe with its mandatory dish type. */
+    public Recipe(String name, int standardServingCount,
+                  List<RecipeIngredient> ingredients, List<RecipeStep> steps,
+                  List<Taste> tastes, DishType dishType) {
+        this(UUID.randomUUID(), name, standardServingCount, ingredients, steps, tastes,
+                null, null, null, dishType);
     }
 
     /**
@@ -111,7 +127,7 @@ public final class Recipe {
                   List<Taste> tastes, Integer preparationTimeMinutes,
                   Integer cookingTimeMinutes) {
         this(id, name, standardServingCount, ingredients, steps, tastes,
-                preparationTimeMinutes, cookingTimeMinutes, null);
+                preparationTimeMinutes, cookingTimeMinutes, null, DishType.MAIN);
     }
 
     /** Recreates a recipe with optional times and per-serving nutrition information. */
@@ -119,6 +135,15 @@ public final class Recipe {
                   List<RecipeIngredient> ingredients, List<RecipeStep> steps,
                   List<Taste> tastes, Integer preparationTimeMinutes,
                   Integer cookingTimeMinutes, NutritionInfo nutritionInfo) {
+        this(id, name, standardServingCount, ingredients, steps, tastes,
+                preparationTimeMinutes, cookingTimeMinutes, nutritionInfo, DishType.MAIN);
+    }
+
+    /** Recreates a recipe with optional data and its mandatory dish type. */
+    public Recipe(UUID id, String name, int standardServingCount,
+                  List<RecipeIngredient> ingredients, List<RecipeStep> steps,
+                  List<Taste> tastes, Integer preparationTimeMinutes,
+                  Integer cookingTimeMinutes, NutritionInfo nutritionInfo, DishType dishType) {
         this.id = java.util.Objects.requireNonNull(id, "Recipe ID must not be null.");
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Recipe name must not be blank.");
@@ -140,6 +165,7 @@ public final class Recipe {
                 this.preparationTimeMinutes, this.cookingTimeMinutes);
         this.nutritionInfo = Optional.ofNullable(nutritionInfo)
                 .filter(NutritionInfo::hasAnyValue);
+        this.dishType = java.util.Objects.requireNonNull(dishType, "Dish type must not be null.");
 
         if (this.tastes.isEmpty()) {
             throw new IllegalArgumentException("Recipe must have at least one taste.");
@@ -192,6 +218,11 @@ public final class Recipe {
     /** Returns optional nutrition values that always apply to one serving. */
     public Optional<NutritionInfo> getNutritionInfo() {
         return nutritionInfo;
+    }
+
+    /** Returns the mandatory classification of this recipe. */
+    public DishType getDishType() {
+        return dishType;
     }
 
     @Override

@@ -1,7 +1,9 @@
 package de.mealdeal.persistence.sqlite;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.MealPlanEntry;
+import de.mealdeal.domain.MealRole;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
 import de.mealdeal.domain.RecipeStep;
@@ -33,6 +35,8 @@ class SqliteMealPlanRepositoryIntegrationTest {
     private SqliteRecipeRepository recipeRepository;
     private Recipe pastaRecipe;
     private Recipe soupRecipe;
+    private Recipe breadRecipe;
+    private Recipe saladRecipe;
 
     @BeforeEach
     void setUp() {
@@ -51,8 +55,12 @@ class SqliteMealPlanRepositoryIntegrationTest {
 
         pastaRecipe = recipe("Pasta recipe", pasta, savory);
         soupRecipe = recipe("Soup recipe", vegetables, savory);
+        breadRecipe = recipe("Bread recipe", pasta, savory, DishType.SIDE);
+        saladRecipe = recipe("Salad recipe", vegetables, savory, DishType.SIDE);
         recipeRepository.save(pastaRecipe);
         recipeRepository.save(soupRecipe);
+        recipeRepository.save(breadRecipe);
+        recipeRepository.save(saladRecipe);
     }
 
     @Test
@@ -92,20 +100,54 @@ class SqliteMealPlanRepositoryIntegrationTest {
     }
 
     @Test
-    void replacesExistingDateIncludingItsIdentity() {
+    void rejectsSecondMainForTheSameDateAndKeepsExistingEntry() {
         LocalDate date = LocalDate.of(2026, 9, 1);
         MealPlanEntry original = new MealPlanEntry(date, pastaRecipe, 2);
         MealPlanEntry replacement = new MealPlanEntry(date, soupRecipe, 4);
         mealPlanRepository.save(original);
 
-        mealPlanRepository.save(replacement);
+        assertThrows(PersistenceException.class, () -> mealPlanRepository.save(replacement));
 
         MealPlanEntry loaded = mealPlanRepository.findByDate(date).orElseThrow();
-        assertEquals(replacement.getId(), loaded.getId());
-        assertEquals(soupRecipe.getId(), loaded.getRecipe().getId());
-        assertEquals(4, loaded.getServingCount());
-        assertTrue(mealPlanRepository.findById(original.getId()).isEmpty());
+        assertEquals(original.getId(), loaded.getId());
+        assertEquals(pastaRecipe.getId(), loaded.getRecipe().getId());
+        assertEquals(2, loaded.getServingCount());
+        assertTrue(mealPlanRepository.findById(replacement.getId()).isEmpty());
         assertEquals(1, mealPlanRepository.findBetween(date, date).size());
+    }
+
+    @Test
+    void savesMultipleOrderedSidesWithoutAMain() {
+        LocalDate date = LocalDate.of(2026, 9, 1);
+        MealPlanEntry secondSide = new MealPlanEntry(date, breadRecipe, 3,
+                MealRole.SIDE, 2);
+        MealPlanEntry firstSide = new MealPlanEntry(date, saladRecipe, 7,
+                MealRole.SIDE, 1);
+
+        mealPlanRepository.save(secondSide);
+        mealPlanRepository.save(firstSide);
+
+        List<MealPlanEntry> entries = mealPlanRepository.findBetween(date, date);
+        assertEquals(List.of(firstSide.getId(), secondSide.getId()),
+                entries.stream().map(MealPlanEntry::getId).toList());
+        assertEquals(List.of(1, 2), entries.stream().map(MealPlanEntry::getPosition).toList());
+        assertEquals(List.of(7, 3), entries.stream().map(MealPlanEntry::getServingCount).toList());
+        assertTrue(mealPlanRepository.findByDate(date).isEmpty());
+    }
+
+    @Test
+    void savesMainAndSidesWithIndependentServingCounts() {
+        LocalDate date = LocalDate.of(2026, 9, 1);
+        MealPlanEntry main = new MealPlanEntry(date, pastaRecipe, 2);
+        MealPlanEntry side = new MealPlanEntry(date, breadRecipe, 6, MealRole.SIDE, 0);
+
+        mealPlanRepository.applyChanges(List.of(main, side), List.of());
+
+        List<MealPlanEntry> entries = mealPlanRepository.findBetween(date, date);
+        assertEquals(List.of(MealRole.MAIN, MealRole.SIDE),
+                entries.stream().map(MealPlanEntry::getMealRole).toList());
+        assertEquals(List.of(2, 6), entries.stream().map(MealPlanEntry::getServingCount).toList());
+        assertEquals(main.getId(), mealPlanRepository.findByDate(date).orElseThrow().getId());
     }
 
     @Test
@@ -161,8 +203,12 @@ class SqliteMealPlanRepositoryIntegrationTest {
     }
 
     private static Recipe recipe(String name, Ingredient ingredient, Taste taste) {
+        return recipe(name, ingredient, taste, DishType.MAIN);
+    }
+
+    private static Recipe recipe(String name, Ingredient ingredient, Taste taste, DishType dishType) {
         return new Recipe(name,
                 List.of(new RecipeIngredient(ingredient, BigDecimal.ONE, Unit.PIECE)),
-                List.of(new RecipeStep(1, "Cook.")), List.of(taste));
+                List.of(new RecipeStep(1, "Cook.")), List.of(taste), dishType);
     }
 }

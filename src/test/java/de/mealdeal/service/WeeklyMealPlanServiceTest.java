@@ -154,7 +154,8 @@ class WeeklyMealPlanServiceTest {
         assertEquals(unchanged.getId(), mealPlans.findByDate(sunday).orElseThrow().getId());
         assertEquals(List.of(monday, tuesday, thursday), mealPlans.savedInLastBatch.stream()
                 .map(MealPlanEntry::getDate).toList());
-        assertEquals(List.of(removed.getId()), mealPlans.deletedInLastBatch);
+        assertEquals(List.of(replaced.getId(), removed.getId(), portionChanged.getId()),
+                mealPlans.deletedInLastBatch);
         assertFalse(mealPlans.savedInLastBatch.stream()
                 .map(MealPlanEntry::getDate).anyMatch(sunday::equals));
         assertNotEquals(replaced.getId(), mealPlans.findByDate(tuesday).orElseThrow().getId());

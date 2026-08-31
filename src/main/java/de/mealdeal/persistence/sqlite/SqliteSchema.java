@@ -6,7 +6,7 @@ import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 4;
+    static final int CURRENT_VERSION = 5;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -99,6 +99,10 @@ final class SqliteSchema {
         }
         if (version == 3) {
             createVersion4(connection);
+            version = 4;
+        }
+        if (version == 4) {
+            createVersion5(connection);
         }
     }
 
@@ -136,7 +140,7 @@ final class SqliteSchema {
         }
     }
 
-    private static void createVersion4(Connection connection) throws SQLException {
+    static void createVersion4(Connection connection) throws SQLException {
         String[] statements = {
             "ALTER TABLE recipes ADD COLUMN calories_kcal INTEGER CHECK (calories_kcal >= 0)",
             "ALTER TABLE recipes ADD COLUMN protein_grams TEXT",
@@ -148,6 +152,56 @@ final class SqliteSchema {
                 statement.execute(sql);
             }
             statement.execute("PRAGMA user_version = 4");
+        }
+    }
+
+    /**
+     * Adds recipe categories and replaces the former one-entry-per-date table.
+     *
+     * <p>The table rebuild is necessary because SQLite cannot remove the old
+     * {@code UNIQUE(planned_date)} constraint in place. Existing entries are
+     * retained as main dishes with their original IDs and portions.</p>
+     */
+    static void createVersion5(Connection connection) throws SQLException {
+        String[] statements = {
+            "ALTER TABLE recipes ADD COLUMN dish_type TEXT NOT NULL DEFAULT 'MAIN' "
+                    + "CHECK (dish_type IN ('MAIN', 'SIDE'))",
+            """
+            CREATE TABLE meal_plan_entries_v5 (
+                id TEXT PRIMARY KEY NOT NULL,
+                planned_date TEXT NOT NULL,
+                recipe_id TEXT NOT NULL,
+                serving_count INTEGER NOT NULL CHECK (serving_count > 0),
+                meal_role TEXT NOT NULL CHECK (meal_role IN ('MAIN', 'SIDE')),
+                position INTEGER NOT NULL CHECK (position >= 0),
+                CHECK (meal_role = 'SIDE' OR position = 0),
+                FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE RESTRICT
+            )
+            """,
+            """
+            INSERT INTO meal_plan_entries_v5
+                (id, planned_date, recipe_id, serving_count, meal_role, position)
+            SELECT id, planned_date, recipe_id, serving_count, 'MAIN', 0
+            FROM meal_plan_entries
+            """,
+            "DROP TABLE meal_plan_entries",
+            "ALTER TABLE meal_plan_entries_v5 RENAME TO meal_plan_entries",
+            """
+            CREATE UNIQUE INDEX meal_plan_one_main_per_date
+            ON meal_plan_entries (planned_date)
+            WHERE meal_role = 'MAIN'
+            """,
+            """
+            CREATE UNIQUE INDEX meal_plan_side_position_per_date
+            ON meal_plan_entries (planned_date, position)
+            WHERE meal_role = 'SIDE'
+            """
+        };
+        try (Statement statement = connection.createStatement()) {
+            for (String sql : statements) {
+                statement.execute(sql);
+            }
+            statement.execute("PRAGMA user_version = 5");
         }
     }
 }

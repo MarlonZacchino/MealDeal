@@ -57,4 +57,28 @@ class MealPlanEntryTest {
         assertEquals(first, changed);
         assertNotEquals(first, new MealPlanEntry(LocalDate.of(2026, 8, 31), recipe, 2));
     }
+
+    @Test
+    void acceptsOrderedSideDishWithMatchingRecipeType() {
+        Recipe sideRecipe = new Recipe("Bread", 2, List.of(), List.of(),
+                List.of(new Taste("Savory")), DishType.SIDE);
+
+        MealPlanEntry entry = new MealPlanEntry(LocalDate.of(2026, 8, 31), sideRecipe,
+                3, MealRole.SIDE, 2);
+
+        assertEquals(MealRole.SIDE, entry.getMealRole());
+        assertEquals(2, entry.getPosition());
+        assertEquals(3, entry.getServingCount());
+    }
+
+    @Test
+    void rejectsRoleThatDoesNotMatchRecipeType() {
+        Recipe sideRecipe = new Recipe("Bread", 2, List.of(), List.of(),
+                List.of(new Taste("Savory")), DishType.SIDE);
+
+        assertThrows(IllegalArgumentException.class, () -> new MealPlanEntry(
+                LocalDate.now(), recipe, 2, MealRole.SIDE, 0));
+        assertThrows(IllegalArgumentException.class, () -> new MealPlanEntry(
+                LocalDate.now(), sideRecipe, 2, MealRole.MAIN, 0));
+    }
 }

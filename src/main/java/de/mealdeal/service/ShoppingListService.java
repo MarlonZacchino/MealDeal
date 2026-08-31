@@ -2,6 +2,7 @@ package de.mealdeal.service;
 
 import de.mealdeal.domain.Ingredient;
 import de.mealdeal.domain.MealPlanEntry;
+import de.mealdeal.domain.MealRole;
 import de.mealdeal.domain.Quantity;
 import de.mealdeal.domain.RecipeIngredient;
 import de.mealdeal.domain.ShoppingList;
@@ -70,7 +71,11 @@ public final class ShoppingListService {
     public ShoppingList buildForCurrentWeek() {
         LocalDate today = LocalDate.now(clock);
         LocalDate sunday = weekService.weekContaining(today).getEndDate();
-        return buildFromEntries(repository.findBetween(today, sunday));
+        // Side dishes are persisted from schema V5 onward, but shopping-list
+        // integration follows in its own phase and therefore keeps V4 behaviour.
+        return buildFromEntries(repository.findBetween(today, sunday).stream()
+                .filter(entry -> entry.getMealRole() == MealRole.MAIN)
+                .toList());
     }
 
     ShoppingList buildFromEntries(Collection<MealPlanEntry> entries) {

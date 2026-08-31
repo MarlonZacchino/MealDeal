@@ -10,6 +10,7 @@ Das derzeit implementierte Modell ist:
 
 ```text
 Recipe
+ ├── DishType (MAIN or SIDE)
  ├── RecipeIngredient *
  │    └── Ingredient
  ├── RecipeStep *
@@ -17,7 +18,7 @@ Recipe
  └── NutritionInfo (optional, per serving)
 ```
 
-`Ingredient` und `Taste` besitzen eine persistenzunabhängige UUID als stabile technische Identität. Ein Rezept lässt jede dieser Identitäten höchstens einmal zu. Rezeptschritte sind optional und werden, wenn vorhanden, anhand ihrer eindeutigen Position sortiert. Rezeptmengen werden mit `BigDecimal` gespeichert. Vorbereitungs- und Garzeit sind optionale positive Minutenwerte. Die Gesamtzeit wird zentral daraus abgeleitet: bei zwei Werten als Summe, bei einem Wert als dieser Wert und andernfalls gar nicht. Optionales `NutritionInfo` bündelt Kalorien sowie Protein, Kohlenhydrate und Fett pro Portion; es wird nicht aus Zutaten berechnet und nicht mit Personenanzahlen skaliert. Einheiten weisen ihre Dimension aus, damit spätere Umrechnung nur zwischen kompatiblen Einheiten erfolgt.
+`Ingredient` und `Taste` besitzen eine persistenzunabhängige UUID als stabile technische Identität. Ein Recipe besitzt außerdem genau einen `DishType`: `MAIN` oder `SIDE`. Ein Rezept lässt jede dieser Identitäten höchstens einmal zu. Rezeptschritte sind optional und werden, wenn vorhanden, anhand ihrer eindeutigen Position sortiert. Rezeptmengen werden mit `BigDecimal` gespeichert. Vorbereitungs- und Garzeit sind optionale positive Minutenwerte. Die Gesamtzeit wird zentral daraus abgeleitet: bei zwei Werten als Summe, bei einem Wert als dieser Wert und andernfalls gar nicht. Optionales `NutritionInfo` bündelt Kalorien sowie Protein, Kohlenhydrate und Fett pro Portion; es wird nicht aus Zutaten berechnet und nicht mit Personenanzahlen skaliert. Einheiten weisen ihre Dimension aus, damit spätere Umrechnung nur zwischen kompatiblen Einheiten erfolgt.
 
 ## Service
 
@@ -59,7 +60,7 @@ SQLite Repository
       SQLite
 ```
 
-Schema-Versionen werden beim Öffnen über `PRAGMA user_version` schrittweise migriert. Version 2 ergänzt `meal_plan_entries`, Version 3 ergänzt die zwei nullable Zeitspalten `preparation_time_minutes` und `cooking_time_minutes` in `recipes`, Version 4 ergänzt dort die vier nullable Nährwertspalten pro Portion. Vorhandene Daten bleiben erhalten. UUIDs werden als Text, `BigDecimal`-Mengen und Nährwert-Grammwerte verlustfrei als Dezimaltext und Units über ihre Enum-Namen gespeichert. Jede neue Verbindung aktiviert SQLite-Foreign-Keys ausdrücklich.
+Schema-Versionen werden beim Öffnen über `PRAGMA user_version` schrittweise migriert. Version 2 ergänzt `meal_plan_entries`, Version 3 ergänzt die zwei nullable Zeitspalten `preparation_time_minutes` und `cooking_time_minutes` in `recipes`, Version 4 ergänzt dort die vier nullable Nährwertspalten pro Portion. Version 5 ergänzt `recipes.dish_type` und ersetzt den früheren einzelnen Meal-Plan-Eintrag pro Datum durch Haupt- und Beilageneinträge. Vorhandene Daten bleiben erhalten; bestehende Recipes und Planungseinträge migrieren jeweils zu `MAIN`. UUIDs werden als Text, `BigDecimal`-Mengen und Nährwert-Grammwerte verlustfrei als Dezimaltext und Units über ihre Enum-Namen gespeichert. Jede neue Verbindung aktiviert SQLite-Foreign-Keys ausdrücklich.
 
 Ingredients und Tastes werden über ihre eigenen Repositories verwaltet und müssen vor einem referenzierenden Recipe existieren. Das vollständige Speichern oder Aktualisieren eines Recipe läuft in einer Transaktion. Dabei werden seine Beziehungs- und Schrittzeilen verständlich und atomar ersetzt; bei Fehlern erfolgt ein Rollback. Ein Recipe ohne Zubereitung erzeugt dabei schlicht keine Zeile in `recipe_steps`; das bestehende Schema benötigt dafür keine Migration.
 
@@ -69,7 +70,7 @@ Die produktive Windows-Anwendung verwendet `%LOCALAPPDATA%\MealDeal\mealdeal.db`
 
 ## Wochenplanung
 
-`MealPlanEntry` verbindet über eine eigene UUID ein `LocalDate` mit einem bereits persistierten Recipe und einer individuellen Personenanzahl. Version 1 erlaubt per `UNIQUE(planned_date)` nur einen tatsächlichen Eintrag pro Tag; leere Tage werden nicht persistiert. Ein Recipe mit Planungshistorie ist durch `ON DELETE RESTRICT` vor versehentlichem Löschen geschützt.
+`MealPlanEntry` verbindet über eine eigene UUID ein `LocalDate` mit einem bereits persistierten Recipe und einer individuellen Personenanzahl. Jeder Eintrag besitzt zusätzlich die Rolle `MAIN` oder `SIDE` sowie eine Position. Die Rolle muss dem `DishType` des Recipe entsprechen. SQLite erzwingt mit einem partiellen Unique-Index höchstens ein `MAIN` pro Datum; `SIDE`-Einträge sind auch ohne Hauptgericht beliebig oft erlaubt und ihre Position ist pro Datum eindeutig. Leere Tage werden nicht persistiert. Ein Recipe mit Planungshistorie ist durch `ON DELETE RESTRICT` vor versehentlichem Löschen geschützt.
 
 ```text
 Recipe
@@ -85,7 +86,7 @@ SQLite
 
 `WeekService` überlässt Monats-, Jahres- und Schaltjahresgrenzen vollständig `LocalDate` und liefert einen `WeekRange` von Montag bis Sonntag. `MealPlanCleanupService` verwendet einen injizierbaren `Clock`: Einträge mit `date < today.minusDays(30)` werden explizit gelöscht, während genau 30 Tage alte Einträge erhalten bleiben. Die Phase enthält noch keine Skalierung oder Einkaufslistenberechnung für geplante Rezepte.
 
-`WeeklyMealPlanService` bildet darauf den Anwendungsfall für die aktuelle Woche. Ein injizierbarer `Clock` bestimmt das lokale Heute, `WeekService` liefert die sieben konkreten Datumswerte und `MealPlanRepository.findBetween()` lädt vorhandene Planungen. Für jeden Tag entsteht ein unveränderlicher `MealPlanDay` mit optionalem Eintrag und Heute-Markierung. Die UI übergibt lokale `MealPlanDraft`s gesammelt an den Service. Dieser vergleicht sie mit dem persistierten Stand, lässt unveränderte Tage aus und übergibt neue, ersetzte oder entfernte Einträge als einen Change-Set an das Repository. Die SQLite-Implementierung führt dieses Change-Set in einer Transaktion aus: Bei einem Fehler bleibt die ganze Woche unverändert. Die eindeutige Datumsspalte garantiert weiterhin höchstens einen Eintrag. Die individuelle Personenanzahl bleibt Bestandteil jedes `MealPlanEntry`.
+`WeeklyMealPlanService` bildet darauf den Anwendungsfall für die aktuelle Woche. Ein injizierbarer `Clock` bestimmt das lokale Heute, `WeekService` liefert die sieben konkreten Datumswerte und `MealPlanRepository.findBetween()` lädt vorhandene Planungen. Für jeden Tag entsteht ein unveränderlicher `MealPlanDay` mit optionalem Eintrag und Heute-Markierung. Bis zur UI-Folgephase bleibt diese bestehende Darstellung bewusst MAIN-orientiert: Sie zeigt nur den optionalen `MAIN` eines Tages, ohne gespeicherte `SIDE`-Einträge zu verändern. Die UI übergibt lokale `MealPlanDraft`s gesammelt an den Service. Dieser vergleicht sie mit dem persistierten Stand, lässt unveränderte Tage aus und übergibt neue, ersetzte oder entfernte Einträge als einen Change-Set an das Repository. Die SQLite-Implementierung führt dieses Change-Set in einer Transaktion aus: Bei einem Fehler bleibt die ganze Woche unverändert. Die individuelle Personenanzahl bleibt Bestandteil jedes `MealPlanEntry`.
 
 ## Einkaufslistenberechnung
 
