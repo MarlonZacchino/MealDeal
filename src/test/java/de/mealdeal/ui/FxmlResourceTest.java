@@ -65,15 +65,18 @@ class FxmlResourceTest {
     }
 
     @Test
-    void recipeDetailUsesWiderResponsiveContentAndOptionalPreparationState() throws Exception {
+    void recipeDetailUsesResponsiveContentAndOptionalPreparationState() throws Exception {
         try (InputStream input = FxmlResourceTest.class.getResourceAsStream(
                 "/de/mealdeal/ui/recipe-detail-view.fxml")) {
             assertNotNull(input);
             String fxml = new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            String css = readResource("/de/mealdeal/ui/styles.css");
 
             assertTrue(fxml.contains("fitToWidth=\"true\""));
-            assertTrue(fxml.contains("maxWidth=\"1240.0\""));
+            assertTrue(fxml.contains("page-container, page-container-detail"));
             assertTrue(fxml.contains("Noch keine Zubereitung hinterlegt."));
+            assertTrue(css.contains(".page-container-detail"));
+            assertTrue(css.contains("-fx-max-width: 1760px"));
         }
     }
 
@@ -95,6 +98,7 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:id=\"themeToggle\""));
         assertTrue(fxml.contains("onAction=\"#toggleTheme\""));
         assertTrue(fxml.contains("VBox.vgrow=\"ALWAYS\""));
+        assertTrue(fxml.contains("maxWidth=\"1.7976931348623157E308\""));
     }
 
     @Test
@@ -105,6 +109,9 @@ class FxmlResourceTest {
         assertTrue(css.contains(".root-shell.theme-dark"));
         assertTrue(css.contains("-fx-font-size: 36px"));
         assertTrue(css.contains("-fx-min-height: 44px"));
+        assertTrue(css.contains(".root-shell.viewport-wide .page-container"));
+        assertTrue(css.contains(".root-shell.viewport-extra-wide .page-container"));
+        assertTrue(css.contains("-fx-max-width: 1640px"));
     }
 
     @Test

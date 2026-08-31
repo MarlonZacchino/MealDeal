@@ -17,7 +17,7 @@
             fx:controller="de.mealdeal.ui.controller.IngredientSearchController">
     <content>
         <StackPane alignment="TOP_CENTER" styleClass="page-shell">
-            <VBox maxWidth="1080.0" spacing="28.0" styleClass="page-container">
+            <VBox maxWidth="1.7976931348623157E308" spacing="28.0" styleClass="page-container">
                 <VBox spacing="6.0" styleClass="page-header">
                     <Label text="Was essen?" styleClass="page-title"/>
                     <Label text="Finde passende Gerichte nach Zutaten oder Geschmack."

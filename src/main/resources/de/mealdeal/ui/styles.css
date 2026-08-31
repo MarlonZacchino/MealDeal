@@ -72,6 +72,9 @@
 
 .sidebar {
     -fx-background-color: -md-sidebar;
+    -fx-min-width: 220px;
+    -fx-pref-width: 235px;
+    -fx-max-width: 250px;
 }
 
 .sidebar-title {
@@ -139,6 +142,14 @@
     -fx-padding: 42px;
 }
 
+.page-container {
+    -fx-max-width: 1080px;
+}
+
+.page-container-detail {
+    -fx-max-width: 1240px;
+}
+
 .page-title {
     -fx-font-size: 36px;
     -fx-font-weight: bold;
@@ -147,6 +158,7 @@
 
 .page-subtitle {
     -fx-font-size: 17px;
+    -fx-max-width: 880px;
     -fx-text-fill: -md-text-muted;
 }
 
@@ -186,6 +198,7 @@
 
 .card-text {
     -fx-font-size: 16px;
+    -fx-max-width: 880px;
     -fx-text-fill: -md-text-muted;
 }
 
@@ -659,4 +672,103 @@
 .scroll-bar .thumb {
     -fx-background-color: -md-border;
     -fx-background-radius: 999px;
+}
+
+.root-shell.viewport-wide .sidebar {
+    -fx-min-width: 250px;
+    -fx-pref-width: 260px;
+    -fx-max-width: 260px;
+}
+
+.root-shell.viewport-wide .page-shell {
+    -fx-padding: 46px;
+}
+
+.root-shell.viewport-wide .page-container {
+    -fx-max-width: 1320px;
+}
+
+.root-shell.viewport-wide .page-container-detail {
+    -fx-max-width: 1440px;
+}
+
+.root-shell.viewport-wide .page-title {
+    -fx-font-size: 38px;
+}
+
+.root-shell.viewport-wide .card-title {
+    -fx-font-size: 24px;
+}
+
+.root-shell.viewport-wide .section-title {
+    -fx-font-size: 22px;
+}
+
+.root-shell.viewport-wide .primary-button,
+.root-shell.viewport-wide .secondary-button,
+.root-shell.viewport-wide .danger-button,
+.root-shell.viewport-wide .nav-button,
+.root-shell.viewport-wide .theme-toggle {
+    -fx-font-size: 17px;
+    -fx-padding: 14px 22px;
+}
+
+.root-shell.viewport-wide .text-field,
+.root-shell.viewport-wide .combo-box,
+.root-shell.viewport-wide .spinner {
+    -fx-font-size: 17px;
+    -fx-min-height: 46px;
+}
+
+.root-shell.viewport-wide .page-subtitle,
+.root-shell.viewport-wide .card-text {
+    -fx-max-width: 940px;
+}
+
+.root-shell.viewport-extra-wide .sidebar {
+    -fx-min-width: 280px;
+    -fx-pref-width: 280px;
+    -fx-max-width: 280px;
+}
+
+.root-shell.viewport-extra-wide .page-shell {
+    -fx-padding: 54px;
+}
+
+.root-shell.viewport-extra-wide .page-container {
+    -fx-max-width: 1640px;
+}
+
+.root-shell.viewport-extra-wide .page-container-detail {
+    -fx-max-width: 1760px;
+}
+
+.root-shell.viewport-extra-wide .sidebar-title {
+    -fx-font-size: 34px;
+}
+
+.root-shell.viewport-extra-wide .page-title {
+    -fx-font-size: 40px;
+}
+
+.root-shell.viewport-extra-wide .card {
+    -fx-padding: 34px;
+}
+
+.root-shell.viewport-extra-wide .search-card {
+    -fx-padding: 38px;
+}
+
+.root-shell.viewport-extra-wide .card-title {
+    -fx-font-size: 26px;
+}
+
+.root-shell.viewport-extra-wide .section-title {
+    -fx-font-size: 23px;
+}
+
+.root-shell.viewport-extra-wide .page-subtitle,
+.root-shell.viewport-extra-wide .card-text {
+    -fx-font-size: 17px;
+    -fx-max-width: 1000px;
 }

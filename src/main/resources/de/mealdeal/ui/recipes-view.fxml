@@ -13,7 +13,7 @@
             fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
     <content>
         <StackPane alignment="TOP_CENTER" styleClass="page-shell">
-            <VBox maxWidth="1080.0" spacing="28.0" styleClass="page-container">
+            <VBox maxWidth="1.7976931348623157E308" spacing="28.0" styleClass="page-container">
                 <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="page-header">
                     <VBox spacing="6.0">
                         <Label text="Gerichte" styleClass="page-title"/>

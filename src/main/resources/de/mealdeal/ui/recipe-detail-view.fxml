@@ -14,7 +14,8 @@
             fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
     <content>
         <StackPane alignment="TOP_CENTER" styleClass="page-shell">
-            <VBox maxWidth="1240.0" spacing="24.0" styleClass="page-container">
+            <VBox maxWidth="1.7976931348623157E308" spacing="24.0"
+                  styleClass="page-container, page-container-detail">
                 <HBox alignment="CENTER_LEFT" spacing="18.0" styleClass="page-header">
                     <Button text="Zurück" onAction="#backToRecipes" styleClass="secondary-button"/>
                     <VBox spacing="5.0">

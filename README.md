@@ -9,7 +9,7 @@ Das Projekt befindet sich in einer frühen Entwicklungsphase. Technisches Fundam
 ## Technologie-Stack
 
 - Java 25 LTS
-- JavaFX 25
+- JavaFX 26
 - Maven
 - SQLite mit direktem JDBC-Zugriff
 - Repository Pattern für die spätere Persistenz

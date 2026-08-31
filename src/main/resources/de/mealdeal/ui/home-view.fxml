@@ -12,7 +12,7 @@
             fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
     <content>
         <StackPane alignment="TOP_CENTER" styleClass="page-shell">
-            <VBox maxWidth="1080.0" spacing="30.0" styleClass="page-container">
+            <VBox maxWidth="1.7976931348623157E308" spacing="30.0" styleClass="page-container">
                 <VBox spacing="6.0" styleClass="page-header">
                     <Label text="Was möchtest du heute essen?" wrapText="true" styleClass="page-title"/>
                     <Label text="Finde eine Idee, plane den Tag oder behalte deine Woche im Blick."

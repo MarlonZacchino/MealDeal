@@ -15,7 +15,7 @@
             fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
     <content>
         <StackPane alignment="TOP_CENTER" styleClass="page-shell">
-            <VBox maxWidth="1080.0" spacing="24.0" styleClass="page-container">
+            <VBox maxWidth="1.7976931348623157E308" spacing="24.0" styleClass="page-container">
                 <VBox spacing="6.0" styleClass="page-header">
                     <Label fx:id="titleLabel" text="Neues Gericht" styleClass="page-title"/>
                     <Label fx:id="subtitleLabel" text="Lege die Grunddaten, Zutaten, Geschmacksrichtungen und Zubereitung fest."

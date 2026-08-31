@@ -15,7 +15,7 @@
             stylesheets="@styles.css"
             styleClass="root-shell">
     <left>
-        <VBox prefWidth="235.0" minWidth="220.0" maxWidth="250.0" spacing="6.0" styleClass="sidebar">
+        <VBox maxWidth="1.7976931348623157E308" spacing="6.0" styleClass="sidebar">
             <padding>
                 <Insets top="28.0" right="18.0" bottom="22.0" left="18.0"/>
             </padding>

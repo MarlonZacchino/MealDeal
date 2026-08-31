@@ -5,7 +5,9 @@ import de.mealdeal.ui.navigation.ViewNavigator;
 import de.mealdeal.ui.navigation.ViewType;
 import de.mealdeal.ui.theme.ThemeMode;
 import de.mealdeal.ui.theme.ThemeService;
+import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.BorderPane;
@@ -20,10 +22,16 @@ public final class MainController {
 
     private static final String ACTIVE_STYLE_CLASS = "nav-button-active";
     private static final String DARK_THEME_STYLE_CLASS = "theme-dark";
+    private static final String WIDE_VIEWPORT_STYLE_CLASS = "viewport-wide";
+    private static final String EXTRA_WIDE_VIEWPORT_STYLE_CLASS = "viewport-extra-wide";
+    private static final double WIDE_VIEWPORT_MIN_WIDTH = 1440;
+    private static final double EXTRA_WIDE_VIEWPORT_MIN_WIDTH = 2100;
 
     private final ApplicationContext applicationContext;
     private final ThemeService themeService;
     private final Map<ViewType, Button> navigationButtons = new EnumMap<>(ViewType.class);
+    private final ChangeListener<Number> viewportWidthListener = (ignored, oldWidth, newWidth) ->
+            updateViewportStyleClasses(newWidth.doubleValue());
 
     @FXML
     private BorderPane rootShell;
@@ -59,6 +67,7 @@ public final class MainController {
         navigationButtons.put(ViewType.WEEK_PLAN, weekPlanButton);
         navigationButtons.put(ViewType.SHOPPING, shoppingButton);
         applyTheme(themeService.getMode());
+        configureResponsiveViewportStyles();
 
         navigator = new ViewNavigator(contentHost, applicationContext);
         navigator.setNavigationListener(this::markActiveView);
@@ -106,6 +115,35 @@ public final class MainController {
         themeToggle.setAccessibleText(dark
                 ? "Aktuell Dark Mode. Zu Light Mode wechseln."
                 : "Aktuell Light Mode. Zu Dark Mode wechseln.");
+    }
+
+    private void configureResponsiveViewportStyles() {
+        rootShell.sceneProperty().addListener((ignored, previousScene, currentScene) -> {
+            if (previousScene != null) {
+                previousScene.widthProperty().removeListener(viewportWidthListener);
+            }
+            if (currentScene != null) {
+                currentScene.widthProperty().addListener(viewportWidthListener);
+                updateViewportStyleClasses(currentScene.getWidth());
+            }
+        });
+
+        Scene scene = rootShell.getScene();
+        if (scene != null) {
+            scene.widthProperty().addListener(viewportWidthListener);
+            updateViewportStyleClasses(scene.getWidth());
+        }
+    }
+
+    private void updateViewportStyleClasses(double sceneWidth) {
+        rootShell.getStyleClass().removeAll(
+                WIDE_VIEWPORT_STYLE_CLASS, EXTRA_WIDE_VIEWPORT_STYLE_CLASS);
+        if (sceneWidth >= EXTRA_WIDE_VIEWPORT_MIN_WIDTH) {
+            rootShell.getStyleClass().add(WIDE_VIEWPORT_STYLE_CLASS);
+            rootShell.getStyleClass().add(EXTRA_WIDE_VIEWPORT_STYLE_CLASS);
+        } else if (sceneWidth >= WIDE_VIEWPORT_MIN_WIDTH) {
+            rootShell.getStyleClass().add(WIDE_VIEWPORT_STYLE_CLASS);
+        }
     }
 
     private void markActiveView(ViewType activeView) {

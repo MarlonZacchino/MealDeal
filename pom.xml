@@ -13,7 +13,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>25</maven.compiler.release>
-        <javafx.version>25</javafx.version>
+        <javafx.version>26</javafx.version>
         <junit.version>5.13.4</junit.version>
         <sqlite.version>3.50.3.0</sqlite.version>
     </properties>
@@ -60,6 +60,10 @@
                 <version>0.0.8</version>
                 <configuration>
                     <mainClass>de.mealdeal.MealDealApplication</mainClass>
+                    <options>
+                        <option>--enable-native-access=javafx.graphics</option>
+                        <option>--enable-native-access=ALL-UNNAMED</option>
+                    </options>
                 </configuration>
             </plugin>
         </plugins>
