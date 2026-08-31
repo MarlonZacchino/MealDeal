@@ -274,6 +274,11 @@ class ShoppingListServiceTest {
         }
 
         @Override
+        public void applyChanges(List<MealPlanEntry> entriesToSave, List<UUID> entryIdsToDelete) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public Optional<MealPlanEntry> findById(UUID id) {
             return entries.stream().filter(entry -> entry.getId().equals(id)).findFirst();
         }

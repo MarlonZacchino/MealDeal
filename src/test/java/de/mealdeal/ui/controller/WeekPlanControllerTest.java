@@ -35,6 +35,10 @@ class WeekPlanControllerTest {
 
     private static final class EmptyMealPlanRepository implements MealPlanRepository {
         @Override public void save(MealPlanEntry entry) { throw new UnsupportedOperationException(); }
+        @Override public void applyChanges(List<MealPlanEntry> entriesToSave,
+                                           List<UUID> entryIdsToDelete) {
+            throw new UnsupportedOperationException();
+        }
         @Override public Optional<MealPlanEntry> findById(UUID id) { return Optional.empty(); }
         @Override public Optional<MealPlanEntry> findByDate(LocalDate date) {
             return Optional.empty();

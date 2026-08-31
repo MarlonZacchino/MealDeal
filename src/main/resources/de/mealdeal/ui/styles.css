@@ -289,6 +289,17 @@
     -fx-padding: 28px 30px;
 }
 
+.meal-plan-save-bar {
+    -fx-alignment: center-left;
+    -fx-padding: 18px 22px;
+}
+
+.meal-plan-unsaved-note {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-accent;
+}
+
 .meal-plan-day-today {
     -fx-background-color: -md-accent-soft;
     -fx-border-color: -md-accent;

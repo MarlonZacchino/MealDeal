@@ -126,6 +126,41 @@ class WeeklyMealPlanServiceTest {
                 () -> service.remove(LocalDate.of(2026, 8, 23)));
     }
 
+    @Test
+    void savesNewReplacedRemovedAndPortionChangesTogetherWithoutRewritingUnchangedDays() {
+        LocalDate monday = LocalDate.of(2026, 8, 24);
+        LocalDate tuesday = LocalDate.of(2026, 8, 25);
+        LocalDate wednesday = LocalDate.of(2026, 8, 26);
+        LocalDate thursday = LocalDate.of(2026, 8, 27);
+        LocalDate sunday = LocalDate.of(2026, 8, 30);
+        MealPlanEntry replaced = service.plan(tuesday, pasta, 2);
+        MealPlanEntry removed = service.plan(wednesday, pasta, 3);
+        MealPlanEntry portionChanged = service.plan(thursday, pasta, 2);
+        MealPlanEntry unchanged = service.plan(sunday, soup, 4);
+        mealPlans.clearRecordedChanges();
+
+        service.saveChanges(List.of(
+                MealPlanDraft.planned(monday, soup, 6),
+                MealPlanDraft.planned(tuesday, soup, 5),
+                MealPlanDraft.unplanned(wednesday),
+                MealPlanDraft.planned(thursday, pasta, 7),
+                MealPlanDraft.planned(sunday, soup, 4)));
+
+        assertEquals(soup.getId(), mealPlans.findByDate(monday).orElseThrow().getRecipe().getId());
+        assertEquals(soup.getId(), mealPlans.findByDate(tuesday).orElseThrow().getRecipe().getId());
+        assertEquals(5, mealPlans.findByDate(tuesday).orElseThrow().getServingCount());
+        assertTrue(mealPlans.findByDate(wednesday).isEmpty());
+        assertEquals(7, mealPlans.findByDate(thursday).orElseThrow().getServingCount());
+        assertEquals(unchanged.getId(), mealPlans.findByDate(sunday).orElseThrow().getId());
+        assertEquals(List.of(monday, tuesday, thursday), mealPlans.savedInLastBatch.stream()
+                .map(MealPlanEntry::getDate).toList());
+        assertEquals(List.of(removed.getId()), mealPlans.deletedInLastBatch);
+        assertFalse(mealPlans.savedInLastBatch.stream()
+                .map(MealPlanEntry::getDate).anyMatch(sunday::equals));
+        assertNotEquals(replaced.getId(), mealPlans.findByDate(tuesday).orElseThrow().getId());
+        assertNotEquals(portionChanged.getId(), mealPlans.findByDate(thursday).orElseThrow().getId());
+    }
+
     private static Clock clock(LocalDate date) {
         ZoneId zone = ZoneId.of("Europe/Berlin");
         return Clock.fixed(date.atStartOfDay(zone).toInstant(), zone);
@@ -140,11 +175,26 @@ class WeeklyMealPlanServiceTest {
         private final List<MealPlanEntry> entries = new ArrayList<>();
         private LocalDate lastRangeStart;
         private LocalDate lastRangeEnd;
+        private List<MealPlanEntry> savedInLastBatch = List.of();
+        private List<UUID> deletedInLastBatch = List.of();
 
         @Override
         public void save(MealPlanEntry entry) {
             entries.removeIf(existing -> existing.getDate().equals(entry.getDate()));
             entries.add(entry);
+        }
+
+        @Override
+        public void applyChanges(List<MealPlanEntry> entriesToSave, List<UUID> entryIdsToDelete) {
+            savedInLastBatch = List.copyOf(entriesToSave);
+            deletedInLastBatch = List.copyOf(entryIdsToDelete);
+            entryIdsToDelete.forEach(this::deleteById);
+            entriesToSave.forEach(this::save);
+        }
+
+        private void clearRecordedChanges() {
+            savedInLastBatch = List.of();
+            deletedInLastBatch = List.of();
         }
 
         @Override

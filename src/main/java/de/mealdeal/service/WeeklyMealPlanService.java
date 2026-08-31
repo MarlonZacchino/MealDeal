@@ -8,10 +8,14 @@ import de.mealdeal.persistence.repository.RecipeRepository;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -69,6 +73,52 @@ public final class WeeklyMealPlanService {
         return recipeRepository.findAll().stream().sorted(RECIPE_ORDER).toList();
     }
 
+    /**
+     * Persists all changed current-week drafts in one repository operation.
+     *
+     * <p>Unchanged dates are deliberately omitted, so a weekly save does not rewrite
+     * entries the user did not edit. The repository owns the transaction that makes
+     * additions, replacements and removals atomic.</p>
+     */
+    public void saveChanges(List<MealPlanDraft> drafts) {
+        Objects.requireNonNull(drafts, "Meal plan drafts must not be null.");
+        Set<LocalDate> draftDates = new HashSet<>();
+        for (MealPlanDraft draft : drafts) {
+            Objects.requireNonNull(draft, "Meal plan draft must not be null.");
+            requireCurrentWeekDate(draft.date());
+            if (!draftDates.add(draft.date())) {
+                throw new IllegalArgumentException("Each meal plan date may occur only once.");
+            }
+        }
+
+        Map<LocalDate, MealPlanEntry> persistedEntries = loadCurrentWeek().stream()
+                .flatMap(day -> day.entry().stream())
+                .collect(Collectors.toMap(MealPlanEntry::getDate, Function.identity()));
+        List<MealPlanEntry> entriesToSave = new ArrayList<>();
+        List<UUID> entryIdsToDelete = new ArrayList<>();
+
+        for (MealPlanDraft draft : drafts) {
+            MealPlanEntry persistedEntry = persistedEntries.get(draft.date());
+            if (draft.recipe().isEmpty()) {
+                if (persistedEntry != null) {
+                    entryIdsToDelete.add(persistedEntry.getId());
+                }
+                continue;
+            }
+
+            Recipe selectedRecipe = draft.recipe().orElseThrow();
+            if (persistedEntry == null || differsFrom(persistedEntry, selectedRecipe,
+                    draft.servingCount())) {
+                entriesToSave.add(new MealPlanEntry(
+                        draft.date(), selectedRecipe, draft.servingCount()));
+            }
+        }
+
+        if (!entriesToSave.isEmpty() || !entryIdsToDelete.isEmpty()) {
+            mealPlanRepository.applyChanges(entriesToSave, entryIdsToDelete);
+        }
+    }
+
     /** Saves or replaces the single plan entry for one current-week date. */
     public MealPlanEntry plan(LocalDate date, Recipe recipe, int servingCount) {
         requireCurrentWeekDate(date);
@@ -84,6 +134,11 @@ public final class WeeklyMealPlanService {
                 .map(MealPlanEntry::getId)
                 .map(mealPlanRepository::deleteById)
                 .orElse(false);
+    }
+
+    private static boolean differsFrom(MealPlanEntry entry, Recipe recipe, int servingCount) {
+        return !entry.getRecipe().getId().equals(recipe.getId())
+                || entry.getServingCount() != servingCount;
     }
 
     private void requireCurrentWeekDate(LocalDate date) {

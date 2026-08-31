@@ -187,6 +187,11 @@ public final class ApplicationContext {
         }
 
         @Override
+        public void applyChanges(List<MealPlanEntry> entriesToSave, List<UUID> entryIdsToDelete) {
+            throw unavailable();
+        }
+
+        @Override
         public Optional<MealPlanEntry> findById(UUID id) {
             throw unavailable();
         }

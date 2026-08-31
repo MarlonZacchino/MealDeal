@@ -18,6 +18,15 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
 
     private static final String SELECT_COLUMNS =
             "SELECT id, planned_date, recipe_id, serving_count FROM meal_plan_entries";
+    private static final String SAVE_SQL = """
+            INSERT INTO meal_plan_entries (id, planned_date, recipe_id, serving_count)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT DO UPDATE SET
+                id = excluded.id,
+                planned_date = excluded.planned_date,
+                recipe_id = excluded.recipe_id,
+                serving_count = excluded.serving_count
+            """;
 
     private final SqliteDatabase database;
     private final SqliteRecipeRepository recipeRepository;
@@ -30,25 +39,48 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
     @Override
     public void save(MealPlanEntry entry) {
         Objects.requireNonNull(entry, "Meal plan entry must not be null.");
-        String sql = """
-                INSERT INTO meal_plan_entries (id, planned_date, recipe_id, serving_count)
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT DO UPDATE SET
-                    id = excluded.id,
-                    planned_date = excluded.planned_date,
-                    recipe_id = excluded.recipe_id,
-                    serving_count = excluded.serving_count
-                """;
         try (var connection = database.openConnection();
-             var statement = connection.prepareStatement(sql)) {
-            statement.setString(1, entry.getId().toString());
-            statement.setString(2, entry.getDate().toString());
-            statement.setString(3, entry.getRecipe().getId().toString());
-            statement.setInt(4, entry.getServingCount());
-            statement.executeUpdate();
+             var statement = connection.prepareStatement(SAVE_SQL)) {
+            save(entry, statement);
         } catch (SQLException exception) {
             throw new PersistenceException(
                     "Could not save meal plan entry. Its recipe must already exist.", exception);
+        }
+    }
+
+    @Override
+    public void applyChanges(List<MealPlanEntry> entriesToSave, List<UUID> entryIdsToDelete) {
+        Objects.requireNonNull(entriesToSave, "Entries to save must not be null.");
+        Objects.requireNonNull(entryIdsToDelete, "Entry IDs to delete must not be null.");
+        entriesToSave.forEach(entry -> Objects.requireNonNull(
+                entry, "Meal plan entry to save must not be null."));
+        entryIdsToDelete.forEach(id -> Objects.requireNonNull(
+                id, "Meal plan entry ID to delete must not be null."));
+
+        try (var connection = database.openConnection();
+             var deleteStatement = connection.prepareStatement(
+                     "DELETE FROM meal_plan_entries WHERE id = ?");
+             var saveStatement = connection.prepareStatement(SAVE_SQL)) {
+            connection.setAutoCommit(false);
+            try {
+                for (UUID entryId : entryIdsToDelete) {
+                    deleteStatement.setString(1, entryId.toString());
+                    deleteStatement.executeUpdate();
+                }
+                for (MealPlanEntry entry : entriesToSave) {
+                    save(entry, saveStatement);
+                }
+                connection.commit();
+            } catch (SQLException exception) {
+                rollback(connection, exception);
+                throw new PersistenceException(
+                        "Could not save weekly meal plan changes. No changes were persisted.",
+                        exception);
+            }
+        } catch (SQLException exception) {
+            throw new PersistenceException(
+                    "Could not save weekly meal plan changes. No changes were persisted.",
+                    exception);
         }
     }
 
@@ -131,6 +163,23 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
             throw new PersistenceException("Could not load meal plan entry.", exception);
         }
         return Optional.of(toDomainEntry(row));
+    }
+
+    private static void save(MealPlanEntry entry, java.sql.PreparedStatement statement)
+            throws SQLException {
+        statement.setString(1, entry.getId().toString());
+        statement.setString(2, entry.getDate().toString());
+        statement.setString(3, entry.getRecipe().getId().toString());
+        statement.setInt(4, entry.getServingCount());
+        statement.executeUpdate();
+    }
+
+    private static void rollback(java.sql.Connection connection, SQLException exception) {
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackException) {
+            exception.addSuppressed(rollbackException);
+        }
     }
 
     private MealPlanEntry toDomainEntry(EntryRow row) {

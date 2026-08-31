@@ -11,6 +11,15 @@ import java.util.UUID;
 public interface MealPlanRepository {
     void save(MealPlanEntry entry);
 
+    /**
+     * Applies replacements or additions and removals as one atomic change set.
+     *
+     * <p>The entries to save are matched by their planned date, just like
+     * {@link #save(MealPlanEntry)}. Implementations must either persist the complete
+     * change set or leave all affected entries unchanged.</p>
+     */
+    void applyChanges(List<MealPlanEntry> entriesToSave, List<UUID> entryIdsToDelete);
+
     Optional<MealPlanEntry> findById(UUID id);
 
     Optional<MealPlanEntry> findByDate(LocalDate date);

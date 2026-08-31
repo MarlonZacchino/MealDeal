@@ -129,6 +129,26 @@ class SqliteMealPlanRepositoryIntegrationTest {
     }
 
     @Test
+    void rollsBackTheWholeWeeklyChangeSetWhenOneEntryCannotBeSaved() {
+        LocalDate monday = LocalDate.of(2026, 9, 1);
+        LocalDate tuesday = LocalDate.of(2026, 9, 2);
+        MealPlanEntry existing = new MealPlanEntry(monday, pastaRecipe, 2);
+        MealPlanEntry validAddition = new MealPlanEntry(tuesday, soupRecipe, 4);
+        Recipe missingRecipe = new Recipe("Missing", List.of(), List.of(),
+                List.of(new Taste("Missing taste")));
+        MealPlanEntry invalidAddition = new MealPlanEntry(
+                LocalDate.of(2026, 9, 3), missingRecipe, 3);
+        mealPlanRepository.save(existing);
+
+        assertThrows(PersistenceException.class, () -> mealPlanRepository.applyChanges(
+                List.of(validAddition, invalidAddition), List.of(existing.getId())));
+
+        assertEquals(existing.getId(), mealPlanRepository.findByDate(monday).orElseThrow().getId());
+        assertTrue(mealPlanRepository.findByDate(tuesday).isEmpty());
+        assertTrue(mealPlanRepository.findByDate(LocalDate.of(2026, 9, 3)).isEmpty());
+    }
+
+    @Test
     void preventsDeletingRecipeReferencedByMealPlan() {
         MealPlanEntry entry = new MealPlanEntry(LocalDate.of(2026, 9, 1), pastaRecipe, 2);
         mealPlanRepository.save(entry);
