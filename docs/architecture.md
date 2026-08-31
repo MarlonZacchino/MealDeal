@@ -90,7 +90,7 @@ SQLite
 
 ## Einkaufslistenberechnung
 
-`ShoppingListService` berechnet eine Einkaufsliste deterministisch aus den aktuellen Planungs- und Recipe-Daten. Sie wird nicht persistiert, damit keine doppelte oder nach Recipe-Änderungen veraltete Datenhaltung entsteht.
+`ShoppingListService` berechnet eine Einkaufsliste deterministisch aus allen aktuellen Planungs- und Recipe-Daten. Sie berücksichtigt für Heute sämtliche `MAIN`- und `SIDE`-Einträge des Tages und für die Woche alle Einträge von Heute bis Sonntag, einschließlich reiner Beilagen-Tage. MealRole und SIDE-Position beeinflussen die Aggregation nicht; jede Zutatenmenge wird ausschließlich mit der individuellen Portionszahl ihres `MealPlanEntry` skaliert. Die Liste wird nicht persistiert, damit keine doppelte oder nach Recipe-Änderungen veraltete Datenhaltung entsteht.
 
 ```text
 MealPlanRepository

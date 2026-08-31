@@ -1,7 +1,9 @@
 package de.mealdeal.service;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.MealPlanEntry;
+import de.mealdeal.domain.MealRole;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
 import de.mealdeal.domain.ShoppingList;
@@ -66,6 +68,26 @@ class ShoppingListServiceTest {
 
         assertItem(shoppingList.getItems().get(0), pasta, "1000", Unit.GRAM);
         assertItem(shoppingList.getItems().get(1), sauce, "600", Unit.MILLILITER);
+    }
+
+    @Test
+    void todayIncludesMainAndAllSideDishesWithTheirIndividualServingCounts() {
+        LocalDate today = LocalDate.of(2026, 9, 1);
+        Recipe main = recipe("Main", 2, DishType.MAIN, amount(pasta, "500", Unit.GRAM));
+        Recipe firstSide = recipe("First side", 4, DishType.SIDE, amount(pasta, "100", Unit.GRAM));
+        Recipe secondSide = recipe("Second side", 1, DishType.SIDE, amount(sauce, "50", Unit.MILLILITER));
+        var repository = new InMemoryMealPlanRepository(List.of(
+                new MealPlanEntry(today, main, 4),
+                sideEntry(today, firstSide, 2, 0),
+                sideEntry(today, secondSide, 3, 1)));
+
+        ShoppingList shoppingList = service(repository, today).buildForToday();
+
+        assertEquals(2, shoppingList.getItems().size());
+        assertItem(shoppingList.getItems().get(0), pasta, "1050", Unit.GRAM);
+        assertItem(shoppingList.getItems().get(1), sauce, "150", Unit.MILLILITER);
+        assertEquals(today, repository.lastRangeStart);
+        assertEquals(today, repository.lastRangeEnd);
     }
 
     @Test
@@ -182,6 +204,40 @@ class ShoppingListServiceTest {
         assertEquals(LocalDate.of(2026, 8, 30), repository.lastRangeEnd);
     }
 
+    @Test
+    void currentWeekIncludesSideOnlyDaysAndExcludesPastMainAndSideEntries() {
+        LocalDate today = LocalDate.of(2026, 8, 26);
+        Recipe main = recipe("Main", 1, DishType.MAIN, amount(pasta, "100", Unit.GRAM));
+        Recipe side = recipe("Side", 1, DishType.SIDE, amount(pasta, "25", Unit.GRAM));
+        var repository = new InMemoryMealPlanRepository(List.of(
+                new MealPlanEntry(today.minusDays(1), main, 1),
+                sideEntry(today.minusDays(1), side, 1, 0),
+                new MealPlanEntry(today, main, 1),
+                sideEntry(today.plusDays(1), side, 2, 0),
+                sideEntry(today.plusDays(2), side, 3, 0)));
+
+        ShoppingList list = service(repository, today).buildForCurrentWeek();
+
+        assertItem(list.getItems().getFirst(), pasta, "225", Unit.GRAM);
+        assertEquals(today, repository.lastRangeStart);
+        assertEquals(LocalDate.of(2026, 8, 30), repository.lastRangeEnd);
+    }
+
+    @Test
+    void keepsIncompatibleUnitsSeparateAcrossMainAndSideDishes() {
+        LocalDate today = LocalDate.of(2026, 9, 1);
+        Recipe main = recipe("Main", 1, DishType.MAIN, amount(onion, "2", Unit.PIECE));
+        Recipe side = recipe("Side", 1, DishType.SIDE, amount(onion, "3", Unit.SLICE));
+
+        ShoppingList list = service(new InMemoryMealPlanRepository(List.of(
+                new MealPlanEntry(today, main, 1), sideEntry(today, side, 1, 0))), today)
+                .buildForToday();
+
+        assertEquals(2, list.getItems().size());
+        assertEquals(List.of(Unit.PIECE, Unit.SLICE), list.getItems().stream()
+                .map(item -> item.getQuantity().getUnit()).sorted().toList());
+    }
+
     @ParameterizedTest
     @MethodSource("calendarBoundaries")
     void handlesMonthYearAndLeapYearWeekBoundaries(LocalDate today, LocalDate sunday) {
@@ -239,12 +295,22 @@ class ShoppingListServiceTest {
         return new MealPlanEntry(date, recipe, 1);
     }
 
+    private static MealPlanEntry sideEntry(LocalDate date, Recipe recipe, int servingCount,
+                                           int position) {
+        return new MealPlanEntry(date, recipe, servingCount, MealRole.SIDE, position);
+    }
+
     private static Recipe recipe(String name, int standardServings, IngredientAmount... amounts) {
+        return recipe(name, standardServings, DishType.MAIN, amounts);
+    }
+
+    private static Recipe recipe(String name, int standardServings, DishType dishType,
+                                 IngredientAmount... amounts) {
         List<RecipeIngredient> ingredients = Stream.of(amounts)
                 .map(amount -> new RecipeIngredient(amount.ingredient(), amount.amount(), amount.unit()))
                 .toList();
         return new Recipe(name, standardServings, ingredients, List.of(),
-                List.of(new Taste("Savory")));
+                List.of(new Taste("Savory")), dishType);
     }
 
     private static IngredientAmount amount(Ingredient ingredient, String amount, Unit unit) {

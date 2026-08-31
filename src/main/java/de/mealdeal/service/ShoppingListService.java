@@ -2,7 +2,6 @@ package de.mealdeal.service;
 
 import de.mealdeal.domain.Ingredient;
 import de.mealdeal.domain.MealPlanEntry;
-import de.mealdeal.domain.MealRole;
 import de.mealdeal.domain.Quantity;
 import de.mealdeal.domain.RecipeIngredient;
 import de.mealdeal.domain.ShoppingList;
@@ -55,13 +54,10 @@ public final class ShoppingListService {
         this.clock = Objects.requireNonNull(clock, "Clock must not be null.");
     }
 
-    /** Builds a list from the single plan entry for the local current date. */
+    /** Builds a list from every plan entry for the local current date. */
     public ShoppingList buildForToday() {
         LocalDate today = LocalDate.now(clock);
-        return repository.findByDate(today)
-                .map(List::of)
-                .map(this::buildFromEntries)
-                .orElseGet(() -> new ShoppingList(List.of()));
+        return buildFromEntries(repository.findBetween(today, today));
     }
 
     /**
@@ -71,11 +67,7 @@ public final class ShoppingListService {
     public ShoppingList buildForCurrentWeek() {
         LocalDate today = LocalDate.now(clock);
         LocalDate sunday = weekService.weekContaining(today).getEndDate();
-        // Side dishes are persisted from schema V5 onward, but shopping-list
-        // integration follows in its own phase and therefore keeps V4 behaviour.
-        return buildFromEntries(repository.findBetween(today, sunday).stream()
-                .filter(entry -> entry.getMealRole() == MealRole.MAIN)
-                .toList());
+        return buildFromEntries(repository.findBetween(today, sunday));
     }
 
     ShoppingList buildFromEntries(Collection<MealPlanEntry> entries) {
