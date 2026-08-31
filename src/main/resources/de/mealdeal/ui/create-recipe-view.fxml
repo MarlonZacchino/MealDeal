@@ -56,6 +56,38 @@
                     </VBox>
                 </VBox>
 
+                <VBox spacing="12.0" styleClass="card, form-section-card">
+                    <VBox spacing="4.0">
+                        <Label text="Nährwerte pro Portion" styleClass="card-title"/>
+                        <Label text="Optional: Angaben gelten immer für eine Portion."
+                               wrapText="true" styleClass="card-text"/>
+                    </VBox>
+                    <HBox spacing="18.0">
+                        <VBox spacing="6.0" HBox.hgrow="ALWAYS" styleClass="form-field">
+                            <Label text="Kalorien (kcal)" styleClass="form-label"/>
+                            <TextField fx:id="caloriesField" promptText="z. B. 650"
+                                       maxWidth="1.7976931348623157E308"/>
+                        </VBox>
+                        <VBox spacing="6.0" HBox.hgrow="ALWAYS" styleClass="form-field">
+                            <Label text="Protein (g)" styleClass="form-label"/>
+                            <TextField fx:id="proteinField" promptText="z. B. 42"
+                                       maxWidth="1.7976931348623157E308"/>
+                        </VBox>
+                    </HBox>
+                    <HBox spacing="18.0">
+                        <VBox spacing="6.0" HBox.hgrow="ALWAYS" styleClass="form-field">
+                            <Label text="Kohlenhydrate (g)" styleClass="form-label"/>
+                            <TextField fx:id="carbohydratesField" promptText="z. B. 71,5"
+                                       maxWidth="1.7976931348623157E308"/>
+                        </VBox>
+                        <VBox spacing="6.0" HBox.hgrow="ALWAYS" styleClass="form-field">
+                            <Label text="Fett (g)" styleClass="form-label"/>
+                            <TextField fx:id="fatField" promptText="z. B. 18"
+                                       maxWidth="1.7976931348623157E308"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+
                 <VBox spacing="16.0" styleClass="card, form-section-card">
                     <HBox alignment="CENTER_LEFT" spacing="12.0">
                         <VBox spacing="4.0">

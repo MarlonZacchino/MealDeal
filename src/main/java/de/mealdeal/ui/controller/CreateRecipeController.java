@@ -1,6 +1,7 @@
 package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.persistence.PersistenceException;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /** Controls the shared form for creating or editing a recipe. */
@@ -57,6 +59,14 @@ public final class CreateRecipeController implements NavigationAware {
     private TextField preparationTimeField;
     @FXML
     private TextField cookingTimeField;
+    @FXML
+    private TextField caloriesField;
+    @FXML
+    private TextField proteinField;
+    @FXML
+    private TextField carbohydratesField;
+    @FXML
+    private TextField fatField;
     @FXML
     private VBox ingredientRowsContainer;
     @FXML
@@ -102,6 +112,12 @@ public final class CreateRecipeController implements NavigationAware {
         servingCountField.setText(Integer.toString(recipe.getStandardServingCount()));
         preparationTimeField.setText(timeText(recipe.getPreparationTimeMinutes()));
         cookingTimeField.setText(timeText(recipe.getCookingTimeMinutes()));
+        NutritionInfo nutrition = recipe.getNutritionInfo().orElse(null);
+        caloriesField.setText(nutrition == null ? "" : timeText(nutrition.getCaloriesKcal()));
+        proteinField.setText(nutrition == null ? "" : decimalText(nutrition.getProteinGrams()));
+        carbohydratesField.setText(nutrition == null
+                ? "" : decimalText(nutrition.getCarbohydrateGrams()));
+        fatField.setText(nutrition == null ? "" : decimalText(nutrition.getFatGrams()));
         fillIngredients(recipe);
         fillTastes(recipe);
         fillSteps(recipe);
@@ -243,7 +259,8 @@ public final class CreateRecipeController implements NavigationAware {
         List<String> steps = stepRows.stream().map(RecipeStepFormRow::description).toList();
         return new RecipeFormInput(nameField.getText(), servingCountField.getText(),
                 ingredients, tastes, steps, preparationTimeField.getText(),
-                cookingTimeField.getText());
+                cookingTimeField.getText(), caloriesField.getText(), proteinField.getText(),
+                carbohydratesField.getText(), fatField.getText());
     }
 
     private void removeIngredientRow(IngredientFormRow row) {
@@ -303,6 +320,10 @@ public final class CreateRecipeController implements NavigationAware {
 
     private static String timeText(OptionalInt minutes) {
         return minutes.isPresent() ? Integer.toString(minutes.getAsInt()) : "";
+    }
+
+    private static String decimalText(Optional<java.math.BigDecimal> value) {
+        return value.map(GermanRecipeDisplay::decimal).orElse("");
     }
 
 }

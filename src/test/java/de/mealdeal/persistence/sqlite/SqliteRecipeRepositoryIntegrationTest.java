@@ -104,6 +104,33 @@ class SqliteRecipeRepositoryIntegrationTest {
         assertTrue(loadedWithoutTimes.getPreparationTimeMinutes().isEmpty());
         assertTrue(loadedWithoutTimes.getCookingTimeMinutes().isEmpty());
         assertTrue(loadedWithoutTimes.getTotalTimeMinutes().isEmpty());
+        assertTrue(loadedWithoutTimes.getNutritionInfo().isEmpty());
+    }
+
+    @Test
+    void savesAndLoadsPartialAndCompleteNutritionInfo() {
+        Recipe partial = new Recipe("Partial", 2,
+                List.of(new RecipeIngredient(pasta, BigDecimal.ONE, Unit.PIECE)),
+                List.of(), List.of(savory), null, null,
+                new de.mealdeal.domain.NutritionInfo(0, null, new BigDecimal("71.5"), null));
+        Recipe complete = new Recipe("Complete", 2,
+                List.of(new RecipeIngredient(pasta, BigDecimal.ONE, Unit.PIECE)),
+                List.of(), List.of(savory), null, null,
+                new de.mealdeal.domain.NutritionInfo(650, new BigDecimal("42"),
+                        new BigDecimal("71.5"), new BigDecimal("18")));
+
+        recipeRepository.save(partial);
+        recipeRepository.save(complete);
+
+        var loadedPartial = recipeRepository.findById(partial.getId()).orElseThrow()
+                .getNutritionInfo().orElseThrow();
+        var loadedComplete = recipeRepository.findById(complete.getId()).orElseThrow()
+                .getNutritionInfo().orElseThrow();
+        assertEquals(0, loadedPartial.getCaloriesKcal().orElseThrow());
+        assertTrue(loadedPartial.getProteinGrams().isEmpty());
+        assertEquals(new BigDecimal("71.5"), loadedPartial.getCarbohydrateGrams().orElseThrow());
+        assertEquals(650, loadedComplete.getCaloriesKcal().orElseThrow());
+        assertEquals(new BigDecimal("18"), loadedComplete.getFatGrams().orElseThrow());
     }
 
     @Test

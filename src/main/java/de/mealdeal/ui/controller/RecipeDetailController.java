@@ -2,6 +2,7 @@ package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.RecipeDeletionRestrictedException;
 import de.mealdeal.persistence.repository.RecipeRepository;
@@ -21,6 +22,7 @@ import javafx.scene.layout.VBox;
 
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.math.BigDecimal;
 import java.util.function.BooleanSupplier;
 
 /** Renders one recipe and updates its displayed quantities for a serving count. */
@@ -47,6 +49,10 @@ public final class RecipeDetailController implements NavigationAware {
     private VBox timeSection;
     @FXML
     private VBox timesContainer;
+    @FXML
+    private VBox nutritionSection;
+    @FXML
+    private VBox nutritionContainer;
     @FXML
     private VBox ingredientsContainer;
     @FXML
@@ -78,6 +84,7 @@ public final class RecipeDetailController implements NavigationAware {
                 .reduce((first, second) -> first + ", " + second)
                 .orElse("Keine Angabe"));
         renderTimes();
+        renderNutrition();
         renderSteps();
         configureServingSelection();
     }
@@ -194,6 +201,39 @@ public final class RecipeDetailController implements NavigationAware {
         boolean hasTimes = !timesContainer.getChildren().isEmpty();
         timeSection.setManaged(hasTimes);
         timeSection.setVisible(hasTimes);
+    }
+
+    private void renderNutrition() {
+        nutritionContainer.getChildren().clear();
+        recipe.getNutritionInfo().ifPresent(this::addNutritionRows);
+        boolean hasNutrition = !nutritionContainer.getChildren().isEmpty();
+        nutritionSection.setManaged(hasNutrition);
+        nutritionSection.setVisible(hasNutrition);
+    }
+
+    private void addNutritionRows(NutritionInfo nutrition) {
+        if (nutrition.getCaloriesKcal().isPresent()) {
+            nutritionContainer.getChildren().add(nutritionRow("Kalorien",
+                    nutrition.getCaloriesKcal().getAsInt() + " kcal"));
+        }
+        addNutritionRow("Protein", nutrition.getProteinGrams());
+        addNutritionRow("Kohlenhydrate", nutrition.getCarbohydrateGrams());
+        addNutritionRow("Fett", nutrition.getFatGrams());
+    }
+
+    private void addNutritionRow(String label, java.util.Optional<BigDecimal> grams) {
+        grams.ifPresent(value -> nutritionContainer.getChildren().add(
+                nutritionRow(label, GermanRecipeDisplay.decimal(value) + " g")));
+    }
+
+    private static HBox nutritionRow(String label, String value) {
+        Label name = new Label(label);
+        name.getStyleClass().add("detail-time-name");
+        Label displayedValue = new Label(value);
+        displayedValue.getStyleClass().add("detail-time-value");
+        HBox row = new HBox(16, name, displayedValue);
+        row.getStyleClass().add("detail-row");
+        return row;
     }
 
     private void addTimeRow(String label, OptionalInt minutes) {

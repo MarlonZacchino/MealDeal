@@ -67,6 +67,21 @@ class RecipeTest {
     }
 
     @Test
+    void keepsNutritionInfoOptionalAndPerServing() {
+        Recipe withoutNutrition = createRecipe("Pasta", 2);
+        NutritionInfo nutrition = new NutritionInfo(650, new BigDecimal("42"),
+                new BigDecimal("71.5"), new BigDecimal("18"));
+        Recipe withNutrition = new Recipe("Pasta", 2, List.of(recipeIngredient),
+                List.of(recipeStep), List.of(savory), null, null, nutrition);
+
+        assertTrue(withoutNutrition.getNutritionInfo().isEmpty());
+        assertEquals(650, withNutrition.getNutritionInfo().orElseThrow()
+                .getCaloriesKcal().orElseThrow());
+        assertEquals(new BigDecimal("71.5"), withNutrition.getNutritionInfo().orElseThrow()
+                .getCarbohydrateGrams().orElseThrow());
+    }
+
+    @Test
     void rejectsZeroAndNegativeTimeValues() {
         assertThrows(IllegalArgumentException.class,
                 () -> new Recipe("Pasta", 2, List.of(recipeIngredient), List.of(recipeStep),

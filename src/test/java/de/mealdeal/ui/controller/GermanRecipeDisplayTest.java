@@ -40,5 +40,6 @@ class GermanRecipeDisplayTest {
         assertEquals("25 Min.", GermanRecipeDisplay.duration(25));
         assertEquals("1 Std. 20 Min.", GermanRecipeDisplay.duration(80));
         assertEquals("2 Std.", GermanRecipeDisplay.duration(120));
+        assertEquals("71,5", GermanRecipeDisplay.decimal(new BigDecimal("71.5")));
     }
 }

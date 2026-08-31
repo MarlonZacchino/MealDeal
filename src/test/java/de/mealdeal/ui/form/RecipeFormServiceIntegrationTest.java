@@ -78,6 +78,29 @@ class RecipeFormServiceIntegrationTest {
     }
 
     @Test
+    void persistsNutritionInfoThroughCreateAndEdit() {
+        SqliteDatabase database = new SqliteDatabase(temporaryDirectory.resolve("nutrition-form.db"));
+        var ingredients = new SqliteIngredientRepository(database);
+        var tastes = new SqliteTasteRepository(database);
+        var recipes = new SqliteRecipeRepository(database);
+        RecipeFormService service = new RecipeFormService(recipes, ingredients, tastes);
+
+        Recipe created = service.createAndSave(new RecipeFormInput("Brotzeit", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.PIECE)),
+                List.of("Herzhaft"), List.of(), "", "", "650", "42", "71,5", "18"));
+        Recipe updated = service.updateAndSave(created.getId(), new RecipeFormInput(
+                "Brotzeit", "2", List.of(new IngredientFormInput("Brot", "2", Unit.PIECE)),
+                List.of("Herzhaft"), List.of(), "", "", "", "", "", "0"));
+
+        assertEquals(650, created.getNutritionInfo().orElseThrow()
+                .getCaloriesKcal().orElseThrow());
+        var loadedNutrition = recipes.findById(updated.getId()).orElseThrow()
+                .getNutritionInfo().orElseThrow();
+        assertTrue(loadedNutrition.getCaloriesKcal().isEmpty());
+        assertEquals(java.math.BigDecimal.ZERO, loadedNutrition.getFatGrams().orElseThrow());
+    }
+
+    @Test
     void persistsRecipeWithoutStepsAndAllowsAddingThemLater() {
         SqliteDatabase database = new SqliteDatabase(
                 temporaryDirectory.resolve("optional-steps.db"));

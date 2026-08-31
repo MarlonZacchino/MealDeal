@@ -1,6 +1,7 @@
 package de.mealdeal.ui.form;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
 import de.mealdeal.domain.RecipeStep;
@@ -88,10 +89,12 @@ public final class RecipeFormService {
         Recipe recipe = recipeId == null
                 ? new Recipe(validated.name(), validated.servingCount(),
                         recipeIngredients, steps, recipeTastes,
-                        validated.preparationTimeMinutes(), validated.cookingTimeMinutes())
+                        validated.preparationTimeMinutes(), validated.cookingTimeMinutes(),
+                        validated.nutritionInfo())
                 : new Recipe(recipeId, validated.name(), validated.servingCount(),
                         recipeIngredients, steps, recipeTastes,
-                        validated.preparationTimeMinutes(), validated.cookingTimeMinutes());
+                        validated.preparationTimeMinutes(), validated.cookingTimeMinutes(),
+                        validated.nutritionInfo());
         recipeRepository.save(recipe);
         return recipe;
     }
@@ -111,12 +114,20 @@ public final class RecipeFormService {
                 input.preparationTimeMinutes(), "Die Vorbereitungszeit", errors);
         Integer cookingTime = parseOptionalMinutes(
                 input.cookingTimeMinutes(), "Die Garzeit", errors);
+        Integer calories = parseOptionalNonNegativeInteger(
+                input.caloriesKcal(), "Die Kalorien", errors);
+        BigDecimal protein = parseOptionalNonNegativeDecimal(
+                input.proteinGrams(), "Protein", errors);
+        BigDecimal carbohydrates = parseOptionalNonNegativeDecimal(
+                input.carbohydrateGrams(), "Kohlenhydrate", errors);
+        BigDecimal fat = parseOptionalNonNegativeDecimal(input.fatGrams(), "Fett", errors);
 
         if (!errors.isEmpty()) {
             throw new RecipeFormValidationException(errors);
         }
         return new ValidatedForm(name, servingCount, ingredients, tasteNames, steps,
-                preparationTime, cookingTime);
+                preparationTime, cookingTime,
+                new NutritionInfo(calories, protein, carbohydrates, fat));
     }
 
     private static int parseServingCount(String input, List<String> errors) {
@@ -146,6 +157,38 @@ public final class RecipeFormService {
             return minutes;
         } catch (NumberFormatException exception) {
             errors.add(fieldName + " muss eine positive ganze Minutenzahl sein.");
+            return null;
+        }
+    }
+
+    private static Integer parseOptionalNonNegativeInteger(String input, String fieldName,
+                                                            List<String> errors) {
+        String value = stripped(input);
+        if (value.isEmpty()) {
+            return null;
+        }
+        try {
+            int parsed = Integer.parseInt(value);
+            if (parsed < 0) {
+                throw new NumberFormatException();
+            }
+            return parsed;
+        } catch (NumberFormatException exception) {
+            errors.add(fieldName + " muss eine nichtnegative ganze Zahl sein.");
+            return null;
+        }
+    }
+
+    private static BigDecimal parseOptionalNonNegativeDecimal(String input, String fieldName,
+                                                               List<String> errors) {
+        String value = stripped(input);
+        if (value.isEmpty()) {
+            return null;
+        }
+        try {
+            return DecimalInputParser.parseNonNegative(value);
+        } catch (IllegalArgumentException exception) {
+            errors.add(fieldName + " muss eine nichtnegative Zahl sein.");
             return null;
         }
     }
@@ -245,6 +288,7 @@ public final class RecipeFormService {
                                  List<String> tasteNames,
                                  List<String> stepDescriptions,
                                  Integer preparationTimeMinutes,
-                                 Integer cookingTimeMinutes) {
+                                 Integer cookingTimeMinutes,
+                                 NutritionInfo nutritionInfo) {
     }
 }

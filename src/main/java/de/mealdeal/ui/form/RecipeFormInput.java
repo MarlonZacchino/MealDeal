@@ -10,7 +10,11 @@ public record RecipeFormInput(
         List<String> tasteNames,
         List<String> stepDescriptions,
         String preparationTimeMinutes,
-        String cookingTimeMinutes) {
+        String cookingTimeMinutes,
+        String caloriesKcal,
+        String proteinGrams,
+        String carbohydrateGrams,
+        String fatGrams) {
 
     public RecipeFormInput {
         ingredients = ingredients == null ? List.of() : List.copyOf(ingredients);
@@ -23,6 +27,15 @@ public record RecipeFormInput(
                            List<IngredientFormInput> ingredients, List<String> tasteNames,
                            List<String> stepDescriptions) {
         this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
-                null, null);
+                null, null, null, null, null, null);
+    }
+
+    /** Creates an input with optional time values but without nutrition values. */
+    public RecipeFormInput(String name, String standardServingCount,
+                           List<IngredientFormInput> ingredients, List<String> tasteNames,
+                           List<String> stepDescriptions, String preparationTimeMinutes,
+                           String cookingTimeMinutes) {
+        this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
+                preparationTimeMinutes, cookingTimeMinutes, null, null, null, null);
     }
 }

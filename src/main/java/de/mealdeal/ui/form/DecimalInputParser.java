@@ -2,7 +2,7 @@ package de.mealdeal.ui.form;
 
 import java.math.BigDecimal;
 
-/** Parses positive decimal quantities entered in the German user interface. */
+/** Parses decimal quantities entered in the German user interface. */
 public final class DecimalInputParser {
 
     private static final String POSITIVE_DECIMAL_PATTERN = "\\d+(?:[,.]\\d+)?";
@@ -22,6 +22,18 @@ public final class DecimalInputParser {
         BigDecimal value = new BigDecimal(input.strip().replace(',', '.'));
         if (value.signum() <= 0) {
             throw new IllegalArgumentException("Menge muss größer als 0 sein.");
+        }
+        return value;
+    }
+
+    /** Parses a nonnegative decimal number with a comma or point separator. */
+    public static BigDecimal parseNonNegative(String input) {
+        if (input == null || !input.strip().matches(POSITIVE_DECIMAL_PATTERN)) {
+            throw new IllegalArgumentException("Wert muss eine nichtnegative Zahl sein.");
+        }
+        BigDecimal value = new BigDecimal(input.strip().replace(',', '.'));
+        if (value.signum() < 0) {
+            throw new IllegalArgumentException("Wert darf nicht negativ sein.");
         }
         return value;
     }

@@ -162,6 +162,44 @@ class RecipeFormServiceTest {
     }
 
     @Test
+    void createsAndUpdatesNutritionValuesPerServing() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+        Recipe created = service.createAndSave(new RecipeFormInput(
+                "Toast", "2", List.of(new IngredientFormInput("Brot", "2", Unit.SLICE)),
+                List.of("Herzhaft"), List.of(), "", "", "650", "42", "71,5", "18"));
+
+        var nutrition = created.getNutritionInfo().orElseThrow();
+        assertEquals(650, nutrition.getCaloriesKcal().orElseThrow());
+        assertEquals(new BigDecimal("71.5"), nutrition.getCarbohydrateGrams().orElseThrow());
+
+        Recipe updated = service.updateAndSave(created.getId(), new RecipeFormInput(
+                "Toast", "2", List.of(new IngredientFormInput("Brot", "2", Unit.SLICE)),
+                List.of("Herzhaft"), List.of(), "", "", "0", "", "", "0"));
+        assertEquals(0, updated.getNutritionInfo().orElseThrow()
+                .getCaloriesKcal().orElseThrow());
+        assertEquals(BigDecimal.ZERO, updated.getNutritionInfo().orElseThrow()
+                .getFatGrams().orElseThrow());
+    }
+
+    @Test
+    void rejectsNegativeNutritionValues() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+        RecipeFormInput input = new RecipeFormInput("Toast", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.SLICE)),
+                List.of("Herzhaft"), List.of(), "", "", "-1", "-0,5", "", "");
+
+        RecipeFormValidationException exception = assertThrows(
+                RecipeFormValidationException.class, () -> service.createAndSave(input));
+
+        assertEquals(2, exception.getErrors().stream()
+                .filter(error -> error.contains("nichtnegative")).count());
+    }
+
+    @Test
     void rejectsInvalidOptionalTimeValues() {
         RecipeFormService service = new RecipeFormService(
                 new MemoryRecipeRepository(), new MemoryIngredientRepository(),

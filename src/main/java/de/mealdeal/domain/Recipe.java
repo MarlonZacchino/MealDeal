@@ -3,6 +3,7 @@ package de.mealdeal.domain;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
@@ -28,6 +29,7 @@ public final class Recipe {
     private final OptionalInt preparationTimeMinutes;
     private final OptionalInt cookingTimeMinutes;
     private final OptionalInt totalTimeMinutes;
+    private final Optional<NutritionInfo> nutritionInfo;
 
     /**
      * Creates a recipe for the default serving count of two.
@@ -73,6 +75,15 @@ public final class Recipe {
                 preparationTimeMinutes, cookingTimeMinutes);
     }
 
+    /** Creates a recipe with optional times and per-serving nutrition information. */
+    public Recipe(String name, int standardServingCount,
+                  List<RecipeIngredient> ingredients, List<RecipeStep> steps,
+                  List<Taste> tastes, Integer preparationTimeMinutes,
+                  Integer cookingTimeMinutes, NutritionInfo nutritionInfo) {
+        this(UUID.randomUUID(), name, standardServingCount, ingredients, steps, tastes,
+                preparationTimeMinutes, cookingTimeMinutes, nutritionInfo);
+    }
+
     /**
      * Recreates a recipe with an existing technical identity.
      *
@@ -99,6 +110,15 @@ public final class Recipe {
                   List<RecipeIngredient> ingredients, List<RecipeStep> steps,
                   List<Taste> tastes, Integer preparationTimeMinutes,
                   Integer cookingTimeMinutes) {
+        this(id, name, standardServingCount, ingredients, steps, tastes,
+                preparationTimeMinutes, cookingTimeMinutes, null);
+    }
+
+    /** Recreates a recipe with optional times and per-serving nutrition information. */
+    public Recipe(UUID id, String name, int standardServingCount,
+                  List<RecipeIngredient> ingredients, List<RecipeStep> steps,
+                  List<Taste> tastes, Integer preparationTimeMinutes,
+                  Integer cookingTimeMinutes, NutritionInfo nutritionInfo) {
         this.id = java.util.Objects.requireNonNull(id, "Recipe ID must not be null.");
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Recipe name must not be blank.");
@@ -118,6 +138,8 @@ public final class Recipe {
         this.cookingTimeMinutes = optionalTime(cookingTimeMinutes, "Cooking time");
         this.totalTimeMinutes = deriveTotalTime(
                 this.preparationTimeMinutes, this.cookingTimeMinutes);
+        this.nutritionInfo = Optional.ofNullable(nutritionInfo)
+                .filter(NutritionInfo::hasAnyValue);
 
         if (this.tastes.isEmpty()) {
             throw new IllegalArgumentException("Recipe must have at least one taste.");
@@ -165,6 +187,11 @@ public final class Recipe {
     /** Returns the optional total time derived from preparation and cooking time. */
     public OptionalInt getTotalTimeMinutes() {
         return totalTimeMinutes;
+    }
+
+    /** Returns optional nutrition values that always apply to one serving. */
+    public Optional<NutritionInfo> getNutritionInfo() {
+        return nutritionInfo;
     }
 
     @Override

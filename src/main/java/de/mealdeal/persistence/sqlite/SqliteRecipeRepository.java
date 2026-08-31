@@ -1,6 +1,7 @@
 package de.mealdeal.persistence.sqlite;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
 import de.mealdeal.domain.RecipeStep;
@@ -111,13 +112,18 @@ public final class SqliteRecipeRepository implements RecipeRepository {
         String sql = """
                 INSERT INTO recipes (
                     id, name, standard_serving_count, preparation_time_minutes,
-                    cooking_time_minutes)
-                VALUES (?, ?, ?, ?, ?)
+                    cooking_time_minutes, calories_kcal, protein_grams,
+                    carbohydrate_grams, fat_grams)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     name = excluded.name,
                     standard_serving_count = excluded.standard_serving_count,
                     preparation_time_minutes = excluded.preparation_time_minutes,
-                    cooking_time_minutes = excluded.cooking_time_minutes
+                    cooking_time_minutes = excluded.cooking_time_minutes,
+                    calories_kcal = excluded.calories_kcal,
+                    protein_grams = excluded.protein_grams,
+                    carbohydrate_grams = excluded.carbohydrate_grams,
+                    fat_grams = excluded.fat_grams
                 """;
         try (var statement = connection.prepareStatement(sql)) {
             statement.setString(1, recipe.getId().toString());
@@ -125,6 +131,7 @@ public final class SqliteRecipeRepository implements RecipeRepository {
             statement.setInt(3, recipe.getStandardServingCount());
             setOptionalTime(statement, 4, recipe.getPreparationTimeMinutes());
             setOptionalTime(statement, 5, recipe.getCookingTimeMinutes());
+            setNutrition(statement, recipe.getNutritionInfo().orElse(null));
             statement.executeUpdate();
         }
     }
@@ -191,7 +198,8 @@ public final class SqliteRecipeRepository implements RecipeRepository {
     private static Optional<Recipe> loadRecipe(Connection connection, UUID id) throws SQLException {
         String sql = """
                 SELECT name, standard_serving_count, preparation_time_minutes,
-                       cooking_time_minutes
+                       cooking_time_minutes, calories_kcal, protein_grams,
+                       carbohydrate_grams, fat_grams
                 FROM recipes WHERE id = ?
                 """;
         try (var statement = connection.prepareStatement(sql)) {
@@ -206,7 +214,8 @@ public final class SqliteRecipeRepository implements RecipeRepository {
                         loadIngredients(connection, id), loadSteps(connection, id),
                         loadTastes(connection, id),
                         nullableInteger(resultSet, "preparation_time_minutes"),
-                        nullableInteger(resultSet, "cooking_time_minutes")));
+                        nullableInteger(resultSet, "cooking_time_minutes"),
+                        nutritionInfo(resultSet)));
             }
         }
     }
@@ -224,6 +233,43 @@ public final class SqliteRecipeRepository implements RecipeRepository {
             throws SQLException {
         int value = resultSet.getInt(column);
         return resultSet.wasNull() ? null : value;
+    }
+
+    private static void setNutrition(java.sql.PreparedStatement statement, NutritionInfo nutrition)
+            throws SQLException {
+        if (nutrition == null) {
+            statement.setNull(6, java.sql.Types.INTEGER);
+            for (int index = 7; index <= 9; index++) {
+                statement.setNull(index, java.sql.Types.VARCHAR);
+            }
+            return;
+        }
+        setOptionalTime(statement, 6, nutrition.getCaloriesKcal());
+        setOptionalDecimal(statement, 7, nutrition.getProteinGrams());
+        setOptionalDecimal(statement, 8, nutrition.getCarbohydrateGrams());
+        setOptionalDecimal(statement, 9, nutrition.getFatGrams());
+    }
+
+    private static void setOptionalDecimal(java.sql.PreparedStatement statement, int index,
+                                           Optional<BigDecimal> value) throws SQLException {
+        if (value.isPresent()) {
+            statement.setString(index, value.get().toPlainString());
+        } else {
+            statement.setNull(index, java.sql.Types.VARCHAR);
+        }
+    }
+
+    private static NutritionInfo nutritionInfo(java.sql.ResultSet resultSet) throws SQLException {
+        return new NutritionInfo(nullableInteger(resultSet, "calories_kcal"),
+                nullableDecimal(resultSet, "protein_grams"),
+                nullableDecimal(resultSet, "carbohydrate_grams"),
+                nullableDecimal(resultSet, "fat_grams"));
+    }
+
+    private static BigDecimal nullableDecimal(java.sql.ResultSet resultSet, String column)
+            throws SQLException {
+        String value = resultSet.getString(column);
+        return value == null ? null : new BigDecimal(value);
     }
 
     private static List<RecipeIngredient> loadIngredients(Connection connection, UUID recipeId)
