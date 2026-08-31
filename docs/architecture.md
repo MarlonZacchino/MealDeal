@@ -11,14 +11,15 @@ Das derzeit implementierte Modell ist:
 ```text
 Recipe
  ├── DishType (MAIN or SIDE)
- ├── RecipeIngredient *
- │    └── Ingredient
+ ├── RecipeIngredientGroup *
+ │    └── RecipeIngredientOption *
+ │         └── Ingredient
  ├── RecipeStep *
  ├── Taste *
  └── NutritionInfo (optional, per serving)
 ```
 
-`Ingredient` und `Taste` besitzen eine persistenzunabhängige UUID als stabile technische Identität. Ein Recipe besitzt außerdem genau einen `DishType`: `MAIN` oder `SIDE`. Ein Rezept lässt jede dieser Identitäten höchstens einmal zu. Rezeptschritte sind optional und werden, wenn vorhanden, anhand ihrer eindeutigen Position sortiert. Rezeptmengen werden mit `BigDecimal` gespeichert. Vorbereitungs- und Garzeit sind optionale positive Minutenwerte. Die Gesamtzeit wird zentral daraus abgeleitet: bei zwei Werten als Summe, bei einem Wert als dieser Wert und andernfalls gar nicht. Optionales `NutritionInfo` bündelt Kalorien sowie Protein, Kohlenhydrate und Fett pro Portion; es wird nicht aus Zutaten berechnet und nicht mit Personenanzahlen skaliert. Einheiten weisen ihre Dimension aus, damit spätere Umrechnung nur zwischen kompatiblen Einheiten erfolgt.
+`Ingredient` und `Taste` besitzen eine persistenzunabhängige UUID als stabile technische Identität. Ein Recipe besitzt außerdem genau einen `DishType`: `MAIN` oder `SIDE`. Seine geordnete Liste von `RecipeIngredientGroup`s beschreibt Zutatenbedarfe; jede Gruppe hat eine stabile UUID, mindestens eine geordnete `RecipeIngredientOption` und genau eine ihrer Optionen als Standard. Optionen besitzen ebenfalls stabile UUIDs sowie ihre eigene positive `BigDecimal`-Menge, Unit und Position. `Recipe.getIngredients()` bildet für noch nicht migrierte Anwendungsfälle ausschließlich die Standardoption jeder Gruppe als alte `RecipeIngredient`-Ansicht ab; eine zweite Zutatenliste wird nicht gespeichert. Rezeptschritte sind optional und werden, wenn vorhanden, anhand ihrer eindeutigen Position sortiert. Rezeptmengen werden mit `BigDecimal` gespeichert. Vorbereitungs- und Garzeit sind optionale positive Minutenwerte. Die Gesamtzeit wird zentral daraus abgeleitet: bei zwei Werten als Summe, bei einem Wert als dieser Wert und andernfalls gar nicht. Optionales `NutritionInfo` bündelt Kalorien sowie Protein, Kohlenhydrate und Fett pro Portion; es wird nicht aus Zutaten berechnet und nicht mit Personenanzahlen skaliert. Einheiten weisen ihre Dimension aus, damit spätere Umrechnung nur zwischen kompatiblen Einheiten erfolgt.
 
 ## Service
 

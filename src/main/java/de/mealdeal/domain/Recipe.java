@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * The aggregate containing a recipe's basic data, ingredients, ordered steps,
+ * The aggregate containing a recipe's basic data, ingredient groups, ordered steps,
  * and tastes.
  *
  * <p>Defensive copies prevent callers from modifying the recipe through list
@@ -23,7 +23,7 @@ public final class Recipe {
     private final UUID id;
     private final String name;
     private final int standardServingCount;
-    private final List<RecipeIngredient> ingredients;
+    private final List<RecipeIngredientGroup> ingredientGroups;
     private final List<RecipeStep> steps;
     private final List<Taste> tastes;
     private final OptionalInt preparationTimeMinutes;
@@ -153,6 +153,50 @@ public final class Recipe {
                   List<RecipeIngredient> ingredients, List<RecipeStep> steps,
                   List<Taste> tastes, Integer preparationTimeMinutes,
                   Integer cookingTimeMinutes, NutritionInfo nutritionInfo, DishType dishType) {
+        this(id, name, standardServingCount, singleOptionGroups(ingredients), steps, tastes,
+                preparationTimeMinutes, cookingTimeMinutes, nutritionInfo, dishType,
+                IngredientGroupInput.INSTANCE);
+    }
+
+    /**
+     * Creates a new recipe whose ingredient groups are already available.
+     *
+     * <p>This named factory avoids ambiguous {@code List}-constructor overloads
+     * while the older {@link RecipeIngredient} constructors remain source-compatible.</p>
+     */
+    public static Recipe withIngredientGroups(String name, int standardServingCount,
+                                              List<RecipeIngredientGroup> ingredientGroups,
+                                              List<RecipeStep> steps, List<Taste> tastes,
+                                              DishType dishType) {
+        return withIngredientGroups(UUID.randomUUID(), name, standardServingCount,
+                ingredientGroups, steps, tastes, null, null, null, dishType);
+    }
+
+    /** Creates a new default-main recipe from ingredient groups. */
+    public static Recipe withIngredientGroups(String name,
+                                              List<RecipeIngredientGroup> ingredientGroups,
+                                              List<RecipeStep> steps, List<Taste> tastes) {
+        return withIngredientGroups(name, DEFAULT_SERVING_COUNT, ingredientGroups, steps, tastes,
+                DishType.MAIN);
+    }
+
+    /** Recreates a recipe with its stable identity and complete ingredient-group state. */
+    public static Recipe withIngredientGroups(UUID id, String name, int standardServingCount,
+                                              List<RecipeIngredientGroup> ingredientGroups,
+                                              List<RecipeStep> steps, List<Taste> tastes,
+                                              Integer preparationTimeMinutes,
+                                              Integer cookingTimeMinutes,
+                                              NutritionInfo nutritionInfo, DishType dishType) {
+        return new Recipe(id, name, standardServingCount, ingredientGroups, steps, tastes,
+                preparationTimeMinutes, cookingTimeMinutes, nutritionInfo, dishType,
+                IngredientGroupInput.INSTANCE);
+    }
+
+    private Recipe(UUID id, String name, int standardServingCount,
+                   List<RecipeIngredientGroup> ingredientGroups, List<RecipeStep> steps,
+                   List<Taste> tastes, Integer preparationTimeMinutes,
+                   Integer cookingTimeMinutes, NutritionInfo nutritionInfo, DishType dishType,
+                   IngredientGroupInput ignored) {
         this.id = java.util.Objects.requireNonNull(id, "Recipe ID must not be null.");
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Recipe name must not be blank.");
@@ -163,7 +207,7 @@ public final class Recipe {
 
         this.name = name.strip();
         this.standardServingCount = standardServingCount;
-        this.ingredients = copyWithoutNulls(ingredients, "Recipe ingredients");
+        this.ingredientGroups = copyWithoutNulls(ingredientGroups, "Recipe ingredient groups");
         this.steps = copyWithoutNulls(steps, "Recipe steps").stream()
                 .sorted(Comparator.comparingInt(RecipeStep::getPosition))
                 .toList();
@@ -180,7 +224,7 @@ public final class Recipe {
             throw new IllegalArgumentException("Recipe must have at least one taste.");
         }
 
-        rejectDuplicateIngredientIds(this.ingredients);
+        rejectDuplicateGroupIds(this.ingredientGroups);
         rejectDuplicateStepPositions(this.steps);
         rejectDuplicateTasteIds(this.tastes);
     }
@@ -197,8 +241,23 @@ public final class Recipe {
         return standardServingCount;
     }
 
+    /** Returns the ordered immutable groups that define this recipe's ingredient needs. */
+    public List<RecipeIngredientGroup> getIngredientGroups() {
+        return ingredientGroups;
+    }
+
+    /**
+     * Returns the standard option from every group as the legacy ingredient view.
+     *
+     * <p>No second ingredient collection is stored. This projection keeps the
+     * current persistence, scaling, search and UI code compatible until their
+     * dedicated alternative-ingredient phases adopt groups directly.</p>
+     */
     public List<RecipeIngredient> getIngredients() {
-        return ingredients;
+        return ingredientGroups.stream().map(RecipeIngredientGroup::getStandardOption)
+                .map(option -> new RecipeIngredient(option.getIngredient(), option.getQuantity(),
+                        option.getUnit()))
+                .toList();
     }
 
     public List<RecipeStep> getSteps() {
@@ -288,12 +347,34 @@ public final class Recipe {
         }
     }
 
+    private static List<RecipeIngredientGroup> singleOptionGroups(
+            List<RecipeIngredient> ingredients) {
+        List<RecipeIngredient> copiedIngredients = copyWithoutNulls(ingredients,
+                "Recipe ingredients");
+        rejectDuplicateIngredientIds(copiedIngredients);
+        return copiedIngredients.stream().map(ingredient -> {
+            RecipeIngredientOption option = new RecipeIngredientOption(
+                    ingredient.getIngredient(), ingredient.getQuantity(), ingredient.getUnit(), 0);
+            return new RecipeIngredientGroup(List.of(option), option);
+        }).toList();
+    }
+
     private static void rejectDuplicateIngredientIds(List<RecipeIngredient> ingredients) {
         Set<UUID> ingredientIds = new HashSet<>();
         for (RecipeIngredient recipeIngredient : ingredients) {
             if (!ingredientIds.add(recipeIngredient.getIngredient().getId())) {
                 throw new IllegalArgumentException(
                         "Recipe must not contain the same ingredient identity more than once.");
+            }
+        }
+    }
+
+    private static void rejectDuplicateGroupIds(List<RecipeIngredientGroup> groups) {
+        Set<UUID> groupIds = new HashSet<>();
+        for (RecipeIngredientGroup group : groups) {
+            if (!groupIds.add(group.getId())) {
+                throw new IllegalArgumentException(
+                        "Recipe must not contain the same ingredient group identity more than once.");
             }
         }
     }
@@ -316,5 +397,9 @@ public final class Recipe {
                         "Recipe must not contain the same taste identity more than once.");
             }
         }
+    }
+
+    private enum IngredientGroupInput {
+        INSTANCE
     }
 }
