@@ -31,9 +31,19 @@
                 <VBox spacing="12.0" styleClass="dashboard-section">
                     <Label text="Heute" styleClass="section-title"/>
                     <VBox maxWidth="1.7976931348623157E308" spacing="12.0" styleClass="card, wide-card">
-                        <Label text="Noch nichts geplant" styleClass="card-title"/>
-                        <Label text="Lege im Wochenplan fest, welches Gericht heute auf den Tisch kommt."
-                               wrapText="true" styleClass="card-text"/>
+                        <VBox fx:id="todayPlanContent" maxWidth="1.7976931348623157E308"
+                              spacing="10.0" styleClass="home-plan-content"/>
+                        <VBox fx:id="todayEmptyState" alignment="CENTER_LEFT" spacing="8.0"
+                              managed="false" visible="false">
+                            <Label text="Noch nichts geplant" styleClass="card-title"/>
+                            <Label text="Lege im Wochenplan fest, welche Gerichte heute auf den Tisch kommen."
+                                   wrapText="true" styleClass="card-text"/>
+                        </VBox>
+                        <VBox fx:id="todayErrorState" alignment="CENTER_LEFT" spacing="8.0"
+                              managed="false" visible="false">
+                            <Label text="Der heutige Plan konnte nicht geladen werden."
+                                   wrapText="true" styleClass="card-title"/>
+                        </VBox>
                         <Button text="Zum Wochenplan" onAction="#openWeekPlan"
                                 styleClass="primary-button"/>
                     </VBox>
@@ -42,10 +52,13 @@
                 <VBox spacing="12.0" styleClass="dashboard-section">
                     <Label text="Wochenplan" styleClass="section-title"/>
                     <VBox maxWidth="1.7976931348623157E308" spacing="12.0" styleClass="card, wide-card">
-                        <Label text="Plane deine Woche von Montag bis Sonntag." wrapText="true"
-                               styleClass="card-title"/>
-                        <Label text="Die geplanten Gerichte werden hier in einer späteren Phase sichtbar."
-                               wrapText="true" styleClass="card-text"/>
+                        <VBox fx:id="weekOverviewContainer" maxWidth="1.7976931348623157E308"
+                              spacing="8.0" styleClass="home-week-overview"/>
+                        <VBox fx:id="weekErrorState" alignment="CENTER_LEFT" spacing="8.0"
+                              managed="false" visible="false">
+                            <Label text="Die Wochenübersicht konnte nicht geladen werden."
+                                   wrapText="true" styleClass="card-title"/>
+                        </VBox>
                         <Button text="Wochenplan öffnen" onAction="#openWeekPlan"
                                 styleClass="primary-button"/>
                     </VBox>

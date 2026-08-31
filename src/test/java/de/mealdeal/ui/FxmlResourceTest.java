@@ -90,11 +90,19 @@ class FxmlResourceTest {
     @Test
     void homeUsesOneCentralActionForCombinedSearch() throws Exception {
         String fxml = readResource("/de/mealdeal/ui/home-view.fxml");
+        String css = readResource("/de/mealdeal/ui/styles.css");
 
         assertTrue(fxml.contains("text=\"Gericht finden\""));
         assertEquals(1, fxml.split("onAction=\"#openSearch\"", -1).length - 1);
         assertFalse(fxml.contains("Nach Zutaten suchen"));
         assertFalse(fxml.contains("Nach Geschmack suchen"));
+        assertTrue(fxml.contains("fx:id=\"todayPlanContent\""));
+        assertTrue(fxml.contains("fx:id=\"todayEmptyState\""));
+        assertTrue(fxml.contains("fx:id=\"weekOverviewContainer\""));
+        assertTrue(fxml.contains("fx:id=\"weekErrorState\""));
+        assertTrue(css.contains(".home-plan-main-entry"));
+        assertTrue(css.contains(".home-plan-side-entry"));
+        assertTrue(css.contains(".home-week-day"));
     }
 
     @Test

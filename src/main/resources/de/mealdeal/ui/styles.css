@@ -184,6 +184,62 @@
     -fx-padding: 26px 30px;
 }
 
+.home-plan-content {
+    -fx-padding: 2px 0;
+}
+
+.home-plan-role-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 0 0 0;
+    -fx-text-fill: -md-text-muted;
+}
+
+.home-plan-main-entry,
+.home-plan-side-entry {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 9px;
+    -fx-font-size: 17px;
+    -fx-padding: 11px 14px;
+    -fx-text-fill: -md-text;
+}
+
+.home-plan-main-entry {
+    -fx-font-weight: bold;
+}
+
+.home-plan-side-entry {
+    -fx-text-fill: -md-text-muted;
+}
+
+.home-week-overview {
+    -fx-padding: 2px 0;
+}
+
+.home-week-day {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 10px;
+    -fx-padding: 12px 14px;
+}
+
+.home-week-day-today {
+    -fx-border-color: -md-accent;
+    -fx-border-radius: 10px;
+    -fx-border-width: 1px;
+}
+
+.home-week-day-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.home-week-day .home-plan-main-entry,
+.home-week-day .home-plan-side-entry {
+    -fx-background-color: transparent;
+    -fx-padding: 1px 0;
+}
+
 .card-title {
     -fx-font-size: 23px;
     -fx-font-weight: bold;

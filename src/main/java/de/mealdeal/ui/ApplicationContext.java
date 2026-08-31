@@ -139,7 +139,7 @@ public final class ApplicationContext {
             return new MainController(this, themeService);
         }
         if (controllerType == HomeController.class) {
-            return new HomeController();
+            return new HomeController(weeklyMealPlanService);
         }
         if (controllerType == RecipesController.class) {
             return new RecipesController(recipeRepository);
