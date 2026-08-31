@@ -71,6 +71,13 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
                     deleteStatement.setString(1, entryId.toString());
                     deleteStatement.executeUpdate();
                 }
+                // Releasing only the changed IDs prevents a temporary unique-index
+                // collision when two persisted SIDE positions are swapped. The same
+                // transaction immediately recreates them with their stable UUIDs.
+                for (MealPlanEntry entry : entriesToSave) {
+                    deleteStatement.setString(1, entry.getId().toString());
+                    deleteStatement.executeUpdate();
+                }
                 for (MealPlanEntry entry : entriesToSave) {
                     save(entry, saveStatement);
                 }

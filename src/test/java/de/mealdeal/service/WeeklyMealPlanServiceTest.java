@@ -1,6 +1,8 @@
 package de.mealdeal.service;
 
 import de.mealdeal.domain.MealPlanEntry;
+import de.mealdeal.domain.MealRole;
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.persistence.repository.MealPlanRepository;
@@ -32,13 +34,17 @@ class WeeklyMealPlanServiceTest {
     private WeeklyMealPlanService service;
     private Recipe pasta;
     private Recipe soup;
+    private Recipe bread;
+    private Recipe salad;
 
     @BeforeEach
     void setUp() {
         pasta = recipe("Pasta", 2);
         soup = recipe("Suppe", 4);
+        bread = recipe("Brot", DishType.SIDE, 2);
+        salad = recipe("Salat", DishType.SIDE, 3);
         mealPlans = new InMemoryMealPlanRepository();
-        recipes = new InMemoryRecipeRepository(List.of(soup, pasta));
+        recipes = new InMemoryRecipeRepository(List.of(soup, pasta, bread, salad));
         service = new WeeklyMealPlanService(
                 mealPlans, recipes, new WeekService(), clock(TODAY));
     }
@@ -75,7 +81,7 @@ class WeeklyMealPlanServiceTest {
         assertEquals(planned.getId(), persisted.getId());
         assertSame(pasta, persisted.getRecipe());
         assertEquals(7, persisted.getServingCount());
-        assertEquals(persisted, service.loadCurrentWeek().get(1).entry().orElseThrow());
+        assertEquals(persisted, service.loadCurrentWeek().get(1).mainEntry().orElseThrow());
     }
 
     @Test
@@ -87,7 +93,7 @@ class WeeklyMealPlanServiceTest {
 
         MealPlanEntry persisted = mealPlans.findByDate(thursday).orElseThrow();
         assertEquals(1, mealPlans.entries.size());
-        assertNotEquals(original.getId(), replacement.getId());
+        assertEquals(original.getId(), replacement.getId());
         assertEquals(replacement.getId(), persisted.getId());
         assertSame(soup, persisted.getRecipe());
         assertEquals(5, persisted.getServingCount());
@@ -100,7 +106,7 @@ class WeeklyMealPlanServiceTest {
 
         assertTrue(service.remove(sunday));
         assertTrue(mealPlans.findByDate(sunday).isEmpty());
-        assertTrue(service.loadCurrentWeek().getLast().entry().isEmpty());
+        assertTrue(service.loadCurrentWeek().getLast().mainEntry().isEmpty());
         assertFalse(service.remove(sunday));
     }
 
@@ -109,11 +115,34 @@ class WeeklyMealPlanServiceTest {
         Recipe otherPasta = recipe("Pasta", 3);
         recipes.entries.add(otherPasta);
 
-        List<Recipe> sorted = service.loadAvailableRecipes();
+        List<Recipe> sorted = service.loadAvailableRecipes(DishType.MAIN);
 
         assertEquals(List.of("Pasta", "Pasta", "Suppe"),
                 sorted.stream().map(Recipe::getName).toList());
         assertTrue(sorted.get(0).getId().compareTo(sorted.get(1).getId()) < 0);
+    }
+
+    @Test
+    void loadsOnlyMatchingRecipesForMainAndSideSelectors() {
+        assertEquals(List.of("Pasta", "Suppe"), service.loadAvailableRecipes(DishType.MAIN)
+                .stream().map(Recipe::getName).toList());
+        assertEquals(List.of("Brot", "Salat"), service.loadAvailableRecipes(DishType.SIDE)
+                .stream().map(Recipe::getName).toList());
+    }
+
+    @Test
+    void loadsMainAndMultipleOrderedSidesForOneDay() {
+        LocalDate monday = LocalDate.of(2026, 8, 24);
+        MealPlanEntry main = new MealPlanEntry(monday, pasta, 4);
+        MealPlanEntry laterSide = new MealPlanEntry(monday, bread, 2, MealRole.SIDE, 1);
+        MealPlanEntry firstSide = new MealPlanEntry(monday, salad, 3, MealRole.SIDE, 0);
+        mealPlans.entries.addAll(List.of(main, laterSide, firstSide));
+
+        MealPlanDay day = service.loadCurrentWeek().getFirst();
+
+        assertEquals(main.getId(), day.mainEntry().orElseThrow().getId());
+        assertEquals(List.of(salad.getId(), bread.getId()), day.sideEntries().stream()
+                .map(entry -> entry.getRecipe().getId()).toList());
     }
 
     @Test
@@ -140,11 +169,13 @@ class WeeklyMealPlanServiceTest {
         mealPlans.clearRecordedChanges();
 
         service.saveChanges(List.of(
-                MealPlanDraft.planned(monday, soup, 6),
-                MealPlanDraft.planned(tuesday, soup, 5),
-                MealPlanDraft.unplanned(wednesday),
-                MealPlanDraft.planned(thursday, pasta, 7),
-                MealPlanDraft.planned(sunday, soup, 4)));
+                new MealPlanDraft(monday, Optional.of(new MealPlanEntry(monday, soup, 6)), List.of()),
+                new MealPlanDraft(tuesday, Optional.of(new MealPlanEntry(replaced.getId(), tuesday,
+                        soup, 5, MealRole.MAIN, 0)), List.of()),
+                new MealPlanDraft(wednesday, Optional.empty(), List.of()),
+                new MealPlanDraft(thursday, Optional.of(new MealPlanEntry(portionChanged.getId(),
+                        thursday, pasta, 7, MealRole.MAIN, 0)), List.of()),
+                new MealPlanDraft(sunday, Optional.of(unchanged), List.of())));
 
         assertEquals(soup.getId(), mealPlans.findByDate(monday).orElseThrow().getRecipe().getId());
         assertEquals(soup.getId(), mealPlans.findByDate(tuesday).orElseThrow().getRecipe().getId());
@@ -154,12 +185,12 @@ class WeeklyMealPlanServiceTest {
         assertEquals(unchanged.getId(), mealPlans.findByDate(sunday).orElseThrow().getId());
         assertEquals(List.of(monday, tuesday, thursday), mealPlans.savedInLastBatch.stream()
                 .map(MealPlanEntry::getDate).toList());
-        assertEquals(List.of(replaced.getId(), removed.getId(), portionChanged.getId()),
+        assertEquals(List.of(removed.getId()),
                 mealPlans.deletedInLastBatch);
         assertFalse(mealPlans.savedInLastBatch.stream()
                 .map(MealPlanEntry::getDate).anyMatch(sunday::equals));
-        assertNotEquals(replaced.getId(), mealPlans.findByDate(tuesday).orElseThrow().getId());
-        assertNotEquals(portionChanged.getId(), mealPlans.findByDate(thursday).orElseThrow().getId());
+        assertEquals(replaced.getId(), mealPlans.findByDate(tuesday).orElseThrow().getId());
+        assertEquals(portionChanged.getId(), mealPlans.findByDate(thursday).orElseThrow().getId());
     }
 
     private static Clock clock(LocalDate date) {
@@ -168,8 +199,12 @@ class WeeklyMealPlanServiceTest {
     }
 
     private static Recipe recipe(String name, int servings) {
+        return recipe(name, DishType.MAIN, servings);
+    }
+
+    private static Recipe recipe(String name, DishType dishType, int servings) {
         return new Recipe(name, servings, List.of(), List.of(),
-                List.of(new Taste("Herzhaft")));
+                List.of(new Taste("Herzhaft")), dishType);
     }
 
     private static final class InMemoryMealPlanRepository implements MealPlanRepository {
@@ -181,7 +216,7 @@ class WeeklyMealPlanServiceTest {
 
         @Override
         public void save(MealPlanEntry entry) {
-            entries.removeIf(existing -> existing.getDate().equals(entry.getDate()));
+            entries.removeIf(existing -> existing.getId().equals(entry.getId()));
             entries.add(entry);
         }
 
@@ -205,7 +240,8 @@ class WeeklyMealPlanServiceTest {
 
         @Override
         public Optional<MealPlanEntry> findByDate(LocalDate date) {
-            return entries.stream().filter(entry -> entry.getDate().equals(date)).findFirst();
+            return entries.stream().filter(entry -> entry.getDate().equals(date))
+                    .filter(entry -> entry.getMealRole() == MealRole.MAIN).findFirst();
         }
 
         @Override

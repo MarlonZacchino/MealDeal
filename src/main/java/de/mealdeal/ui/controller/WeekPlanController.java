@@ -1,10 +1,11 @@
 package de.mealdeal.ui.controller;
 
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.MealPlanEntry;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.service.MealPlanDay;
-import de.mealdeal.service.MealPlanDraft;
+import de.mealdeal.service.WeeklyMealPlanDayDraft;
 import de.mealdeal.service.WeeklyMealPlanService;
 import de.mealdeal.ui.navigation.NavigationAware;
 import de.mealdeal.ui.navigation.ViewNavigator;
@@ -31,10 +32,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 
-/** Renders the current week and keeps all local day edits until one shared save. */
+/** Renders editable MAIN and SIDE planning state for the current week. */
 public final class WeekPlanController implements NavigationAware {
 
     private static final System.Logger LOGGER =
@@ -45,20 +45,18 @@ public final class WeekPlanController implements NavigationAware {
     private static final DateTimeFormatter FULL_DATE =
             DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMAN);
     private static final StringConverter<Recipe> RECIPE_CONVERTER = new StringConverter<>() {
-        @Override
-        public String toString(Recipe recipe) {
-            return recipe == null ? "" : recipe.getName();
-        }
-
-        @Override
-        public Recipe fromString(String value) {
+        @Override public String toString(Recipe recipe) { return recipe == null ? "" : recipe.getName(); }
+        @Override public Recipe fromString(String value) {
             throw new UnsupportedOperationException("Recipe selection is not editable.");
         }
     };
 
     private final WeeklyMealPlanService mealPlanService;
-    private final Map<LocalDate, DayDraft> dayDrafts = new LinkedHashMap<>();
+    private final Map<LocalDate, MealPlanDay> loadedDays = new LinkedHashMap<>();
+    private final Map<LocalDate, WeeklyMealPlanDayDraft> dayDrafts = new LinkedHashMap<>();
     private Consumer<Recipe> detailNavigation;
+    private List<Recipe> mainRecipes = List.of();
+    private List<Recipe> sideRecipes = List.of();
 
     @FXML private Label weekRangeLabel;
     @FXML private VBox dayCardsContainer;
@@ -90,18 +88,14 @@ public final class WeekPlanController implements NavigationAware {
         detailNavigation = configuredNavigator::navigateToRecipeDetail;
     }
 
-    @FXML
-    private void initialize() {
-        refresh();
-    }
+    @FXML private void initialize() { refresh(); }
 
-    /** Reloads recipes and all current-week entries from their repositories. */
-    @FXML
-    public void refresh() {
+    /** Reloads recipes and the persisted state for the current calendar week. */
+    @FXML public void refresh() {
         try {
-            List<Recipe> recipes = mealPlanService.loadAvailableRecipes();
-            List<MealPlanDay> days = mealPlanService.loadCurrentWeek();
-            renderWeek(days, recipes);
+            mainRecipes = mealPlanService.loadAvailableRecipes(DishType.MAIN);
+            sideRecipes = mealPlanService.loadAvailableRecipes(DishType.SIDE);
+            renderWeek(mealPlanService.loadCurrentWeek());
             showContent();
             clearSaveMessage();
         } catch (PersistenceException exception) {
@@ -110,12 +104,10 @@ public final class WeekPlanController implements NavigationAware {
         }
     }
 
-    @FXML
-    private void saveChanges() {
+    @FXML private void saveChanges() {
         try {
             mealPlanService.saveChanges(dayDrafts.values().stream()
-                    .map(DayDraft::toMealPlanDraft)
-                    .toList());
+                    .map(WeeklyMealPlanDayDraft::toSaveSnapshot).toList());
             refresh();
             showSaveMessage("Änderungen wurden gespeichert.", false);
         } catch (IllegalArgumentException | PersistenceException exception) {
@@ -130,21 +122,24 @@ public final class WeekPlanController implements NavigationAware {
         detailNavigation.accept(Objects.requireNonNull(recipe, "Recipe must not be null."));
     }
 
-    private void renderWeek(List<MealPlanDay> days, List<Recipe> recipes) {
+    private void renderWeek(List<MealPlanDay> days) {
         if (days.size() != 7) {
             throw new IllegalStateException("Current week must contain seven days.");
         }
+        loadedDays.clear();
         dayDrafts.clear();
-        days.forEach(day -> dayDrafts.put(day.date(), new DayDraft(day.date(), day.entry().orElse(null))));
+        for (MealPlanDay day : days) {
+            loadedDays.put(day.date(), day);
+            dayDrafts.put(day.date(), new WeeklyMealPlanDayDraft(day));
+        }
         weekRangeLabel.setText(FULL_DATE.format(days.getFirst().date())
                 + " – " + FULL_DATE.format(days.getLast().date()));
-        dayCardsContainer.getChildren().setAll(days.stream()
-                .map(day -> createDayCard(day, recipes, dayDrafts.get(day.date())))
-                .toList());
+        dayCardsContainer.getChildren().setAll(days.stream().map(this::createDayCard).toList());
         updateSaveButtonState();
     }
 
-    private VBox createDayCard(MealPlanDay day, List<Recipe> recipes, DayDraft draft) {
+    private VBox createDayCard(MealPlanDay day) {
+        WeeklyMealPlanDayDraft draft = dayDrafts.get(day.date());
         VBox card = new VBox(16);
         card.setMaxWidth(Double.MAX_VALUE);
         card.getStyleClass().addAll("card", "meal-plan-day-card");
@@ -152,14 +147,14 @@ public final class WeekPlanController implements NavigationAware {
             card.getStyleClass().add("meal-plan-day-today");
         }
 
-        Label localChangeNote = new Label();
-        localChangeNote.setManaged(false);
-        localChangeNote.setVisible(false);
+        Label localChangeNote = new Label(draft.isChanged()
+                ? "Ungespeicherte Änderungen." : "");
+        localChangeNote.setManaged(draft.isChanged());
+        localChangeNote.setVisible(draft.isChanged());
         localChangeNote.setWrapText(true);
         localChangeNote.getStyleClass().add("meal-plan-unsaved-note");
-
-        card.getChildren().addAll(dayHeader(day), planState(draft.original(), recipes.isEmpty()),
-                planningControls(recipes, draft, localChangeNote), localChangeNote);
+        card.getChildren().addAll(dayHeader(day), mainSection(day.date(), draft),
+                sideSection(day.date(), draft), localChangeNote);
         return card;
     }
 
@@ -168,9 +163,7 @@ public final class WeekPlanController implements NavigationAware {
         dayName.getStyleClass().add("meal-plan-day-name");
         Label date = new Label(FULL_DATE.format(day.date()));
         date.getStyleClass().add("meal-plan-date");
-        VBox dateBlock = new VBox(3, dayName, date);
-
-        HBox header = new HBox(14, dateBlock);
+        HBox header = new HBox(14, new VBox(3, dayName, date));
         header.setAlignment(Pos.CENTER_LEFT);
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -183,112 +176,158 @@ public final class WeekPlanController implements NavigationAware {
         return header;
     }
 
-    private VBox planState(MealPlanEntry plannedEntry, boolean noRecipesAvailable) {
-        if (plannedEntry == null) {
-            Label emptyTitle = new Label("Noch nichts geplant.");
-            emptyTitle.getStyleClass().add("meal-plan-empty-title");
-            Label instruction = new Label(noRecipesAvailable
-                    ? "Lege zuerst ein Gericht an, bevor du diesen Tag planst."
-                    : "Wähle ein Gericht und die gewünschte Personenanzahl aus.");
-            instruction.setWrapText(true);
-            instruction.getStyleClass().add("card-text");
-            return new VBox(5, emptyTitle, instruction);
+    private VBox mainSection(LocalDate date, WeeklyMealPlanDayDraft draft) {
+        VBox section = new VBox(10);
+        section.getStyleClass().add("meal-plan-role-section");
+        Label title = new Label("Hauptgericht");
+        title.getStyleClass().add("section-title");
+        MealPlanEntry entry = draft.getMainEntry().orElse(null);
+        if (entry == null) {
+            Label empty = new Label("Kein Hauptgericht geplant.");
+            empty.getStyleClass().add("card-text");
+            section.getChildren().add(empty);
+        } else {
+            section.getChildren().add(recipeLink(entry));
         }
 
-        Recipe recipe = plannedEntry.getRecipe();
-        Button recipeLink = new Button(recipe.getName());
-        recipeLink.setAccessibleText("Details zu " + recipe.getName() + " öffnen");
-        recipeLink.setOnAction(ignored -> openRecipe(recipe));
-        recipeLink.getStyleClass().add("meal-plan-recipe-link");
-        Label servings = new Label("Geplant für " + servingText(plannedEntry.getServingCount()));
-        servings.getStyleClass().add("card-text");
-        return new VBox(5, recipeLink, servings);
-    }
-
-    private FlowPane planningControls(List<Recipe> recipes, DayDraft draft,
-                                      Label localChangeNote) {
-        ComboBox<Recipe> recipeSelection = new ComboBox<>(
-                FXCollections.observableArrayList(recipes));
-        recipeSelection.setConverter(RECIPE_CONVERTER);
-        recipeSelection.setPromptText(recipes.isEmpty()
-                ? "Keine Gerichte verfügbar" : "Gericht auswählen");
-        recipeSelection.setDisable(recipes.isEmpty());
-        recipeSelection.setAccessibleText("Gericht für diesen Tag auswählen");
-        recipeSelection.getStyleClass().add("meal-plan-recipe-picker");
-        recipeSelection.setValue(draft.recipe());
-
-        Spinner<Integer> servingSelection = new Spinner<>();
-        servingSelection.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                1, MAX_SERVING_COUNT, draft.servingCount()));
-        servingSelection.setEditable(false);
-        servingSelection.setDisable(recipes.isEmpty());
-        servingSelection.setAccessibleText("Geplante Personenanzahl");
-        servingSelection.getStyleClass().add("meal-plan-serving-spinner");
-
-        Button remove = draft.original() == null ? null : new Button();
-        recipeSelection.valueProperty().addListener((ignored, previous, selected) -> {
-            if (draft.original() == null && previous == null && selected != null) {
-                servingSelection.getValueFactory().setValue(selected.getStandardServingCount());
+        ComboBox<Recipe> selection = recipeBox(mainRecipes, "Hauptgericht auswählen");
+        selection.setValue(entry == null ? null : entry.getRecipe());
+        Spinner<Integer> servings = servingSpinner(entry == null
+                ? Recipe.DEFAULT_SERVING_COUNT : entry.getServingCount());
+        servings.setDisable(entry == null);
+        selection.valueProperty().addListener((ignored, previous, selected) -> {
+            draft.setMainRecipe(selected);
+            rerenderDay(date);
+        });
+        servings.valueProperty().addListener((ignored, previous, selected) -> {
+            if (draft.getMainEntry().isPresent()) {
+                draft.setMainServingCount(selected);
+                rerenderDay(date);
             }
-            draft.setRecipe(selected);
-            updateLocalChangeStatus(draft, localChangeNote, remove);
-            updateSaveButtonState();
-        });
-        servingSelection.valueProperty().addListener((ignored, previous, selected) -> {
-            draft.setServingCount(selected);
-            updateLocalChangeStatus(draft, localChangeNote, remove);
-            updateSaveButtonState();
         });
 
-        if (remove != null) {
+        FlowPane controls = controls(labeledControl("Hauptgericht", selection),
+                labeledControl("Personen", servings));
+        if (entry != null) {
+            Button remove = new Button("Hauptgericht entfernen");
             remove.getStyleClass().add("danger-button");
             remove.setOnAction(ignored -> {
-                if (draft.recipe() == null) {
-                    recipeSelection.setValue(draft.original().getRecipe());
-                    servingSelection.getValueFactory().setValue(
-                            draft.original().getServingCount());
-                } else {
-                    recipeSelection.setValue(null);
-                }
+                draft.setMainRecipe(null);
+                rerenderDay(date);
             });
-        }
-
-        FlowPane controls = new FlowPane(12, 12);
-        controls.setAlignment(Pos.CENTER_LEFT);
-        controls.getStyleClass().add("meal-plan-controls");
-        controls.getChildren().addAll(labeledControl("Gericht", recipeSelection),
-                labeledControl("Personen", servingSelection));
-        if (remove != null) {
             controls.getChildren().add(remove);
         }
-        updateLocalChangeStatus(draft, localChangeNote, remove);
-        return controls;
+        section.getChildren().add(controls);
+        return section;
     }
 
-    private void updateLocalChangeStatus(DayDraft draft, Label note, Button remove) {
-        if (!draft.isChanged()) {
-            note.setManaged(false);
-            note.setVisible(false);
-            if (remove != null) {
-                remove.setText("Planung entfernen");
-            }
-            return;
-        }
-        if (draft.recipe() == null) {
-            note.setText("Planung wird beim Speichern entfernt.");
-            if (remove != null) {
-                remove.setText("Entfernen rückgängig");
-            }
-        } else if (draft.original() == null) {
-            note.setText("Neue Planung wird beim Speichern angelegt.");
+    private VBox sideSection(LocalDate date, WeeklyMealPlanDayDraft draft) {
+        VBox section = new VBox(10);
+        section.getStyleClass().add("meal-plan-role-section");
+        HBox header = new HBox();
+        header.setAlignment(Pos.CENTER_LEFT);
+        Label title = new Label("Beilagen");
+        title.getStyleClass().add("section-title");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Button add = new Button("Beilage hinzufügen");
+        add.getStyleClass().add("secondary-button");
+        add.setDisable(sideRecipes.isEmpty());
+        add.setOnAction(ignored -> {
+            draft.addSide(sideRecipes.getFirst());
+            rerenderDay(date);
+        });
+        header.getChildren().addAll(title, spacer, add);
+        section.getChildren().add(header);
+
+        if (draft.getSideEntries().isEmpty()) {
+            Label empty = new Label(sideRecipes.isEmpty()
+                    ? "Keine Beilagen-Rezepte verfügbar." : "Keine Beilage geplant.");
+            empty.getStyleClass().add("card-text");
+            section.getChildren().add(empty);
         } else {
-            note.setText("Änderungen werden beim Speichern übernommen.");
-            if (remove != null) {
-                remove.setText("Planung entfernen");
+            VBox rows = new VBox(10);
+            for (int index = 0; index < draft.getSideEntries().size(); index++) {
+                rows.getChildren().add(sideRow(date, draft, index));
             }
+            section.getChildren().add(rows);
         }
-        note.setManaged(true);
-        note.setVisible(true);
+        return section;
+    }
+
+    private VBox sideRow(LocalDate date, WeeklyMealPlanDayDraft draft, int index) {
+        MealPlanEntry side = draft.getSideEntries().get(index);
+        ComboBox<Recipe> selection = recipeBox(sideRecipes, "Beilage auswählen");
+        selection.setValue(side.getRecipe());
+        Spinner<Integer> servings = servingSpinner(side.getServingCount());
+        selection.valueProperty().addListener((ignored, previous, selected) -> {
+            if (selected != null) {
+                draft.setSideRecipe(index, selected);
+                rerenderDay(date);
+            }
+        });
+        servings.valueProperty().addListener((ignored, previous, selected) -> {
+            draft.setSideServingCount(index, selected);
+            rerenderDay(date);
+        });
+        Button up = new Button("↑");
+        up.setDisable(index == 0);
+        up.setAccessibleText("Beilage nach oben verschieben");
+        up.setOnAction(ignored -> { draft.moveSideUp(index); rerenderDay(date); });
+        Button down = new Button("↓");
+        down.setDisable(index == draft.getSideEntries().size() - 1);
+        down.setAccessibleText("Beilage nach unten verschieben");
+        down.setOnAction(ignored -> { draft.moveSideDown(index); rerenderDay(date); });
+        Button remove = new Button("Entfernen");
+        remove.getStyleClass().add("danger-button");
+        remove.setOnAction(ignored -> { draft.removeSide(index); rerenderDay(date); });
+
+        FlowPane controls = controls(labeledControl("Beilage", selection),
+                labeledControl("Personen", servings), up, down, remove);
+        VBox row = new VBox(7, recipeLink(side), controls);
+        row.getStyleClass().add("meal-plan-side-row");
+        return row;
+    }
+
+    private void rerenderDay(LocalDate date) {
+        MealPlanDay day = loadedDays.get(date);
+        int index = new java.util.ArrayList<>(loadedDays.keySet()).indexOf(date);
+        dayCardsContainer.getChildren().set(index, createDayCard(day));
+        updateSaveButtonState();
+    }
+
+    private ComboBox<Recipe> recipeBox(List<Recipe> recipes, String promptText) {
+        ComboBox<Recipe> selection = new ComboBox<>(FXCollections.observableArrayList(recipes));
+        selection.setConverter(RECIPE_CONVERTER);
+        selection.setPromptText(recipes.isEmpty() ? "Keine Gerichte verfügbar" : promptText);
+        selection.setDisable(recipes.isEmpty());
+        selection.getStyleClass().add("meal-plan-recipe-picker");
+        return selection;
+    }
+
+    private static Spinner<Integer> servingSpinner(int value) {
+        Spinner<Integer> spinner = new Spinner<>();
+        spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                1, MAX_SERVING_COUNT, value));
+        spinner.setEditable(false);
+        spinner.getStyleClass().add("meal-plan-serving-spinner");
+        return spinner;
+    }
+
+    private Button recipeLink(MealPlanEntry entry) {
+        Button link = new Button(entry.getRecipe().getName());
+        link.setAccessibleText("Details zu " + entry.getRecipe().getName() + " öffnen");
+        link.setOnAction(ignored -> openRecipe(entry.getRecipe()));
+        link.getStyleClass().add("meal-plan-recipe-link");
+        return link;
+    }
+
+    private static FlowPane controls(Node... nodes) {
+        FlowPane controls = new FlowPane(12, 10);
+        controls.setAlignment(Pos.CENTER_LEFT);
+        controls.getStyleClass().add("meal-plan-controls");
+        controls.getChildren().addAll(nodes);
+        return controls;
     }
 
     private static VBox labeledControl(String text, Node control) {
@@ -298,32 +337,25 @@ public final class WeekPlanController implements NavigationAware {
     }
 
     private void updateSaveButtonState() {
-        saveChangesButton.setDisable(dayDrafts.values().stream().noneMatch(DayDraft::isChanged));
+        saveChangesButton.setDisable(dayDrafts.values().stream()
+                .noneMatch(WeeklyMealPlanDayDraft::isChanged));
     }
 
     private void showContent() {
-        dayCardsContainer.setManaged(true);
-        dayCardsContainer.setVisible(true);
-        weekSaveBar.setManaged(true);
-        weekSaveBar.setVisible(true);
-        errorState.setManaged(false);
-        errorState.setVisible(false);
+        dayCardsContainer.setManaged(true); dayCardsContainer.setVisible(true);
+        weekSaveBar.setManaged(true); weekSaveBar.setVisible(true);
+        errorState.setManaged(false); errorState.setVisible(false);
     }
 
     private void showLoadError() {
-        dayCardsContainer.setManaged(false);
-        dayCardsContainer.setVisible(false);
-        weekSaveBar.setManaged(false);
-        weekSaveBar.setVisible(false);
-        errorMessage.setText(
-                "Die aktuelle Woche konnte nicht geladen werden. Bitte versuche es erneut.");
-        errorState.setManaged(true);
-        errorState.setVisible(true);
+        dayCardsContainer.setManaged(false); dayCardsContainer.setVisible(false);
+        weekSaveBar.setManaged(false); weekSaveBar.setVisible(false);
+        errorMessage.setText("Die aktuelle Woche konnte nicht geladen werden. Bitte versuche es erneut.");
+        errorState.setManaged(true); errorState.setVisible(true);
     }
 
     private void clearSaveMessage() {
-        saveChangesMessage.setManaged(false);
-        saveChangesMessage.setVisible(false);
+        saveChangesMessage.setManaged(false); saveChangesMessage.setVisible(false);
         saveChangesMessage.setText("");
     }
 
@@ -331,49 +363,11 @@ public final class WeekPlanController implements NavigationAware {
         saveChangesMessage.setText(message);
         saveChangesMessage.getStyleClass().removeAll("form-error", "form-message");
         saveChangesMessage.getStyleClass().add(error ? "form-error" : "form-message");
-        saveChangesMessage.setManaged(true);
-        saveChangesMessage.setVisible(true);
-    }
-
-    private static String servingText(int servingCount) {
-        return servingCount + (servingCount == 1 ? " Person" : " Personen");
+        saveChangesMessage.setManaged(true); saveChangesMessage.setVisible(true);
     }
 
     private static String titleCase(String value) {
-        if (value.isEmpty()) {
-            return value;
-        }
-        return value.substring(0, 1).toUpperCase(Locale.GERMAN) + value.substring(1);
-    }
-
-    private static final class DayDraft {
-        private final LocalDate date;
-        private final MealPlanEntry original;
-        private Recipe recipe;
-        private int servingCount;
-
-        private DayDraft(LocalDate date, MealPlanEntry original) {
-            this.date = date;
-            this.original = original;
-            recipe = original == null ? null : original.getRecipe();
-            servingCount = original == null ? Recipe.DEFAULT_SERVING_COUNT
-                    : original.getServingCount();
-        }
-
-        private MealPlanEntry original() { return original; }
-        private Recipe recipe() { return recipe; }
-        private void setRecipe(Recipe recipe) { this.recipe = recipe; }
-        private int servingCount() { return servingCount; }
-        private void setServingCount(int servingCount) { this.servingCount = servingCount; }
-
-        private boolean isChanged() {
-            return original == null ? recipe != null : recipe == null
-                    || !original.getRecipe().getId().equals(recipe.getId())
-                    || original.getServingCount() != servingCount;
-        }
-
-        private MealPlanDraft toMealPlanDraft() {
-            return new MealPlanDraft(date, Optional.ofNullable(recipe), servingCount);
-        }
+        return value.isEmpty() ? value
+                : value.substring(0, 1).toUpperCase(Locale.GERMAN) + value.substring(1);
     }
 }

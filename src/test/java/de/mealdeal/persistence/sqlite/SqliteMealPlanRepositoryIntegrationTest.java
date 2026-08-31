@@ -151,6 +151,28 @@ class SqliteMealPlanRepositoryIntegrationTest {
     }
 
     @Test
+    void updatesAndReordersPersistedSidesWithoutChangingTheirUuids() {
+        LocalDate date = LocalDate.of(2026, 9, 1);
+        MealPlanEntry first = new MealPlanEntry(date, breadRecipe, 2, MealRole.SIDE, 0);
+        MealPlanEntry second = new MealPlanEntry(date, saladRecipe, 3, MealRole.SIDE, 1);
+        mealPlanRepository.applyChanges(List.of(first, second), List.of());
+
+        MealPlanEntry movedFirst = new MealPlanEntry(first.getId(), date, saladRecipe,
+                5, MealRole.SIDE, 1);
+        MealPlanEntry movedSecond = new MealPlanEntry(second.getId(), date, breadRecipe,
+                3, MealRole.SIDE, 0);
+        mealPlanRepository.applyChanges(List.of(movedFirst, movedSecond), List.of());
+
+        List<MealPlanEntry> loaded = mealPlanRepository.findBetween(date, date);
+        assertEquals(List.of(second.getId(), first.getId()), loaded.stream()
+                .map(MealPlanEntry::getId).toList());
+        assertEquals(List.of(0, 1), loaded.stream().map(MealPlanEntry::getPosition).toList());
+        assertEquals(List.of(3, 5), loaded.stream().map(MealPlanEntry::getServingCount).toList());
+        assertEquals(List.of(breadRecipe.getId(), saladRecipe.getId()), loaded.stream()
+                .map(entry -> entry.getRecipe().getId()).toList());
+    }
+
+    @Test
     void deletesEntryAndReportsUnknownId() {
         MealPlanEntry entry = new MealPlanEntry(LocalDate.of(2026, 9, 1), pastaRecipe, 2);
         mealPlanRepository.save(entry);

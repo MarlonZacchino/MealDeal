@@ -351,6 +351,25 @@
     -fx-padding: 16px 18px;
 }
 
+.meal-plan-role-section {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 12px;
+    -fx-padding: 18px 20px;
+}
+
+.meal-plan-side-row {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 10px;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 10px;
+    -fx-padding: 14px 16px;
+}
+
+.meal-plan-role-section .meal-plan-controls {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}
+
 .meal-plan-recipe-picker {
     -fx-pref-width: 340px;
 }

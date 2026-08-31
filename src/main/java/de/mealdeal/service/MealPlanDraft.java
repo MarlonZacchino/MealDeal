@@ -1,35 +1,40 @@
 package de.mealdeal.service;
 
-import de.mealdeal.domain.Recipe;
+import de.mealdeal.domain.MealPlanEntry;
+import de.mealdeal.domain.MealRole;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
  * The locally selected state of one day before a weekly plan is saved.
  *
- * <p>An empty recipe represents an intentionally unplanned day. The draft stays
- * independent from JavaFX so other callers can use the same batch-save use case.</p>
+ * <p>The draft stays independent from JavaFX so other callers can use the same
+ * atomic batch-save use case.</p>
  */
-public record MealPlanDraft(LocalDate date, Optional<Recipe> recipe, int servingCount) {
+public record MealPlanDraft(LocalDate date, Optional<MealPlanEntry> mainEntry,
+                            List<MealPlanEntry> sideEntries) {
 
     public MealPlanDraft {
         Objects.requireNonNull(date, "Meal plan date must not be null.");
-        Objects.requireNonNull(recipe, "Recipe selection must not be null.");
-        if (servingCount <= 0) {
-            throw new IllegalArgumentException("Serving count must be positive.");
+        Objects.requireNonNull(mainEntry, "Main draft entry must not be null.");
+        sideEntries = List.copyOf(Objects.requireNonNull(sideEntries,
+                "Side draft entries must not be null."));
+        mainEntry.ifPresent(entry -> requireEntry(entry, date, MealRole.MAIN, 0));
+        for (int index = 0; index < sideEntries.size(); index++) {
+            requireEntry(sideEntries.get(index), date, MealRole.SIDE, index);
         }
     }
 
-    /** Creates a draft that adds or keeps a recipe for its date. */
-    public static MealPlanDraft planned(LocalDate date, Recipe recipe, int servingCount) {
-        return new MealPlanDraft(date, Optional.of(Objects.requireNonNull(
-                recipe, "Recipe must not be null.")), servingCount);
+    private static void requireEntry(MealPlanEntry entry, LocalDate date, MealRole role,
+                                     int position) {
+        Objects.requireNonNull(entry, "Draft entry must not be null.");
+        if (!entry.getDate().equals(date) || entry.getMealRole() != role
+                || entry.getPosition() != position) {
+            throw new IllegalArgumentException("Meal plan draft entry has an invalid role or position.");
+        }
     }
 
-    /** Creates a draft that leaves its date without a plan. */
-    public static MealPlanDraft unplanned(LocalDate date) {
-        return new MealPlanDraft(date, Optional.empty(), 1);
-    }
 }

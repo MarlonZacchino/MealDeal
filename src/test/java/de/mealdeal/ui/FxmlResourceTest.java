@@ -146,10 +146,13 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:controller=\"de.mealdeal.ui.controller.WeekPlanController\""));
         assertTrue(fxml.contains("fx:id=\"weekRangeLabel\""));
         assertTrue(fxml.contains("fx:id=\"dayCardsContainer\""));
+        assertTrue(fxml.contains("Änderungen speichern"));
         assertTrue(fxml.contains("fx:id=\"errorState\""));
         assertTrue(fxml.contains("onAction=\"#refresh\""));
         assertTrue(css.contains(".meal-plan-day-today"));
         assertTrue(css.contains(".meal-plan-controls"));
+        assertTrue(css.contains(".meal-plan-role-section"));
+        assertTrue(css.contains(".meal-plan-side-row"));
     }
 
     @Test
