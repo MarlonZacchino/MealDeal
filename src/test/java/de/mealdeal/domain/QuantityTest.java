@@ -33,7 +33,8 @@ class QuantityTest {
                 Arguments.of("500", Unit.GRAM, "1", Unit.KILOGRAM, "1500"),
                 Arguments.of("1", Unit.KILOGRAM, "500", Unit.GRAM, "1.5"),
                 Arguments.of("500", Unit.MILLILITER, "1", Unit.LITER, "1500"),
-                Arguments.of("2", Unit.PIECE, "3", Unit.PIECE, "5")
+                Arguments.of("2", Unit.PIECE, "3", Unit.PIECE, "5"),
+                Arguments.of("2", Unit.SLICE, "3", Unit.SLICE, "5")
         );
     }
 
@@ -50,6 +51,7 @@ class QuantityTest {
         return Stream.of(
                 Arguments.of(Unit.GRAM, Unit.LITER),
                 Arguments.of(Unit.PIECE, Unit.GRAM),
+                Arguments.of(Unit.SLICE, Unit.PIECE),
                 Arguments.of(Unit.TABLESPOON, Unit.TEASPOON)
         );
     }

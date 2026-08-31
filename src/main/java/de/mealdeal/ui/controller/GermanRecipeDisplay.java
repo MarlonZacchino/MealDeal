@@ -13,7 +13,7 @@ final class GermanRecipeDisplay {
 
     static String quantity(BigDecimal amount, Unit unit) {
         Objects.requireNonNull(amount, "Amount must not be null.");
-        return decimal(amount) + " " + unit(unit);
+        return decimal(amount) + " " + unit(amount, unit);
     }
 
     static String decimal(BigDecimal amount) {
@@ -33,9 +33,18 @@ final class GermanRecipeDisplay {
             case MILLILITER -> "ml";
             case LITER -> "l";
             case PIECE -> "Stück";
+            case SLICE -> "Scheibe";
             case TABLESPOON -> "EL";
             case TEASPOON -> "TL";
             case PINCH -> "Prise";
         };
+    }
+
+    static String unit(BigDecimal amount, Unit unit) {
+        Objects.requireNonNull(amount, "Amount must not be null.");
+        if (unit == Unit.SLICE && amount.compareTo(BigDecimal.ONE) != 0) {
+            return "Scheiben";
+        }
+        return unit(unit);
     }
 }

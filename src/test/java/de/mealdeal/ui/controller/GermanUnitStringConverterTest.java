@@ -17,6 +17,7 @@ class GermanUnitStringConverterTest {
             "MILLILITER, ml",
             "LITER, l",
             "PIECE, Stück",
+            "SLICE, Scheibe",
             "TABLESPOON, EL",
             "TEASPOON, TL",
             "PINCH, Prise"

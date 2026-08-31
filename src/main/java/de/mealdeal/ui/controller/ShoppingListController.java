@@ -160,7 +160,8 @@ public final class ShoppingListController {
 
         Label amount = columnLabel(displayAmount(item.getQuantity().getAmount()),
                 "shopping-list-amount");
-        Label unit = columnLabel(displayUnit(item.getQuantity().getUnit()),
+        Label unit = columnLabel(displayUnit(item.getQuantity().getAmount(),
+                        item.getQuantity().getUnit()),
                 "shopping-list-unit");
 
         HBox row = new HBox(16, ingredient, amount, unit);
@@ -208,8 +209,8 @@ public final class ShoppingListController {
         return GermanRecipeDisplay.decimal(amount);
     }
 
-    static String displayUnit(Unit unit) {
-        return GermanRecipeDisplay.unit(unit);
+    static String displayUnit(BigDecimal amount, Unit unit) {
+        return GermanRecipeDisplay.unit(amount, unit);
     }
 
     private static String itemCountText(int itemCount) {

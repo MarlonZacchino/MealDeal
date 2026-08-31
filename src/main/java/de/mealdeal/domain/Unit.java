@@ -13,6 +13,7 @@ public enum Unit {
     MILLILITER("ml", UnitDimension.VOLUME),
     LITER("l", UnitDimension.VOLUME),
     PIECE("piece", UnitDimension.COUNT),
+    SLICE("slice", UnitDimension.COUNT),
     TABLESPOON("tbsp", UnitDimension.KITCHEN_MEASURE),
     TEASPOON("tsp", UnitDimension.KITCHEN_MEASURE),
     PINCH("pinch", UnitDimension.KITCHEN_MEASURE);

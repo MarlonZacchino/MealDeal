@@ -27,4 +27,11 @@ class GermanRecipeDisplayTest {
         assertEquals("2,5 EL", GermanRecipeDisplay.quantity(
                 new BigDecimal("2.500"), Unit.TABLESPOON));
     }
+
+    @Test
+    void displaysSlicesWithGermanSingularAndPlural() {
+        assertEquals("1 Scheibe", GermanRecipeDisplay.quantity(BigDecimal.ONE, Unit.SLICE));
+        assertEquals("2 Scheiben", GermanRecipeDisplay.quantity(
+                new BigDecimal("2"), Unit.SLICE));
+    }
 }

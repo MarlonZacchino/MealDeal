@@ -62,6 +62,9 @@ class ShoppingListControllerTest {
     void amountAndUnitUseGermanDisplay() {
         assertEquals("1250,5", ShoppingListController.displayAmount(
                 new BigDecimal("1250.500")));
-        assertEquals("Stück", ShoppingListController.displayUnit(Unit.PIECE));
+        assertEquals("Stück", ShoppingListController.displayUnit(BigDecimal.ONE, Unit.PIECE));
+        assertEquals("Scheibe", ShoppingListController.displayUnit(BigDecimal.ONE, Unit.SLICE));
+        assertEquals("Scheiben", ShoppingListController.displayUnit(
+                new BigDecimal("2"), Unit.SLICE));
     }
 }

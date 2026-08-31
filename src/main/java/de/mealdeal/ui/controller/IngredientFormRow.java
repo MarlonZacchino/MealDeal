@@ -41,7 +41,7 @@ final class IngredientFormRow {
         quantityInput.setPromptText("Menge");
         quantityInput.setPrefColumnCount(8);
         unitInput.setPromptText("Einheit");
-        unitInput.setItems(FXCollections.observableArrayList(Unit.values()));
+        unitInput.setItems(FXCollections.observableArrayList(availableUnits()));
         unitInput.setConverter(new GermanUnitStringConverter());
 
         removeButton.getStyleClass().add("danger-button");
@@ -77,6 +77,10 @@ final class IngredientFormRow {
 
     void setRemovalDisabled(boolean disabled) {
         removeButton.setDisable(disabled);
+    }
+
+    static List<Unit> availableUnits() {
+        return List.of(Unit.values());
     }
 
     private final class IngredientStringConverter extends StringConverter<Ingredient> {

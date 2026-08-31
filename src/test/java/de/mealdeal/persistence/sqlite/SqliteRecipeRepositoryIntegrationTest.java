@@ -73,6 +73,18 @@ class SqliteRecipeRepositoryIntegrationTest {
     }
 
     @Test
+    void savesAndLoadsSliceUnitByItsEnumName() {
+        Recipe recipe = new Recipe("Toast",
+                List.of(new RecipeIngredient(pasta, new BigDecimal("2"), Unit.SLICE)),
+                List.of(new RecipeStep(1, "Toast.")), List.of(savory));
+
+        recipeRepository.save(recipe);
+
+        assertEquals(Unit.SLICE, recipeRepository.findById(recipe.getId()).orElseThrow()
+                .getIngredients().getFirst().getUnit());
+    }
+
+    @Test
     void updatesRecipeAndReplacesAllDependentRows() {
         UUID recipeId = UUID.randomUUID();
         Recipe original = new Recipe(recipeId, "Pasta", 2,

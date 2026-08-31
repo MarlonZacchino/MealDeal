@@ -21,4 +21,10 @@ class UnitTest {
     void incompatibleUnitsHaveDifferentDimensions() {
         assertNotEquals(Unit.PIECE.getDimension(), Unit.GRAM.getDimension());
     }
+
+    @Test
+    void sliceSharesCountDimensionWithoutBeingEquivalentToPiece() {
+        assertEquals(UnitDimension.COUNT, Unit.SLICE.getDimension());
+        assertNotEquals(Unit.SLICE, Unit.PIECE);
+    }
 }

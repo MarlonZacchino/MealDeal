@@ -111,6 +111,7 @@ public final class ShoppingListService {
             case GRAM, KILOGRAM -> CompatibilityGroup.MASS;
             case MILLILITER, LITER -> CompatibilityGroup.VOLUME;
             case PIECE -> CompatibilityGroup.PIECE;
+            case SLICE -> CompatibilityGroup.SLICE;
             case TABLESPOON -> CompatibilityGroup.TABLESPOON;
             case TEASPOON -> CompatibilityGroup.TEASPOON;
             case PINCH -> CompatibilityGroup.PINCH;
@@ -121,6 +122,7 @@ public final class ShoppingListService {
         MASS,
         VOLUME,
         PIECE,
+        SLICE,
         TABLESPOON,
         TEASPOON,
         PINCH

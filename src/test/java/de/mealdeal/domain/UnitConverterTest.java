@@ -33,6 +33,7 @@ class UnitConverterTest {
                 Arguments.of("2.5", Unit.LITER, Unit.MILLILITER, "2500.0"),
                 Arguments.of("12.50", Unit.GRAM, Unit.GRAM, "12.50"),
                 Arguments.of("2", Unit.PIECE, Unit.PIECE, "2"),
+                Arguments.of("2", Unit.SLICE, Unit.SLICE, "2"),
                 Arguments.of("3", Unit.TABLESPOON, Unit.TABLESPOON, "3")
         );
     }
@@ -49,6 +50,8 @@ class UnitConverterTest {
                 Arguments.of(Unit.GRAM, Unit.LITER),
                 Arguments.of(Unit.GRAM, Unit.PIECE),
                 Arguments.of(Unit.PIECE, Unit.GRAM),
+                Arguments.of(Unit.SLICE, Unit.PIECE),
+                Arguments.of(Unit.PIECE, Unit.SLICE),
                 Arguments.of(Unit.TABLESPOON, Unit.TEASPOON),
                 Arguments.of(Unit.TABLESPOON, Unit.MILLILITER),
                 Arguments.of(Unit.PINCH, Unit.GRAM)

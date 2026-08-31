@@ -43,6 +43,18 @@ class RecipeScalerTest {
     }
 
     @Test
+    void scalesSliceQuantityWithoutChangingItsUnit() {
+        Recipe recipe = new Recipe("Toast", 2,
+                List.of(new RecipeIngredient(pasta, new BigDecimal("3"), Unit.SLICE)),
+                List.of(new RecipeStep(1, "Toast.")), List.of(new Taste("Savory")));
+
+        RecipeIngredient scaled = scaler.scale(recipe, 4).getFirst();
+
+        assertEquals(new BigDecimal("6"), scaled.getQuantity());
+        assertEquals(Unit.SLICE, scaled.getUnit());
+    }
+
+    @Test
     void scalesToOddServingCount() {
         assertScaledAmount(recipe(2, "500"), 5, "1250");
     }
