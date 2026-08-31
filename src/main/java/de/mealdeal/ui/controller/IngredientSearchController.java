@@ -26,6 +26,7 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
@@ -326,6 +327,9 @@ public final class IngredientSearchController implements NavigationAware {
 
     private void showResults(List<CombinedSearchResult> results) {
         resultsContainer.getChildren().clear();
+        resultsContainer.setAlignment(Pos.TOP_LEFT);
+        resultsContainer.setMaxHeight(Region.USE_PREF_SIZE);
+        VBox.setVgrow(resultsContainer, Priority.NEVER);
         if (results.isEmpty()) {
             setResultState(emptyState);
             return;
@@ -358,7 +362,9 @@ public final class IngredientSearchController implements NavigationAware {
         Button entry = new Button();
         entry.setGraphic(content);
         entry.setMaxWidth(Double.MAX_VALUE);
+        entry.setMaxHeight(Region.USE_PREF_SIZE);
         entry.setAlignment(Pos.CENTER_LEFT);
+        VBox.setVgrow(entry, Priority.NEVER);
         entry.setAccessibleText("Gericht " + recipe.getName() + " öffnen");
         entry.setOnAction(ignored -> openRecipe(recipe));
         entry.getStyleClass().add("search-result-item");

@@ -106,7 +106,8 @@
 
                 <VBox spacing="14.0">
                     <Label text="Ergebnisse" styleClass="section-title"/>
-                    <VBox fx:id="resultsContainer" managed="false" visible="false" spacing="12.0"/>
+                    <VBox fx:id="resultsContainer" alignment="TOP_LEFT" VBox.vgrow="NEVER"
+                          managed="false" visible="false" spacing="12.0"/>
 
                     <VBox fx:id="initialState" alignment="CENTER" spacing="8.0"
                           styleClass="card, wide-card, search-state-card">

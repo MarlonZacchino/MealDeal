@@ -61,6 +61,8 @@ class FxmlResourceTest {
             assertTrue(fxml.contains("fx:id=\"tasteRankingMode\""));
             assertTrue(fxml.contains("onAction=\"#resetFilters\""));
             assertTrue(fxml.contains("onAction=\"#search\""));
+            assertTrue(fxml.contains("fx:id=\"resultsContainer\" alignment=\"TOP_LEFT\""));
+            assertTrue(fxml.contains("VBox.vgrow=\"NEVER\""));
         }
     }
 
