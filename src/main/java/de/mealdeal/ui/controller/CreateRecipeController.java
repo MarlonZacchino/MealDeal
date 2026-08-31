@@ -1,6 +1,7 @@
 package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.Taste;
@@ -17,10 +18,12 @@ import de.mealdeal.ui.navigation.ViewType;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -55,6 +58,8 @@ public final class CreateRecipeController implements NavigationAware {
     private TextField nameField;
     @FXML
     private TextField servingCountField;
+    @FXML
+    private ComboBox<DishType> dishTypeBox;
     @FXML
     private TextField preparationTimeField;
     @FXML
@@ -94,6 +99,7 @@ public final class CreateRecipeController implements NavigationAware {
     @FXML
     private void initialize() {
         servingCountField.setText(RecipeFormService.DEFAULT_SERVING_COUNT);
+        configureDishTypeBox();
         addIngredientRow();
         loadReferenceData();
     }
@@ -110,6 +116,7 @@ public final class CreateRecipeController implements NavigationAware {
         subtitleLabel.setText("Passe Grunddaten, Zutaten, Geschmacksrichtungen und Zubereitung an.");
         nameField.setText(recipe.getName());
         servingCountField.setText(Integer.toString(recipe.getStandardServingCount()));
+        dishTypeBox.getSelectionModel().select(recipe.getDishType());
         preparationTimeField.setText(timeText(recipe.getPreparationTimeMinutes()));
         cookingTimeField.setText(timeText(recipe.getCookingTimeMinutes()));
         NutritionInfo nutrition = recipe.getNutritionInfo().orElse(null);
@@ -260,7 +267,7 @@ public final class CreateRecipeController implements NavigationAware {
         return new RecipeFormInput(nameField.getText(), servingCountField.getText(),
                 ingredients, tastes, steps, preparationTimeField.getText(),
                 cookingTimeField.getText(), caloriesField.getText(), proteinField.getText(),
-                carbohydratesField.getText(), fatField.getText());
+                carbohydratesField.getText(), fatField.getText(), dishTypeBox.getValue());
     }
 
     private void removeIngredientRow(IngredientFormRow row) {
@@ -294,6 +301,22 @@ public final class CreateRecipeController implements NavigationAware {
         checkBox.setSelected(selected);
         checkBox.getStyleClass().add("taste-option");
         tasteOptionsContainer.getChildren().add(checkBox);
+    }
+
+    private void configureDishTypeBox() {
+        dishTypeBox.getItems().setAll(DishType.values());
+        dishTypeBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(DishType dishType) {
+                return dishType == null ? "" : GermanRecipeDisplay.dishType(dishType);
+            }
+
+            @Override
+            public DishType fromString(String value) {
+                throw new UnsupportedOperationException("Dish type selection is not text-based.");
+            }
+        });
+        dishTypeBox.getSelectionModel().select(DishType.MAIN);
     }
 
     private CheckBox findTasteCheckBox(String name) {

@@ -92,6 +92,15 @@ public final class Recipe {
                 preparationTimeMinutes, cookingTimeMinutes, nutritionInfo, DishType.MAIN);
     }
 
+    /** Creates a recipe with optional data and its mandatory dish type. */
+    public Recipe(String name, int standardServingCount,
+                  List<RecipeIngredient> ingredients, List<RecipeStep> steps,
+                  List<Taste> tastes, Integer preparationTimeMinutes,
+                  Integer cookingTimeMinutes, NutritionInfo nutritionInfo, DishType dishType) {
+        this(UUID.randomUUID(), name, standardServingCount, ingredients, steps, tastes,
+                preparationTimeMinutes, cookingTimeMinutes, nutritionInfo, dishType);
+    }
+
     /** Creates a recipe with its mandatory dish type. */
     public Recipe(String name, int standardServingCount,
                   List<RecipeIngredient> ingredients, List<RecipeStep> steps,

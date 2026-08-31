@@ -21,6 +21,7 @@
                     <VBox spacing="5.0">
                         <Label fx:id="nameLabel" styleClass="page-title"/>
                         <Label fx:id="standardServingLabel" styleClass="page-subtitle"/>
+                        <Label fx:id="dishTypeLabel" styleClass="recipe-type-badge"/>
                     </VBox>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Button text="Löschen" onAction="#deleteRecipe" styleClass="danger-button"/>

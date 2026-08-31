@@ -2,6 +2,7 @@ package de.mealdeal.ui.form;
 
 import de.mealdeal.domain.Unit;
 import de.mealdeal.domain.Recipe;
+import de.mealdeal.domain.DishType;
 import de.mealdeal.persistence.sqlite.SqliteDatabase;
 import de.mealdeal.persistence.sqlite.SqliteIngredientRepository;
 import de.mealdeal.persistence.sqlite.SqliteRecipeRepository;
@@ -131,5 +132,26 @@ class RecipeFormServiceIntegrationTest {
                 List.of("Herzhaft"), List.of()));
 
         assertTrue(recipes.findById(created.getId()).orElseThrow().getSteps().isEmpty());
+    }
+
+    @Test
+    void persistsSelectedSideDishTypeThroughCreateAndEdit() {
+        SqliteDatabase database = new SqliteDatabase(temporaryDirectory.resolve("side-form.db"));
+        var ingredients = new SqliteIngredientRepository(database);
+        var tastes = new SqliteTasteRepository(database);
+        var recipes = new SqliteRecipeRepository(database);
+        RecipeFormService service = new RecipeFormService(recipes, ingredients, tastes);
+        RecipeFormInput sideInput = new RecipeFormInput("Knoblauchbrot", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.SLICE)),
+                List.of("Herzhaft"), List.of(), "", "", "", "", "", "",
+                DishType.SIDE);
+
+        Recipe created = service.createAndSave(sideInput);
+        Recipe updated = service.updateAndSave(created.getId(), sideInput);
+        Recipe loaded = recipes.findById(created.getId()).orElseThrow();
+
+        assertEquals(DishType.SIDE, created.getDishType());
+        assertEquals(DishType.SIDE, updated.getDishType());
+        assertEquals(DishType.SIDE, loaded.getDishType());
     }
 }

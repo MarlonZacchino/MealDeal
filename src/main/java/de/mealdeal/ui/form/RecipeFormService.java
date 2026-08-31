@@ -1,6 +1,7 @@
 package de.mealdeal.ui.form;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
@@ -90,11 +91,11 @@ public final class RecipeFormService {
                 ? new Recipe(validated.name(), validated.servingCount(),
                         recipeIngredients, steps, recipeTastes,
                         validated.preparationTimeMinutes(), validated.cookingTimeMinutes(),
-                        validated.nutritionInfo())
+                        validated.nutritionInfo(), validated.dishType())
                 : new Recipe(recipeId, validated.name(), validated.servingCount(),
                         recipeIngredients, steps, recipeTastes,
                         validated.preparationTimeMinutes(), validated.cookingTimeMinutes(),
-                        validated.nutritionInfo());
+                        validated.nutritionInfo(), validated.dishType());
         recipeRepository.save(recipe);
         return recipe;
     }
@@ -121,13 +122,17 @@ public final class RecipeFormService {
         BigDecimal carbohydrates = parseOptionalNonNegativeDecimal(
                 input.carbohydrateGrams(), "Kohlenhydrate", errors);
         BigDecimal fat = parseOptionalNonNegativeDecimal(input.fatGrams(), "Fett", errors);
+        DishType dishType = input.dishType();
+        if (dishType == null) {
+            errors.add("Bitte wähle einen Gerichtstyp aus.");
+        }
 
         if (!errors.isEmpty()) {
             throw new RecipeFormValidationException(errors);
         }
         return new ValidatedForm(name, servingCount, ingredients, tasteNames, steps,
                 preparationTime, cookingTime,
-                new NutritionInfo(calories, protein, carbohydrates, fat));
+                new NutritionInfo(calories, protein, carbohydrates, fat), dishType);
     }
 
     private static int parseServingCount(String input, List<String> errors) {
@@ -289,6 +294,7 @@ public final class RecipeFormService {
                                  List<String> stepDescriptions,
                                  Integer preparationTimeMinutes,
                                  Integer cookingTimeMinutes,
-                                 NutritionInfo nutritionInfo) {
+                                 NutritionInfo nutritionInfo,
+                                 DishType dishType) {
     }
 }

@@ -12,6 +12,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 import java.util.Comparator;
@@ -97,6 +99,14 @@ public final class RecipesController implements NavigationAware {
     private ToggleButton createRecipeEntry(Recipe recipe) {
         Label name = new Label(recipe.getName());
         name.getStyleClass().add("recipe-name");
+        name.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(name, Priority.ALWAYS);
+
+        Label dishType = new Label(GermanRecipeDisplay.dishType(recipe.getDishType()));
+        dishType.getStyleClass().add("recipe-type-badge");
+
+        HBox heading = new HBox(12, name, dishType);
+        heading.setAlignment(Pos.CENTER_LEFT);
 
         Label facts = new Label(recipeFacts(recipe));
         facts.getStyleClass().add("recipe-facts");
@@ -106,7 +116,7 @@ public final class RecipesController implements NavigationAware {
         tastes.getStyleClass().add("recipe-tastes");
         tastes.setWrapText(true);
 
-        VBox summary = new VBox(6, name, facts, tastes);
+        VBox summary = new VBox(6, heading, facts, tastes);
         summary.setAlignment(Pos.CENTER_LEFT);
         summary.setMaxHeight(Region.USE_PREF_SIZE);
 

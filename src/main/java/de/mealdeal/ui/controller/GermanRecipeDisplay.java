@@ -1,6 +1,7 @@
 package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.Unit;
+import de.mealdeal.domain.DishType;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -57,5 +58,13 @@ final class GermanRecipeDisplay {
         return remainingMinutes == 0
                 ? hours + " Std."
                 : hours + " Std. " + remainingMinutes + " Min.";
+    }
+
+    static String dishType(DishType dishType) {
+        Objects.requireNonNull(dishType, "Dish type must not be null.");
+        return switch (dishType) {
+            case MAIN -> "Hauptgericht";
+            case SIDE -> "Beilage";
+        };
     }
 }

@@ -1,6 +1,7 @@
 package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.Unit;
+import de.mealdeal.domain.DishType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -41,5 +42,11 @@ class GermanRecipeDisplayTest {
         assertEquals("1 Std. 20 Min.", GermanRecipeDisplay.duration(80));
         assertEquals("2 Std.", GermanRecipeDisplay.duration(120));
         assertEquals("71,5", GermanRecipeDisplay.decimal(new BigDecimal("71.5")));
+    }
+
+    @Test
+    void displaysBothDishTypesInGermanForListAndDetailViews() {
+        assertEquals("Hauptgericht", GermanRecipeDisplay.dishType(DishType.MAIN));
+        assertEquals("Beilage", GermanRecipeDisplay.dishType(DishType.SIDE));
     }
 }

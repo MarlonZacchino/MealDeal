@@ -482,6 +482,15 @@
     -fx-text-fill: -md-text-muted;
 }
 
+.recipe-type-badge {
+    -fx-background-color: -md-accent-soft;
+    -fx-background-radius: 999px;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 5px 10px;
+    -fx-text-fill: -md-accent;
+}
+
 .detail-time-name {
     -fx-min-width: 180px;
     -fx-font-size: 16px;
@@ -512,6 +521,10 @@
 
 .serving-field {
     -fx-min-width: 210px;
+}
+
+.dish-type-field {
+    -fx-min-width: 190px;
 }
 
 .form-row {

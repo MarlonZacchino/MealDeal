@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
@@ -37,6 +38,10 @@
                             <Label text="Standard-Personenanzahl" styleClass="form-label"/>
                             <TextField fx:id="servingCountField" promptText="2"
                                        prefColumnCount="8"/>
+                        </VBox>
+                        <VBox spacing="7.0" styleClass="form-field, dish-type-field">
+                            <Label text="Gerichtstyp" styleClass="form-label"/>
+                            <ComboBox fx:id="dishTypeBox" prefWidth="190.0"/>
                         </VBox>
                     </HBox>
                     <VBox spacing="7.0">

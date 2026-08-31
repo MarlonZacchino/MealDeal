@@ -1,5 +1,7 @@
 package de.mealdeal.ui.form;
 
+import de.mealdeal.domain.DishType;
+
 import java.util.List;
 
 /** JavaFX-independent snapshot of all values in the create-recipe form. */
@@ -14,7 +16,8 @@ public record RecipeFormInput(
         String caloriesKcal,
         String proteinGrams,
         String carbohydrateGrams,
-        String fatGrams) {
+        String fatGrams,
+        DishType dishType) {
 
     public RecipeFormInput {
         ingredients = ingredients == null ? List.of() : List.copyOf(ingredients);
@@ -27,7 +30,7 @@ public record RecipeFormInput(
                            List<IngredientFormInput> ingredients, List<String> tasteNames,
                            List<String> stepDescriptions) {
         this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, DishType.MAIN);
     }
 
     /** Creates an input with optional time values but without nutrition values. */
@@ -36,6 +39,18 @@ public record RecipeFormInput(
                            List<String> stepDescriptions, String preparationTimeMinutes,
                            String cookingTimeMinutes) {
         this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
-                preparationTimeMinutes, cookingTimeMinutes, null, null, null, null);
+                preparationTimeMinutes, cookingTimeMinutes, null, null, null, null,
+                DishType.MAIN);
+    }
+
+    /** Creates an input with optional times and nutrition values, defaulting to MAIN. */
+    public RecipeFormInput(String name, String standardServingCount,
+                           List<IngredientFormInput> ingredients, List<String> tasteNames,
+                           List<String> stepDescriptions, String preparationTimeMinutes,
+                           String cookingTimeMinutes, String caloriesKcal, String proteinGrams,
+                           String carbohydrateGrams, String fatGrams) {
+        this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
+                preparationTimeMinutes, cookingTimeMinutes, caloriesKcal, proteinGrams,
+                carbohydrateGrams, fatGrams, DishType.MAIN);
     }
 }

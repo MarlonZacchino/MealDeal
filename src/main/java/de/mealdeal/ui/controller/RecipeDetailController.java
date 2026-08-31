@@ -42,6 +42,8 @@ public final class RecipeDetailController implements NavigationAware {
     @FXML
     private Label standardServingLabel;
     @FXML
+    private Label dishTypeLabel;
+    @FXML
     private Label tastesLabel;
     @FXML
     private Spinner<Integer> servingSpinner;
@@ -78,6 +80,7 @@ public final class RecipeDetailController implements NavigationAware {
         nameLabel.setText(recipe.getName());
         standardServingLabel.setText("Standard: "
                 + servingText(recipe.getStandardServingCount()));
+        dishTypeLabel.setText(GermanRecipeDisplay.dishType(recipe.getDishType()));
         tastesLabel.setText(recipe.getTastes().stream()
                 .map(taste -> taste.getName())
                 .sorted(String.CASE_INSENSITIVE_ORDER)

@@ -81,6 +81,7 @@ class FxmlResourceTest {
             assertTrue(fxml.contains("fx:id=\"timesContainer\""));
             assertTrue(fxml.contains("fx:id=\"nutritionSection\""));
             assertTrue(fxml.contains("fx:id=\"nutritionContainer\""));
+            assertTrue(fxml.contains("fx:id=\"dishTypeLabel\""));
             assertTrue(css.contains(".page-container-detail"));
             assertTrue(css.contains("-fx-max-width: 1760px"));
         }
@@ -109,6 +110,8 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:id=\"carbohydratesField\""));
         assertTrue(fxml.contains("fx:id=\"fatField\""));
         assertTrue(fxml.contains("Nährwerte pro Portion"));
+        assertTrue(fxml.contains("fx:id=\"dishTypeBox\""));
+        assertTrue(fxml.contains("text=\"Gerichtstyp\""));
     }
 
     @Test

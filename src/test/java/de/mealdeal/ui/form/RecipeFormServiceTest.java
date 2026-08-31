@@ -1,6 +1,7 @@
 package de.mealdeal.ui.form;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.domain.Unit;
@@ -49,6 +50,7 @@ class RecipeFormServiceTest {
         assertEquals(List.of(1, 2), recipe.getSteps().stream()
                 .map(step -> step.getPosition()).toList());
         assertEquals(savory, recipe.getTastes().getFirst());
+        assertEquals(DishType.MAIN, recipe.getDishType());
         assertEquals(recipe, recipes.savedRecipes.getFirst());
         assertEquals(1, ingredients.values.size());
         assertEquals(1, tastes.values.size());
@@ -96,6 +98,43 @@ class RecipeFormServiceTest {
         assertEquals(15, recipe.getPreparationTimeMinutes().orElseThrow());
         assertTrue(recipe.getCookingTimeMinutes().isEmpty());
         assertEquals(15, recipe.getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
+    void savesSelectedDishTypeForNewAndEditedRecipes() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+        RecipeFormInput sideInput = new RecipeFormInput("Knoblauchbrot", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.SLICE)),
+                List.of("Herzhaft"), List.of(), "", "", "", "", "", "",
+                DishType.SIDE);
+
+        Recipe side = service.createAndSave(sideInput);
+        Recipe editedSide = service.updateAndSave(side.getId(), sideInput);
+        Recipe main = service.createAndSave(validInput("Pasta", "Herzhaft"));
+        Recipe editedMain = service.updateAndSave(main.getId(), validInput("Pasta", "Herzhaft"));
+
+        assertEquals(DishType.SIDE, side.getDishType());
+        assertEquals(DishType.SIDE, editedSide.getDishType());
+        assertEquals(side.getId(), editedSide.getId());
+        assertEquals(DishType.MAIN, main.getDishType());
+        assertEquals(DishType.MAIN, editedMain.getDishType());
+    }
+
+    @Test
+    void rejectsMissingDishType() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+        RecipeFormInput input = new RecipeFormInput("Toast", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.SLICE)),
+                List.of("Herzhaft"), List.of(), "", "", "", "", "", "", null);
+
+        RecipeFormValidationException exception = assertThrows(
+                RecipeFormValidationException.class, () -> service.createAndSave(input));
+
+        assertTrue(exception.getErrors().stream().anyMatch(error -> error.contains("Gerichtstyp")));
     }
 
     @Test
