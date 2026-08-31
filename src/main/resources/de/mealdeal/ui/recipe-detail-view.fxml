@@ -38,6 +38,12 @@
                              styleClass="serving-spinner"/>
                 </HBox>
 
+                <VBox fx:id="timeSection" spacing="10.0" managed="false" visible="false"
+                      styleClass="card, detail-section-card">
+                    <Label text="Zeitangaben" styleClass="section-title"/>
+                    <VBox fx:id="timesContainer" spacing="8.0"/>
+                </VBox>
+
                 <VBox spacing="10.0" styleClass="card, detail-section-card">
                     <Label text="Geschmacksrichtungen" styleClass="section-title"/>
                     <Label fx:id="tastesLabel" wrapText="true" styleClass="detail-row-text"/>

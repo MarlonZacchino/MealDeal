@@ -34,4 +34,11 @@ class GermanRecipeDisplayTest {
         assertEquals("2 Scheiben", GermanRecipeDisplay.quantity(
                 new BigDecimal("2"), Unit.SLICE));
     }
+
+    @Test
+    void formatsMinutesAsGermanDurations() {
+        assertEquals("25 Min.", GermanRecipeDisplay.duration(25));
+        assertEquals("1 Std. 20 Min.", GermanRecipeDisplay.duration(80));
+        assertEquals("2 Std.", GermanRecipeDisplay.duration(120));
+    }
 }

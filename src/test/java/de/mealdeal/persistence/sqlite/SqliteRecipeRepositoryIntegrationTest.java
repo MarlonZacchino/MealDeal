@@ -85,6 +85,28 @@ class SqliteRecipeRepositoryIntegrationTest {
     }
 
     @Test
+    void savesAndLoadsOptionalTimesAndDerivesTotalTime() {
+        Recipe withTimes = new Recipe("Pasta", 2,
+                List.of(new RecipeIngredient(pasta, BigDecimal.ONE, Unit.PIECE)),
+                List.of(), List.of(savory), 15, 25);
+        Recipe withoutTimes = new Recipe("Plain pasta", 2,
+                List.of(new RecipeIngredient(pasta, BigDecimal.ONE, Unit.PIECE)),
+                List.of(), List.of(savory));
+
+        recipeRepository.save(withTimes);
+        recipeRepository.save(withoutTimes);
+
+        Recipe loadedWithTimes = recipeRepository.findById(withTimes.getId()).orElseThrow();
+        Recipe loadedWithoutTimes = recipeRepository.findById(withoutTimes.getId()).orElseThrow();
+        assertEquals(15, loadedWithTimes.getPreparationTimeMinutes().orElseThrow());
+        assertEquals(25, loadedWithTimes.getCookingTimeMinutes().orElseThrow());
+        assertEquals(40, loadedWithTimes.getTotalTimeMinutes().orElseThrow());
+        assertTrue(loadedWithoutTimes.getPreparationTimeMinutes().isEmpty());
+        assertTrue(loadedWithoutTimes.getCookingTimeMinutes().isEmpty());
+        assertTrue(loadedWithoutTimes.getTotalTimeMinutes().isEmpty());
+    }
+
+    @Test
     void updatesRecipeAndReplacesAllDependentRows() {
         UUID recipeId = UUID.randomUUID();
         Recipe original = new Recipe(recipeId, "Pasta", 2,

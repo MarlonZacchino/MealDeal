@@ -6,7 +6,7 @@ import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 2;
+    static final int CURRENT_VERSION = 3;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -69,6 +69,13 @@ final class SqliteSchema {
             )
             """;
 
+    private static final String[] VERSION_3_STATEMENTS = {
+        "ALTER TABLE recipes ADD COLUMN preparation_time_minutes INTEGER "
+                + "CHECK (preparation_time_minutes > 0)",
+        "ALTER TABLE recipes ADD COLUMN cooking_time_minutes INTEGER "
+                + "CHECK (cooking_time_minutes > 0)"
+    };
+
     private SqliteSchema() {
     }
 
@@ -84,6 +91,10 @@ final class SqliteSchema {
         }
         if (version == 1) {
             createVersion2(connection);
+            version = 2;
+        }
+        if (version == 2) {
+            createVersion3(connection);
         }
     }
 
@@ -105,10 +116,19 @@ final class SqliteSchema {
         }
     }
 
-    private static void createVersion2(Connection connection) throws SQLException {
+    static void createVersion2(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.execute(VERSION_2_STATEMENT);
             statement.execute("PRAGMA user_version = 2");
+        }
+    }
+
+    private static void createVersion3(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            for (String sql : VERSION_3_STATEMENTS) {
+                statement.execute(sql);
+            }
+            statement.execute("PRAGMA user_version = 3");
         }
     }
 }

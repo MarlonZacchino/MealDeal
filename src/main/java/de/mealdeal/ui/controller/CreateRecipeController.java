@@ -26,6 +26,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 
 /** Controls the shared form for creating or editing a recipe. */
@@ -52,6 +53,10 @@ public final class CreateRecipeController implements NavigationAware {
     private TextField nameField;
     @FXML
     private TextField servingCountField;
+    @FXML
+    private TextField preparationTimeField;
+    @FXML
+    private TextField cookingTimeField;
     @FXML
     private VBox ingredientRowsContainer;
     @FXML
@@ -95,6 +100,8 @@ public final class CreateRecipeController implements NavigationAware {
         subtitleLabel.setText("Passe Grunddaten, Zutaten, Geschmacksrichtungen und Zubereitung an.");
         nameField.setText(recipe.getName());
         servingCountField.setText(Integer.toString(recipe.getStandardServingCount()));
+        preparationTimeField.setText(timeText(recipe.getPreparationTimeMinutes()));
+        cookingTimeField.setText(timeText(recipe.getCookingTimeMinutes()));
         fillIngredients(recipe);
         fillTastes(recipe);
         fillSteps(recipe);
@@ -235,7 +242,8 @@ public final class CreateRecipeController implements NavigationAware {
                 .toList();
         List<String> steps = stepRows.stream().map(RecipeStepFormRow::description).toList();
         return new RecipeFormInput(nameField.getText(), servingCountField.getText(),
-                ingredients, tastes, steps);
+                ingredients, tastes, steps, preparationTimeField.getText(),
+                cookingTimeField.getText());
     }
 
     private void removeIngredientRow(IngredientFormRow row) {
@@ -291,6 +299,10 @@ public final class CreateRecipeController implements NavigationAware {
         formMessage.setText("");
         formMessage.setManaged(false);
         formMessage.setVisible(false);
+    }
+
+    private static String timeText(OptionalInt minutes) {
+        return minutes.isPresent() ? Integer.toString(minutes.getAsInt()) : "";
     }
 
 }

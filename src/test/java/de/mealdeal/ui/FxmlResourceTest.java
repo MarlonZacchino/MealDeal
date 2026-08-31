@@ -77,6 +77,8 @@ class FxmlResourceTest {
             assertTrue(fxml.contains("fitToWidth=\"true\""));
             assertTrue(fxml.contains("page-container, page-container-detail"));
             assertTrue(fxml.contains("Noch keine Zubereitung hinterlegt."));
+            assertTrue(fxml.contains("fx:id=\"timeSection\""));
+            assertTrue(fxml.contains("fx:id=\"timesContainer\""));
             assertTrue(css.contains(".page-container-detail"));
             assertTrue(css.contains("-fx-max-width: 1760px"));
         }
@@ -90,6 +92,16 @@ class FxmlResourceTest {
         assertEquals(1, fxml.split("onAction=\"#openSearch\"", -1).length - 1);
         assertFalse(fxml.contains("Nach Zutaten suchen"));
         assertFalse(fxml.contains("Nach Geschmack suchen"));
+    }
+
+    @Test
+    void recipeFormDefinesOptionalTimeInputs() throws Exception {
+        String fxml = readResource("/de/mealdeal/ui/create-recipe-view.fxml");
+
+        assertTrue(fxml.contains("fx:id=\"preparationTimeField\""));
+        assertTrue(fxml.contains("fx:id=\"cookingTimeField\""));
+        assertFalse(fxml.contains("totalTimeField"));
+        assertTrue(fxml.contains("Zeitangaben (optional, in Minuten)"));
     }
 
     @Test

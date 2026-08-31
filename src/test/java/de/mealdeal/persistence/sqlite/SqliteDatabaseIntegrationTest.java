@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SqliteDatabaseIntegrationTest {
 
@@ -15,7 +16,7 @@ class SqliteDatabaseIntegrationTest {
     Path temporaryDirectory;
 
     @Test
-    void createsSchemaVersionTwoWithExpectedTables() throws Exception {
+    void createsSchemaVersionThreeWithExpectedTables() throws Exception {
         SqliteDatabase database = new SqliteDatabase(temporaryDirectory.resolve("schema.db"));
 
         Set<String> tables = new HashSet<>();
@@ -28,9 +29,20 @@ class SqliteDatabaseIntegrationTest {
             }
         }
 
-        assertEquals(2, database.getSchemaVersion());
+        assertEquals(3, database.getSchemaVersion());
         assertEquals(Set.of("ingredients", "tastes", "recipes", "recipe_ingredients",
                 "recipe_steps", "recipe_tastes", "meal_plan_entries"), tables);
+
+        Set<String> recipeColumns = new HashSet<>();
+        try (var connection = database.openConnection();
+             var statement = connection.createStatement();
+             var resultSet = statement.executeQuery("PRAGMA table_info(recipes)")) {
+            while (resultSet.next()) {
+                recipeColumns.add(resultSet.getString("name"));
+            }
+        }
+        assertEquals(Set.of("id", "name", "standard_serving_count",
+                "preparation_time_minutes", "cooking_time_minutes"), recipeColumns);
     }
 
     @Test
@@ -45,7 +57,7 @@ class SqliteDatabaseIntegrationTest {
     }
 
     @Test
-    void migratesVersionOneDataToVersionTwoWithoutLoss() throws Exception {
+    void migratesVersionTwoDataToVersionThreeWithoutLoss() throws Exception {
         Path databasePath = temporaryDirectory.resolve("migration.db");
         java.util.UUID ingredientId = java.util.UUID.randomUUID();
         java.util.UUID tasteId = java.util.UUID.randomUUID();
@@ -55,6 +67,7 @@ class SqliteDatabaseIntegrationTest {
                 "jdbc:sqlite:" + databasePath.toAbsolutePath())) {
             connection.setAutoCommit(false);
             SqliteSchema.createVersion1(connection);
+            SqliteSchema.createVersion2(connection);
             insertVersionOneData(connection, ingredientId, tasteId, recipeId);
             connection.commit();
         }
@@ -63,11 +76,14 @@ class SqliteDatabaseIntegrationTest {
         var loadedRecipe = new SqliteRecipeRepository(migratedDatabase)
                 .findById(recipeId).orElseThrow();
 
-        assertEquals(2, migratedDatabase.getSchemaVersion());
+        assertEquals(3, migratedDatabase.getSchemaVersion());
         assertEquals("Pasta recipe", loadedRecipe.getName());
         assertEquals(new java.math.BigDecimal("500.00"),
                 loadedRecipe.getIngredients().getFirst().getQuantity());
         assertEquals("Savory", loadedRecipe.getTastes().getFirst().getName());
+        assertTrue(loadedRecipe.getPreparationTimeMinutes().isEmpty());
+        assertTrue(loadedRecipe.getCookingTimeMinutes().isEmpty());
+        assertTrue(loadedRecipe.getTotalTimeMinutes().isEmpty());
     }
 
     private static void insertVersionOneData(java.sql.Connection connection,

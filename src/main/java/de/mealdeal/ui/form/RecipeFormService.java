@@ -87,9 +87,11 @@ public final class RecipeFormService {
 
         Recipe recipe = recipeId == null
                 ? new Recipe(validated.name(), validated.servingCount(),
-                        recipeIngredients, steps, recipeTastes)
+                        recipeIngredients, steps, recipeTastes,
+                        validated.preparationTimeMinutes(), validated.cookingTimeMinutes())
                 : new Recipe(recipeId, validated.name(), validated.servingCount(),
-                        recipeIngredients, steps, recipeTastes);
+                        recipeIngredients, steps, recipeTastes,
+                        validated.preparationTimeMinutes(), validated.cookingTimeMinutes());
         recipeRepository.save(recipe);
         return recipe;
     }
@@ -105,11 +107,16 @@ public final class RecipeFormService {
         List<ValidatedIngredient> ingredients = validateIngredients(input.ingredients(), errors);
         List<String> tasteNames = validateTastes(input.tasteNames(), errors);
         List<String> steps = validateSteps(input.stepDescriptions());
+        Integer preparationTime = parseOptionalMinutes(
+                input.preparationTimeMinutes(), "Die Vorbereitungszeit", errors);
+        Integer cookingTime = parseOptionalMinutes(
+                input.cookingTimeMinutes(), "Die Garzeit", errors);
 
         if (!errors.isEmpty()) {
             throw new RecipeFormValidationException(errors);
         }
-        return new ValidatedForm(name, servingCount, ingredients, tasteNames, steps);
+        return new ValidatedForm(name, servingCount, ingredients, tasteNames, steps,
+                preparationTime, cookingTime);
     }
 
     private static int parseServingCount(String input, List<String> errors) {
@@ -122,6 +129,24 @@ public final class RecipeFormService {
         } catch (NumberFormatException exception) {
             errors.add("Die Personenanzahl muss eine positive ganze Zahl sein.");
             return 1;
+        }
+    }
+
+    private static Integer parseOptionalMinutes(String input, String fieldName,
+                                                List<String> errors) {
+        String value = stripped(input);
+        if (value.isEmpty()) {
+            return null;
+        }
+        try {
+            int minutes = Integer.parseInt(value);
+            if (minutes <= 0) {
+                throw new NumberFormatException();
+            }
+            return minutes;
+        } catch (NumberFormatException exception) {
+            errors.add(fieldName + " muss eine positive ganze Minutenzahl sein.");
+            return null;
         }
     }
 
@@ -218,6 +243,8 @@ public final class RecipeFormService {
     private record ValidatedForm(String name, int servingCount,
                                  List<ValidatedIngredient> ingredients,
                                  List<String> tasteNames,
-                                 List<String> stepDescriptions) {
+                                 List<String> stepDescriptions,
+                                 Integer preparationTimeMinutes,
+                                 Integer cookingTimeMinutes) {
     }
 }

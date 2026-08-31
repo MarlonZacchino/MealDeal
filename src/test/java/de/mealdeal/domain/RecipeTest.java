@@ -10,6 +10,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RecipeTest {
 
@@ -33,6 +34,46 @@ class RecipeTest {
                 List.of(recipeStep), List.of(savory));
 
         assertEquals(2, recipe.getStandardServingCount());
+    }
+
+    @Test
+    void keepsAllTimeValuesEmptyWhenTheyAreNotProvided() {
+        Recipe recipe = createRecipe("Pasta", 2);
+
+        assertTrue(recipe.getPreparationTimeMinutes().isEmpty());
+        assertTrue(recipe.getCookingTimeMinutes().isEmpty());
+        assertTrue(recipe.getTotalTimeMinutes().isEmpty());
+    }
+
+    @Test
+    void derivesTotalTimeFromPreparationAndCookingTime() {
+        Recipe recipe = new Recipe("Pasta", 2, List.of(recipeIngredient),
+                List.of(recipeStep), List.of(savory), 15, 25);
+
+        assertEquals(15, recipe.getPreparationTimeMinutes().orElseThrow());
+        assertEquals(25, recipe.getCookingTimeMinutes().orElseThrow());
+        assertEquals(40, recipe.getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
+    void derivesTotalTimeFromTheOnlyAvailableTimeValue() {
+        Recipe withPreparationTime = new Recipe("Pasta", 2, List.of(recipeIngredient),
+                List.of(recipeStep), List.of(savory), 20, null);
+        Recipe withCookingTime = new Recipe("Pasta", 2, List.of(recipeIngredient),
+                List.of(recipeStep), List.of(savory), null, 45);
+
+        assertEquals(20, withPreparationTime.getTotalTimeMinutes().orElseThrow());
+        assertEquals(45, withCookingTime.getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
+    void rejectsZeroAndNegativeTimeValues() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new Recipe("Pasta", 2, List.of(recipeIngredient), List.of(recipeStep),
+                        List.of(savory), 0, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Recipe("Pasta", 2, List.of(recipeIngredient), List.of(recipeStep),
+                        List.of(savory), null, -1));
     }
 
     @Test

@@ -482,6 +482,18 @@
     -fx-text-fill: -md-text-muted;
 }
 
+.detail-time-name {
+    -fx-min-width: 180px;
+    -fx-font-size: 16px;
+    -fx-text-fill: -md-text-muted;
+}
+
+.detail-time-value {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
 .form-section-card,
 .detail-section-card,
 .search-selection-card {

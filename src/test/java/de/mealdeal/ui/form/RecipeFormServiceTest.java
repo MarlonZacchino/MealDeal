@@ -83,6 +83,37 @@ class RecipeFormServiceTest {
     }
 
     @Test
+    void createsRecipeWithOnlyPreparationTime() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+        RecipeFormInput input = new RecipeFormInput("Brotzeit", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.PIECE)),
+                List.of("Herzhaft"), List.of(), "15", "");
+
+        Recipe recipe = service.createAndSave(input);
+
+        assertEquals(15, recipe.getPreparationTimeMinutes().orElseThrow());
+        assertTrue(recipe.getCookingTimeMinutes().isEmpty());
+        assertEquals(15, recipe.getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
+    void createsRecipeWithOnlyCookingTime() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+
+        Recipe recipe = service.createAndSave(new RecipeFormInput("Brotzeit", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.PIECE)),
+                List.of("Herzhaft"), List.of(), "", "45"));
+
+        assertTrue(recipe.getPreparationTimeMinutes().isEmpty());
+        assertEquals(45, recipe.getCookingTimeMinutes().orElseThrow());
+        assertEquals(45, recipe.getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
     void updatesAllRecipeValuesAndKeepsUuid() {
         MemoryIngredientRepository ingredients = new MemoryIngredientRepository();
         MemoryTasteRepository tastes = new MemoryTasteRepository();
@@ -112,6 +143,38 @@ class RecipeFormServiceTest {
         assertEquals(List.of("Kochen.", "Mit Zitrone abschmecken.", "Servieren."),
                 updated.getSteps().stream().map(step -> step.getDescription()).toList());
         assertEquals(updated, recipes.savedRecipes.getFirst());
+    }
+
+    @Test
+    void updatesTimesAndDerivesTotalTime() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+        UUID recipeId = UUID.randomUUID();
+
+        Recipe updated = service.updateAndSave(recipeId, new RecipeFormInput(
+                "Toast", "2", List.of(new IngredientFormInput("Brot", "2", Unit.SLICE)),
+                List.of("Herzhaft"), List.of(), "10", "20"));
+
+        assertEquals(10, updated.getPreparationTimeMinutes().orElseThrow());
+        assertEquals(20, updated.getCookingTimeMinutes().orElseThrow());
+        assertEquals(30, updated.getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
+    void rejectsInvalidOptionalTimeValues() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+        RecipeFormInput input = new RecipeFormInput("Toast", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.SLICE)),
+                List.of("Herzhaft"), List.of(), "0", "-2");
+
+        RecipeFormValidationException exception = assertThrows(
+                RecipeFormValidationException.class, () -> service.createAndSave(input));
+
+        assertEquals(2, exception.getErrors().stream()
+                .filter(error -> error.contains("zeit")).count());
     }
 
     @Test

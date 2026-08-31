@@ -3,6 +3,7 @@ package de.mealdeal.domain;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
 
@@ -24,6 +25,9 @@ public final class Recipe {
     private final List<RecipeIngredient> ingredients;
     private final List<RecipeStep> steps;
     private final List<Taste> tastes;
+    private final OptionalInt preparationTimeMinutes;
+    private final OptionalInt cookingTimeMinutes;
+    private final OptionalInt totalTimeMinutes;
 
     /**
      * Creates a recipe for the default serving count of two.
@@ -35,7 +39,8 @@ public final class Recipe {
      */
     public Recipe(String name, List<RecipeIngredient> ingredients,
                   List<RecipeStep> steps, List<Taste> tastes) {
-        this(UUID.randomUUID(), name, DEFAULT_SERVING_COUNT, ingredients, steps, tastes);
+        this(UUID.randomUUID(), name, DEFAULT_SERVING_COUNT, ingredients, steps, tastes,
+                null, null);
     }
 
     /**
@@ -50,7 +55,22 @@ public final class Recipe {
     public Recipe(String name, int standardServingCount,
                   List<RecipeIngredient> ingredients, List<RecipeStep> steps,
                   List<Taste> tastes) {
-        this(UUID.randomUUID(), name, standardServingCount, ingredients, steps, tastes);
+        this(UUID.randomUUID(), name, standardServingCount, ingredients, steps, tastes,
+                null, null);
+    }
+
+    /**
+     * Creates a new recipe with optional preparation and cooking times.
+     *
+     * @param preparationTimeMinutes optional positive preparation time in minutes
+     * @param cookingTimeMinutes optional positive cooking time in minutes
+     */
+    public Recipe(String name, int standardServingCount,
+                  List<RecipeIngredient> ingredients, List<RecipeStep> steps,
+                  List<Taste> tastes, Integer preparationTimeMinutes,
+                  Integer cookingTimeMinutes) {
+        this(UUID.randomUUID(), name, standardServingCount, ingredients, steps, tastes,
+                preparationTimeMinutes, cookingTimeMinutes);
     }
 
     /**
@@ -66,6 +86,19 @@ public final class Recipe {
     public Recipe(UUID id, String name, int standardServingCount,
                   List<RecipeIngredient> ingredients, List<RecipeStep> steps,
                   List<Taste> tastes) {
+        this(id, name, standardServingCount, ingredients, steps, tastes, null, null);
+    }
+
+    /**
+     * Creates or recreates a recipe with optional preparation and cooking times.
+     *
+     * @param preparationTimeMinutes optional positive preparation time in minutes
+     * @param cookingTimeMinutes optional positive cooking time in minutes
+     */
+    public Recipe(UUID id, String name, int standardServingCount,
+                  List<RecipeIngredient> ingredients, List<RecipeStep> steps,
+                  List<Taste> tastes, Integer preparationTimeMinutes,
+                  Integer cookingTimeMinutes) {
         this.id = java.util.Objects.requireNonNull(id, "Recipe ID must not be null.");
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Recipe name must not be blank.");
@@ -81,6 +114,10 @@ public final class Recipe {
                 .sorted(Comparator.comparingInt(RecipeStep::getPosition))
                 .toList();
         this.tastes = copyWithoutNulls(tastes, "Recipe tastes");
+        this.preparationTimeMinutes = optionalTime(preparationTimeMinutes, "Preparation time");
+        this.cookingTimeMinutes = optionalTime(cookingTimeMinutes, "Cooking time");
+        this.totalTimeMinutes = deriveTotalTime(
+                this.preparationTimeMinutes, this.cookingTimeMinutes);
 
         if (this.tastes.isEmpty()) {
             throw new IllegalArgumentException("Recipe must have at least one taste.");
@@ -115,6 +152,21 @@ public final class Recipe {
         return tastes;
     }
 
+    /** Returns the optional preparation time in minutes. */
+    public OptionalInt getPreparationTimeMinutes() {
+        return preparationTimeMinutes;
+    }
+
+    /** Returns the optional cooking time in minutes. */
+    public OptionalInt getCookingTimeMinutes() {
+        return cookingTimeMinutes;
+    }
+
+    /** Returns the optional total time derived from preparation and cooking time. */
+    public OptionalInt getTotalTimeMinutes() {
+        return totalTimeMinutes;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -139,6 +191,34 @@ public final class Recipe {
             throw new IllegalArgumentException(fieldName + " must not contain null values.");
         }
         return List.copyOf(values);
+    }
+
+    private static OptionalInt optionalTime(Integer minutes, String fieldName) {
+        if (minutes == null) {
+            return OptionalInt.empty();
+        }
+        if (minutes <= 0) {
+            throw new IllegalArgumentException(fieldName + " must be greater than zero.");
+        }
+        return OptionalInt.of(minutes);
+    }
+
+    private static OptionalInt deriveTotalTime(OptionalInt preparationTime,
+                                               OptionalInt cookingTime) {
+        if (preparationTime.isEmpty()) {
+            return cookingTime;
+        }
+        if (cookingTime.isEmpty()) {
+            return preparationTime;
+        }
+        try {
+            return OptionalInt.of(Math.addExact(
+                    preparationTime.getAsInt(), cookingTime.getAsInt()));
+        } catch (ArithmeticException exception) {
+            throw new IllegalArgumentException(
+                    "Preparation and cooking time must fit into a positive minute value.",
+                    exception);
+        }
     }
 
     private static void rejectDuplicateIngredientIds(List<RecipeIngredient> ingredients) {

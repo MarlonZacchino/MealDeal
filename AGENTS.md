@@ -39,6 +39,7 @@ Bestehende Architekturentscheidungen oder Dateien werden nicht ohne nachvollzieh
 - Neue fachliche Logik erhält grundsätzlich passende Tests.
 - Tests sollen reale Fehler erkennen und nicht nur formale Testabdeckung erzeugen.
 - Vor Abschluss einer Phase werden alle vorhandenen Tests ausgeführt.
+- Codex führt für MealDeal keine GUI-, Desktop- oder Computersteuerung für manuelle Tests durch. Keine Klick-Automation, Maus-/Tastatursteuerung oder visuelle Bedienung der laufenden App. Manuelle UI- und Akzeptanztests übernimmt der Nutzer; Codex führt weiterhin automatisierte Tests, Maven-Builds, statische Prüfungen und ähnliche nicht-interaktive Tests aus.
 
 ## Dokumentation und Verständlichkeit
 

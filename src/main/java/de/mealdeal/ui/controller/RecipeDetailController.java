@@ -20,6 +20,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.function.BooleanSupplier;
 
 /** Renders one recipe and updates its displayed quantities for a serving count. */
@@ -42,6 +43,10 @@ public final class RecipeDetailController implements NavigationAware {
     private Label tastesLabel;
     @FXML
     private Spinner<Integer> servingSpinner;
+    @FXML
+    private VBox timeSection;
+    @FXML
+    private VBox timesContainer;
     @FXML
     private VBox ingredientsContainer;
     @FXML
@@ -72,6 +77,7 @@ public final class RecipeDetailController implements NavigationAware {
                 .sorted(String.CASE_INSENSITIVE_ORDER)
                 .reduce((first, second) -> first + ", " + second)
                 .orElse("Keine Angabe"));
+        renderTimes();
         renderSteps();
         configureServingSelection();
     }
@@ -178,6 +184,29 @@ public final class RecipeDetailController implements NavigationAware {
             row.getStyleClass().add("detail-row");
             stepsContainer.getChildren().add(row);
         });
+    }
+
+    private void renderTimes() {
+        timesContainer.getChildren().clear();
+        addTimeRow("Vorbereitungszeit", recipe.getPreparationTimeMinutes());
+        addTimeRow("Garzeit", recipe.getCookingTimeMinutes());
+        addTimeRow("Gesamtzeit", recipe.getTotalTimeMinutes());
+        boolean hasTimes = !timesContainer.getChildren().isEmpty();
+        timeSection.setManaged(hasTimes);
+        timeSection.setVisible(hasTimes);
+    }
+
+    private void addTimeRow(String label, OptionalInt minutes) {
+        if (minutes.isEmpty()) {
+            return;
+        }
+        Label name = new Label(label);
+        name.getStyleClass().add("detail-time-name");
+        Label value = new Label(GermanRecipeDisplay.duration(minutes.getAsInt()));
+        value.getStyleClass().add("detail-time-value");
+        HBox row = new HBox(16, name, value);
+        row.getStyleClass().add("detail-row");
+        timesContainer.getChildren().add(row);
     }
 
     private static HBox ingredientRow(RecipeIngredient ingredient) {

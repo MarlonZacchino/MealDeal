@@ -109,15 +109,22 @@ public final class SqliteRecipeRepository implements RecipeRepository {
 
     private static void saveRecipeRow(Connection connection, Recipe recipe) throws SQLException {
         String sql = """
-                INSERT INTO recipes (id, name, standard_serving_count) VALUES (?, ?, ?)
+                INSERT INTO recipes (
+                    id, name, standard_serving_count, preparation_time_minutes,
+                    cooking_time_minutes)
+                VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     name = excluded.name,
-                    standard_serving_count = excluded.standard_serving_count
+                    standard_serving_count = excluded.standard_serving_count,
+                    preparation_time_minutes = excluded.preparation_time_minutes,
+                    cooking_time_minutes = excluded.cooking_time_minutes
                 """;
         try (var statement = connection.prepareStatement(sql)) {
             statement.setString(1, recipe.getId().toString());
             statement.setString(2, recipe.getName());
             statement.setInt(3, recipe.getStandardServingCount());
+            setOptionalTime(statement, 4, recipe.getPreparationTimeMinutes());
+            setOptionalTime(statement, 5, recipe.getCookingTimeMinutes());
             statement.executeUpdate();
         }
     }
@@ -182,7 +189,11 @@ public final class SqliteRecipeRepository implements RecipeRepository {
     }
 
     private static Optional<Recipe> loadRecipe(Connection connection, UUID id) throws SQLException {
-        String sql = "SELECT name, standard_serving_count FROM recipes WHERE id = ?";
+        String sql = """
+                SELECT name, standard_serving_count, preparation_time_minutes,
+                       cooking_time_minutes
+                FROM recipes WHERE id = ?
+                """;
         try (var statement = connection.prepareStatement(sql)) {
             statement.setString(1, id.toString());
             try (var resultSet = statement.executeQuery()) {
@@ -193,9 +204,26 @@ public final class SqliteRecipeRepository implements RecipeRepository {
                 int servingCount = resultSet.getInt("standard_serving_count");
                 return Optional.of(new Recipe(id, name, servingCount,
                         loadIngredients(connection, id), loadSteps(connection, id),
-                        loadTastes(connection, id)));
+                        loadTastes(connection, id),
+                        nullableInteger(resultSet, "preparation_time_minutes"),
+                        nullableInteger(resultSet, "cooking_time_minutes")));
             }
         }
+    }
+
+    private static void setOptionalTime(java.sql.PreparedStatement statement, int index,
+                                        java.util.OptionalInt minutes) throws SQLException {
+        if (minutes.isPresent()) {
+            statement.setInt(index, minutes.getAsInt());
+        } else {
+            statement.setNull(index, java.sql.Types.INTEGER);
+        }
+    }
+
+    private static Integer nullableInteger(java.sql.ResultSet resultSet, String column)
+            throws SQLException {
+        int value = resultSet.getInt(column);
+        return resultSet.wasNull() ? null : value;
     }
 
     private static List<RecipeIngredient> loadIngredients(Connection connection, UUID recipeId)

@@ -39,6 +39,21 @@
                                        prefColumnCount="8"/>
                         </VBox>
                     </HBox>
+                    <VBox spacing="7.0">
+                        <Label text="Zeitangaben (optional, in Minuten)" styleClass="form-label"/>
+                        <HBox spacing="18.0">
+                            <VBox spacing="6.0" HBox.hgrow="ALWAYS" styleClass="form-field">
+                                <Label text="Vorbereitungszeit" styleClass="form-label"/>
+                                <TextField fx:id="preparationTimeField" promptText="z. B. 15"
+                                           maxWidth="1.7976931348623157E308"/>
+                            </VBox>
+                            <VBox spacing="6.0" HBox.hgrow="ALWAYS" styleClass="form-field">
+                                <Label text="Garzeit" styleClass="form-label"/>
+                                <TextField fx:id="cookingTimeField" promptText="z. B. 25"
+                                           maxWidth="1.7976931348623157E308"/>
+                            </VBox>
+                        </HBox>
+                    </VBox>
                 </VBox>
 
                 <VBox spacing="16.0" styleClass="card, form-section-card">

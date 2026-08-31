@@ -47,4 +47,15 @@ final class GermanRecipeDisplay {
         }
         return unit(unit);
     }
+
+    static String duration(int minutes) {
+        if (minutes < 60) {
+            return minutes + " Min.";
+        }
+        int hours = minutes / 60;
+        int remainingMinutes = minutes % 60;
+        return remainingMinutes == 0
+                ? hours + " Std."
+                : hours + " Std. " + remainingMinutes + " Min.";
+    }
 }
