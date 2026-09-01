@@ -4,6 +4,8 @@ import de.mealdeal.domain.Ingredient;
 import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.domain.RecipeIngredientGroup;
+import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.domain.RecipeStep;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.domain.Unit;
@@ -34,10 +36,11 @@ class SqliteRecipeRepositoryIntegrationTest {
     private Ingredient salt;
     private Taste savory;
     private Taste mild;
+    private SqliteDatabase database;
 
     @BeforeEach
     void setUp() {
-        SqliteDatabase database = new SqliteDatabase(temporaryDirectory.resolve("recipes.db"));
+        database = new SqliteDatabase(temporaryDirectory.resolve("recipes.db"));
         ingredientRepository = new SqliteIngredientRepository(database);
         tasteRepository = new SqliteTasteRepository(database);
         recipeRepository = new SqliteRecipeRepository(database);
@@ -142,6 +145,108 @@ class SqliteRecipeRepositoryIntegrationTest {
     }
 
     @Test
+    void roundTripsOrderedGroupsOptionsDefaultsAndStableUuids() {
+        UUID firstGroupId = UUID.randomUUID();
+        UUID secondGroupId = UUID.randomUUID();
+        RecipeIngredientOption pastaOption = new RecipeIngredientOption(UUID.randomUUID(), pasta,
+                new BigDecimal("0.75"), Unit.KILOGRAM, 1);
+        RecipeIngredientOption saltOption = new RecipeIngredientOption(UUID.randomUUID(), salt,
+                new BigDecimal("1.5"), Unit.TEASPOON, 0);
+        RecipeIngredientOption secondSaltOption = new RecipeIngredientOption(
+                UUID.randomUUID(), salt, new BigDecimal("2"), Unit.PINCH, 0);
+        RecipeIngredientGroup alternatives = new RecipeIngredientGroup(firstGroupId,
+                List.of(pastaOption, saltOption), pastaOption);
+        RecipeIngredientGroup seasoning = new RecipeIngredientGroup(secondGroupId,
+                List.of(secondSaltOption), secondSaltOption);
+        Recipe recipe = Recipe.withIngredientGroups("Flexible pasta", 2,
+                List.of(seasoning, alternatives), List.of(), List.of(savory), DishType.MAIN);
+
+        recipeRepository.save(recipe);
+        Recipe loaded = recipeRepository.findById(recipe.getId()).orElseThrow();
+
+        assertEquals(List.of(secondGroupId, firstGroupId), loaded.getIngredientGroups().stream()
+                .map(RecipeIngredientGroup::getId).toList());
+        RecipeIngredientGroup loadedAlternatives = loaded.getIngredientGroups().get(1);
+        assertEquals(List.of(saltOption.getId(), pastaOption.getId()),
+                loadedAlternatives.getOptions().stream()
+                        .map(RecipeIngredientOption::getId).toList());
+        assertEquals(pastaOption.getId(), loadedAlternatives.getStandardOptionId());
+        assertEquals(new BigDecimal("0.75"),
+                loadedAlternatives.getStandardOption().getQuantity());
+        assertEquals(Unit.KILOGRAM, loadedAlternatives.getStandardOption().getUnit());
+        assertEquals(new BigDecimal("1.5"),
+                loadedAlternatives.getOptions().getFirst().getQuantity());
+        assertEquals(Unit.TEASPOON, loadedAlternatives.getOptions().getFirst().getUnit());
+    }
+
+    @Test
+    void updateAddsRemovesReordersGroupsAndOptionsAndChangesDefaultWithoutOrphans()
+            throws Exception {
+        RecipeIngredientOption first = option(pasta, "500", Unit.GRAM, 0);
+        RecipeIngredientOption retained = option(salt, "1", Unit.TEASPOON, 1);
+        RecipeIngredientGroup retainedGroup = new RecipeIngredientGroup(
+                List.of(first, retained), first);
+        RecipeIngredientOption removedGroupOption = option(pasta, "1", Unit.PIECE, 0);
+        RecipeIngredientGroup removedGroup = new RecipeIngredientGroup(
+                List.of(removedGroupOption), removedGroupOption);
+        Recipe original = Recipe.withIngredientGroups("Original", 2,
+                List.of(retainedGroup, removedGroup), List.of(), List.of(savory), DishType.MAIN);
+        recipeRepository.save(original);
+
+        RecipeIngredientOption reorderedRetained = new RecipeIngredientOption(retained.getId(),
+                salt, new BigDecimal("2"), Unit.PINCH, 0);
+        RecipeIngredientOption addedOption = option(pasta, "0.25", Unit.KILOGRAM, 1);
+        RecipeIngredientGroup changedGroup = new RecipeIngredientGroup(retainedGroup.getId(),
+                List.of(addedOption, reorderedRetained), addedOption);
+        RecipeIngredientOption addedGroupOption = option(salt, "3", Unit.CLOVE, 0);
+        RecipeIngredientGroup addedGroup = new RecipeIngredientGroup(
+                List.of(addedGroupOption), addedGroupOption);
+        Recipe updated = Recipe.withIngredientGroups(original.getId(), "Updated", 2,
+                List.of(addedGroup, changedGroup), List.of(), List.of(savory),
+                null, null, null, null, DishType.MAIN);
+
+        recipeRepository.save(updated);
+        Recipe loaded = recipeRepository.findById(original.getId()).orElseThrow();
+
+        assertEquals(List.of(addedGroup.getId(), retainedGroup.getId()),
+                loaded.getIngredientGroups().stream().map(RecipeIngredientGroup::getId).toList());
+        RecipeIngredientGroup loadedChanged = loaded.getIngredientGroups().get(1);
+        assertEquals(List.of(retained.getId(), addedOption.getId()),
+                loadedChanged.getOptions().stream().map(RecipeIngredientOption::getId).toList());
+        assertEquals(addedOption.getId(), loadedChanged.getStandardOptionId());
+        assertFalse(loaded.getIngredientGroups().stream()
+                .anyMatch(group -> group.getId().equals(removedGroup.getId())));
+        assertEquals(2, rowCount("recipe_ingredient_groups"));
+        assertEquals(3, rowCount("recipe_ingredient_options"));
+        assertEquals(0, orphanGroupCount());
+        assertEquals(0, orphanOptionCount());
+    }
+
+    @Test
+    void failedGroupUpdateRollsBackRecipeAndAllRelationshipChanges() throws Exception {
+        Recipe original = recipeNamed("Original");
+        recipeRepository.save(original);
+        UUID originalGroupId = original.getIngredientGroups().getFirst().getId();
+        Ingredient missing = new Ingredient("Missing");
+        RecipeIngredientOption invalidOption = option(missing, "1", Unit.PIECE, 0);
+        RecipeIngredientGroup invalidGroup = new RecipeIngredientGroup(
+                List.of(invalidOption), invalidOption);
+        Recipe invalidUpdate = Recipe.withIngredientGroups(original.getId(), "Changed", 2,
+                List.of(invalidGroup), List.of(), List.of(savory),
+                null, null, null, null, DishType.MAIN);
+
+        assertThrows(PersistenceException.class, () -> recipeRepository.save(invalidUpdate));
+
+        Recipe loaded = recipeRepository.findById(original.getId()).orElseThrow();
+        assertEquals("Original", loaded.getName());
+        assertEquals(originalGroupId, loaded.getIngredientGroups().getFirst().getId());
+        assertEquals(1, rowCount("recipe_ingredient_groups"));
+        assertEquals(1, rowCount("recipe_ingredient_options"));
+        assertEquals(0, orphanGroupCount());
+        assertEquals(0, orphanOptionCount());
+    }
+
+    @Test
     void savesAndLoadsPartialAndCompleteNutritionInfo() {
         Recipe partial = new Recipe("Partial", 2,
                 List.of(new RecipeIngredient(pasta, BigDecimal.ONE, Unit.PIECE)),
@@ -230,5 +335,45 @@ class SqliteRecipeRepositoryIntegrationTest {
         return new Recipe(name,
                 List.of(new RecipeIngredient(pasta, new BigDecimal("500"), Unit.GRAM)),
                 List.of(new RecipeStep(1, "Cook.")), List.of(savory));
+    }
+
+    private static RecipeIngredientOption option(Ingredient ingredient, String quantity,
+                                                 Unit unit, int position) {
+        return new RecipeIngredientOption(ingredient, new BigDecimal(quantity), unit, position);
+    }
+
+    private int rowCount(String table) throws Exception {
+        try (var connection = database.openConnection();
+             var statement = connection.createStatement();
+             var resultSet = statement.executeQuery("SELECT count(*) FROM " + table)) {
+            return resultSet.getInt(1);
+        }
+    }
+
+    private int orphanOptionCount() throws Exception {
+        try (var connection = database.openConnection();
+             var statement = connection.createStatement();
+             var resultSet = statement.executeQuery("""
+                     SELECT count(*)
+                     FROM recipe_ingredient_options option
+                     LEFT JOIN recipe_ingredient_groups ingredient_group
+                         ON ingredient_group.id = option.group_id
+                     WHERE ingredient_group.id IS NULL
+                     """)) {
+            return resultSet.getInt(1);
+        }
+    }
+
+    private int orphanGroupCount() throws Exception {
+        try (var connection = database.openConnection();
+             var statement = connection.createStatement();
+             var resultSet = statement.executeQuery("""
+                     SELECT count(*)
+                     FROM recipe_ingredient_groups ingredient_group
+                     LEFT JOIN recipes recipe ON recipe.id = ingredient_group.recipe_id
+                     WHERE recipe.id IS NULL
+                     """)) {
+            return resultSet.getInt(1);
+        }
     }
 }

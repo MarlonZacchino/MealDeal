@@ -6,6 +6,8 @@ import de.mealdeal.domain.MealPlanEntry;
 import de.mealdeal.domain.MealRole;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.domain.RecipeIngredientGroup;
+import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.domain.ShoppingList;
 import de.mealdeal.domain.ShoppingListItem;
 import de.mealdeal.domain.Taste;
@@ -68,6 +70,25 @@ class ShoppingListServiceTest {
 
         assertItem(shoppingList.getItems().get(0), pasta, "1000", Unit.GRAM);
         assertItem(shoppingList.getItems().get(1), sauce, "600", Unit.MILLILITER);
+    }
+
+    @Test
+    void shoppingListUsesOnlyTheStandardOptionOfAnAlternativeGroup() {
+        RecipeIngredientOption pastaOption = new RecipeIngredientOption(
+                pasta, new BigDecimal("500"), Unit.GRAM, 0);
+        RecipeIngredientOption sauceOption = new RecipeIngredientOption(
+                sauce, new BigDecimal("300"), Unit.MILLILITER, 1);
+        RecipeIngredientGroup group = new RecipeIngredientGroup(
+                List.of(pastaOption, sauceOption), sauceOption);
+        Recipe recipe = Recipe.withIngredientGroups("Flexible", 2, List.of(group),
+                List.of(), List.of(new Taste("Savory")), DishType.MAIN);
+        LocalDate today = LocalDate.of(2026, 9, 1);
+
+        ShoppingList shoppingList = service(new InMemoryMealPlanRepository(List.of()), today)
+                .buildFromEntries(List.of(new MealPlanEntry(today, recipe, 4)));
+
+        assertEquals(1, shoppingList.getItems().size());
+        assertItem(shoppingList.getItems().getFirst(), sauce, "600", Unit.MILLILITER);
     }
 
     @Test

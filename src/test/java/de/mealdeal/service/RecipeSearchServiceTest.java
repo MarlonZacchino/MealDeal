@@ -1,8 +1,11 @@
 package de.mealdeal.service;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.domain.RecipeIngredientGroup;
+import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.domain.RecipeStep;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.domain.Unit;
@@ -52,6 +55,22 @@ class RecipeSearchServiceTest {
         assertEquals(1, results.size());
         assertEquals(matching, results.getFirst().getRecipe());
         assertEquals(MatchQuality.PERFECT, results.getFirst().getMatchQuality());
+    }
+
+    @Test
+    void searchesAlternativeGroupsOnlyThroughTheirStandardOptions() {
+        RecipeIngredientOption pastaOption = new RecipeIngredientOption(
+                pasta, BigDecimal.ONE, Unit.PIECE, 0);
+        RecipeIngredientOption tomatoOption = new RecipeIngredientOption(
+                tomato, new BigDecimal("2"), Unit.PIECE, 1);
+        RecipeIngredientGroup group = new RecipeIngredientGroup(
+                List.of(pastaOption, tomatoOption), tomatoOption);
+        Recipe recipe = Recipe.withIngredientGroups("Flexible", 2, List.of(group),
+                List.of(), List.of(savory), DishType.MAIN);
+
+        assertTrue(service.searchByIngredients(List.of(recipe), List.of(pasta)).isEmpty());
+        assertEquals(recipe, service.searchByIngredients(List.of(recipe), List.of(tomato))
+                .getFirst().getRecipe());
     }
 
     @Test

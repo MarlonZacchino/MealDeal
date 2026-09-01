@@ -1,8 +1,11 @@
 package de.mealdeal.service;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.domain.RecipeIngredientGroup;
+import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.domain.RecipeStep;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.domain.Unit;
@@ -67,6 +70,24 @@ class RecipeScalerTest {
         assertEquals(Unit.CLOVE, scaled.get(0).getUnit());
         assertEquals(new BigDecimal("2"), scaled.get(1).getQuantity());
         assertEquals(Unit.SPRIG, scaled.get(1).getUnit());
+    }
+
+    @Test
+    void scalesOnlyTheStandardOptionOfAnAlternativeGroup() {
+        Ingredient rice = new Ingredient("Rice");
+        RecipeIngredientOption pastaOption = new RecipeIngredientOption(
+                pasta, new BigDecimal("500"), Unit.GRAM, 0);
+        RecipeIngredientOption riceOption = new RecipeIngredientOption(
+                rice, new BigDecimal("300"), Unit.GRAM, 1);
+        RecipeIngredientGroup group = new RecipeIngredientGroup(
+                List.of(pastaOption, riceOption), riceOption);
+        Recipe recipe = Recipe.withIngredientGroups("Flexible", 2, List.of(group),
+                List.of(), List.of(new Taste("Savory")), DishType.MAIN);
+
+        RecipeIngredient scaled = scaler.scale(recipe, 4).getFirst();
+
+        assertEquals(rice, scaled.getIngredient());
+        assertEquals(new BigDecimal("600"), scaled.getQuantity());
     }
 
     @Test

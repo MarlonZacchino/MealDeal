@@ -6,7 +6,7 @@ import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 6;
+    static final int CURRENT_VERSION = 7;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -107,6 +107,10 @@ final class SqliteSchema {
         }
         if (version == 5) {
             createVersion6(connection);
+            version = 6;
+        }
+        if (version == 6) {
+            createVersion7(connection);
         }
     }
 
@@ -215,6 +219,88 @@ final class SqliteSchema {
             statement.execute("ALTER TABLE recipes ADD COLUMN baking_time_minutes INTEGER "
                     + "CHECK (baking_time_minutes > 0)");
             statement.execute("PRAGMA user_version = 6");
+        }
+    }
+
+    /**
+     * Replaces flat recipe ingredients with ordered groups and ordered options.
+     *
+     * <p>The composite deferred foreign key guarantees that a group's required
+     * default option belongs to that same group. Deferral resolves the intentional
+     * insert cycle between a group and its options without weakening the committed
+     * database state.</p>
+     */
+    static void createVersion7(Connection connection) throws SQLException {
+        String uuidExpression = "lower(hex(randomblob(4))) || '-' || "
+                + "lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))), 2) "
+                + "|| '-' || substr('89ab', abs(random() % 4) + 1, 1) "
+                + "|| substr(lower(hex(randomblob(2))), 2) || '-' || lower(hex(randomblob(6)))";
+        String[] statements = {
+            """
+            CREATE TABLE recipe_ingredient_groups (
+                id TEXT PRIMARY KEY NOT NULL,
+                recipe_id TEXT NOT NULL,
+                position INTEGER NOT NULL CHECK (position >= 0),
+                default_option_id TEXT NOT NULL,
+                UNIQUE (recipe_id, position),
+                FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+                FOREIGN KEY (id, default_option_id)
+                    REFERENCES recipe_ingredient_options(group_id, id)
+                    DEFERRABLE INITIALLY DEFERRED
+            )
+            """,
+            """
+            CREATE TABLE recipe_ingredient_options (
+                id TEXT PRIMARY KEY NOT NULL,
+                group_id TEXT NOT NULL,
+                ingredient_id TEXT NOT NULL,
+                quantity TEXT NOT NULL CHECK (length(trim(quantity)) > 0),
+                unit TEXT NOT NULL,
+                position INTEGER NOT NULL CHECK (position >= 0),
+                UNIQUE (group_id, id),
+                UNIQUE (group_id, position),
+                FOREIGN KEY (group_id) REFERENCES recipe_ingredient_groups(id)
+                    ON DELETE CASCADE,
+                FOREIGN KEY (ingredient_id) REFERENCES ingredients(id)
+                    ON DELETE RESTRICT
+            )
+            """,
+            """
+            CREATE TEMP TABLE recipe_ingredient_migration_v7 (
+                group_id TEXT NOT NULL,
+                option_id TEXT NOT NULL,
+                recipe_id TEXT NOT NULL,
+                ingredient_id TEXT NOT NULL,
+                quantity TEXT NOT NULL,
+                unit TEXT NOT NULL,
+                group_position INTEGER NOT NULL
+            )
+            """,
+            "INSERT INTO recipe_ingredient_migration_v7 "
+                    + "SELECT " + uuidExpression + ", " + uuidExpression + ", "
+                    + "ri.recipe_id, ri.ingredient_id, ri.quantity, ri.unit, "
+                    + "row_number() OVER (PARTITION BY ri.recipe_id ORDER BY i.name, i.id) - 1 "
+                    + "FROM recipe_ingredients ri "
+                    + "JOIN ingredients i ON i.id = ri.ingredient_id",
+            """
+            INSERT INTO recipe_ingredient_groups (id, recipe_id, position, default_option_id)
+            SELECT group_id, recipe_id, group_position, option_id
+            FROM recipe_ingredient_migration_v7
+            """,
+            """
+            INSERT INTO recipe_ingredient_options
+                (id, group_id, ingredient_id, quantity, unit, position)
+            SELECT option_id, group_id, ingredient_id, quantity, unit, 0
+            FROM recipe_ingredient_migration_v7
+            """,
+            "DROP TABLE recipe_ingredients",
+            "DROP TABLE recipe_ingredient_migration_v7"
+        };
+        try (Statement statement = connection.createStatement()) {
+            for (String sql : statements) {
+                statement.execute(sql);
+            }
+            statement.execute("PRAGMA user_version = 7");
         }
     }
 }

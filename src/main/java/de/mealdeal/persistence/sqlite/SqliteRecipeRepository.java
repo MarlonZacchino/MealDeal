@@ -4,7 +4,8 @@ import de.mealdeal.domain.Ingredient;
 import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.domain.Recipe;
-import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.domain.RecipeIngredientGroup;
+import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.domain.RecipeStep;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.domain.Unit;
@@ -45,7 +46,7 @@ public final class SqliteRecipeRepository implements RecipeRepository {
             try {
                 saveRecipeRow(connection, recipe);
                 deleteRelationships(connection, recipe.getId());
-                saveIngredients(connection, recipe);
+                saveIngredientGroups(connection, recipe);
                 saveSteps(connection, recipe);
                 saveTastes(connection, recipe);
                 connection.commit();
@@ -143,7 +144,8 @@ public final class SqliteRecipeRepository implements RecipeRepository {
 
     private static void deleteRelationships(Connection connection, UUID recipeId)
             throws SQLException {
-        for (String table : List.of("recipe_ingredients", "recipe_steps", "recipe_tastes")) {
+        for (String table : List.of(
+                "recipe_ingredient_groups", "recipe_steps", "recipe_tastes")) {
             // Table names are fixed application constants; all data still uses parameters.
             try (var statement = connection.prepareStatement(
                     "DELETE FROM " + table + " WHERE recipe_id = ?")) {
@@ -153,22 +155,42 @@ public final class SqliteRecipeRepository implements RecipeRepository {
         }
     }
 
-    private static void saveIngredients(Connection connection, Recipe recipe) throws SQLException {
-        String sql = """
-                INSERT INTO recipe_ingredients
-                    (recipe_id, ingredient_id, quantity, unit)
+    private static void saveIngredientGroups(Connection connection, Recipe recipe)
+            throws SQLException {
+        String groupSql = """
+                INSERT INTO recipe_ingredient_groups
+                    (id, recipe_id, position, default_option_id)
                 VALUES (?, ?, ?, ?)
                 """;
-        try (var statement = connection.prepareStatement(sql)) {
-            for (RecipeIngredient recipeIngredient : recipe.getIngredients()) {
-                statement.setString(1, recipe.getId().toString());
-                statement.setString(2, recipeIngredient.getIngredient().getId().toString());
-                // Plain decimal text preserves BigDecimal exactly without binary conversion.
-                statement.setString(3, recipeIngredient.getQuantity().toPlainString());
-                statement.setString(4, recipeIngredient.getUnit().name());
-                statement.addBatch();
+        String optionSql = """
+                INSERT INTO recipe_ingredient_options
+                    (id, group_id, ingredient_id, quantity, unit, position)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """;
+        try (var groupStatement = connection.prepareStatement(groupSql);
+             var optionStatement = connection.prepareStatement(optionSql)) {
+            List<RecipeIngredientGroup> groups = recipe.getIngredientGroups();
+            for (int groupPosition = 0; groupPosition < groups.size(); groupPosition++) {
+                RecipeIngredientGroup group = groups.get(groupPosition);
+                groupStatement.setString(1, group.getId().toString());
+                groupStatement.setString(2, recipe.getId().toString());
+                groupStatement.setInt(3, groupPosition);
+                groupStatement.setString(4, group.getStandardOptionId().toString());
+                groupStatement.addBatch();
+
+                for (RecipeIngredientOption option : group.getOptions()) {
+                    optionStatement.setString(1, option.getId().toString());
+                    optionStatement.setString(2, group.getId().toString());
+                    optionStatement.setString(3, option.getIngredient().getId().toString());
+                    // Plain decimal text preserves BigDecimal exactly without binary conversion.
+                    optionStatement.setString(4, option.getQuantity().toPlainString());
+                    optionStatement.setString(5, option.getUnit().name());
+                    optionStatement.setInt(6, option.getPosition());
+                    optionStatement.addBatch();
+                }
             }
-            statement.executeBatch();
+            groupStatement.executeBatch();
+            optionStatement.executeBatch();
         }
     }
 
@@ -215,8 +237,8 @@ public final class SqliteRecipeRepository implements RecipeRepository {
                 }
                 String name = resultSet.getString("name");
                 int servingCount = resultSet.getInt("standard_serving_count");
-                return Optional.of(new Recipe(id, name, servingCount,
-                        loadIngredients(connection, id), loadSteps(connection, id),
+                return Optional.of(Recipe.withIngredientGroups(id, name, servingCount,
+                        loadIngredientGroups(connection, id), loadSteps(connection, id),
                         loadTastes(connection, id),
                         nullableInteger(resultSet, "preparation_time_minutes"),
                         nullableInteger(resultSet, "cooking_time_minutes"),
@@ -279,30 +301,56 @@ public final class SqliteRecipeRepository implements RecipeRepository {
         return value == null ? null : new BigDecimal(value);
     }
 
-    private static List<RecipeIngredient> loadIngredients(Connection connection, UUID recipeId)
+    private static List<RecipeIngredientGroup> loadIngredientGroups(
+            Connection connection, UUID recipeId)
             throws SQLException {
         String sql = """
-                SELECT i.id, i.name, ri.quantity, ri.unit
-                FROM recipe_ingredients ri
-                JOIN ingredients i ON i.id = ri.ingredient_id
-                WHERE ri.recipe_id = ?
-                ORDER BY i.name, i.id
+                SELECT id, default_option_id
+                FROM recipe_ingredient_groups
+                WHERE recipe_id = ?
+                ORDER BY position, id
                 """;
-        List<RecipeIngredient> ingredients = new ArrayList<>();
+        List<RecipeIngredientGroup> groups = new ArrayList<>();
         try (var statement = connection.prepareStatement(sql)) {
             statement.setString(1, recipeId.toString());
             try (var resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    Ingredient ingredient = new Ingredient(
-                            UUID.fromString(resultSet.getString("id")),
-                            resultSet.getString("name"));
-                    ingredients.add(new RecipeIngredient(ingredient,
-                            new BigDecimal(resultSet.getString("quantity")),
-                            Unit.valueOf(resultSet.getString("unit"))));
+                    UUID groupId = UUID.fromString(resultSet.getString("id"));
+                    groups.add(new RecipeIngredientGroup(groupId,
+                            loadIngredientOptions(connection, groupId),
+                            UUID.fromString(resultSet.getString("default_option_id"))));
                 }
             }
         }
-        return ingredients;
+        return groups;
+    }
+
+    private static List<RecipeIngredientOption> loadIngredientOptions(
+            Connection connection, UUID groupId) throws SQLException {
+        String sql = """
+                SELECT rio.id, i.id AS ingredient_id, i.name, rio.quantity, rio.unit, rio.position
+                FROM recipe_ingredient_options rio
+                JOIN ingredients i ON i.id = rio.ingredient_id
+                WHERE rio.group_id = ?
+                ORDER BY rio.position, rio.id
+                """;
+        List<RecipeIngredientOption> options = new ArrayList<>();
+        try (var statement = connection.prepareStatement(sql)) {
+            statement.setString(1, groupId.toString());
+            try (var resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    Ingredient ingredient = new Ingredient(
+                            UUID.fromString(resultSet.getString("ingredient_id")),
+                            resultSet.getString("name"));
+                    options.add(new RecipeIngredientOption(
+                            UUID.fromString(resultSet.getString("id")), ingredient,
+                            new BigDecimal(resultSet.getString("quantity")),
+                            Unit.valueOf(resultSet.getString("unit")),
+                            resultSet.getInt("position")));
+                }
+            }
+        }
+        return options;
     }
 
     private static List<RecipeStep> loadSteps(Connection connection, UUID recipeId)
