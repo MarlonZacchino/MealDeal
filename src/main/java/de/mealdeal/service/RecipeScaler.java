@@ -2,6 +2,8 @@ package de.mealdeal.service;
 
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.domain.RecipeIngredientGroup;
+import de.mealdeal.domain.RecipeIngredientOption;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -27,6 +29,19 @@ public final class RecipeScaler {
      * @return immutable list of newly created scaled ingredient entries
      */
     public List<RecipeIngredient> scale(Recipe recipe, int requestedServingCount) {
+        return scaleIngredientGroups(recipe, requestedServingCount).stream()
+                .map(group -> group.getStandardOption())
+                .map(option -> new RecipeIngredient(option.getIngredient(), option.getQuantity(),
+                        option.getUnit()))
+                .toList();
+    }
+
+    /**
+     * Scales every option in every ingredient group while retaining group, option,
+     * default and ordering identities.
+     */
+    public List<RecipeIngredientGroup> scaleIngredientGroups(
+            Recipe recipe, int requestedServingCount) {
         Objects.requireNonNull(recipe, "Recipe must not be null.");
         if (requestedServingCount <= 0) {
             throw new IllegalArgumentException("Requested serving count must be greater than zero.");
@@ -35,16 +50,26 @@ public final class RecipeScaler {
         BigDecimal requested = BigDecimal.valueOf(requestedServingCount);
         BigDecimal standard = BigDecimal.valueOf(recipe.getStandardServingCount());
 
-        return recipe.getIngredients().stream()
-                .map(ingredient -> scaleIngredient(ingredient, requested, standard))
+        return recipe.getIngredientGroups().stream()
+                .map(group -> scaleGroup(group, requested, standard))
                 .toList();
     }
 
-    private static RecipeIngredient scaleIngredient(
-            RecipeIngredient ingredient, BigDecimal requested, BigDecimal standard) {
-        BigDecimal scaledAmount = ingredient.getQuantity()
+    private static RecipeIngredientGroup scaleGroup(RecipeIngredientGroup group,
+                                                     BigDecimal requested,
+                                                     BigDecimal standard) {
+        List<RecipeIngredientOption> options = group.getOptions().stream()
+                .map(option -> scaleOption(option, requested, standard))
+                .toList();
+        return new RecipeIngredientGroup(group.getId(), options, group.getStandardOptionId());
+    }
+
+    private static RecipeIngredientOption scaleOption(
+            RecipeIngredientOption option, BigDecimal requested, BigDecimal standard) {
+        BigDecimal scaledAmount = option.getQuantity()
                 .multiply(requested)
                 .divide(standard, CALCULATION_CONTEXT);
-        return new RecipeIngredient(ingredient.getIngredient(), scaledAmount, ingredient.getUnit());
+        return new RecipeIngredientOption(option.getId(), option.getIngredient(), scaledAmount,
+                option.getUnit(), option.getPosition());
     }
 }

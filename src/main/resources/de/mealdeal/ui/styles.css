@@ -612,6 +612,17 @@
     -fx-padding: 6px 0;
 }
 
+.ingredient-group-form {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 12px;
+    -fx-padding: 16px;
+}
+
+.ingredient-standard-choice {
+    -fx-font-size: 15px;
+    -fx-text-fill: -md-text;
+}
+
 .form-message {
     -fx-background-color: -md-danger-background;
     -fx-background-radius: 10px;
@@ -677,6 +688,33 @@
     -fx-font-weight: bold;
     -fx-min-width: 125px;
     -fx-text-fill: -md-text;
+}
+
+.detail-ingredient-group {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 10px;
+    -fx-padding: 10px;
+}
+
+.detail-ingredient-group > .detail-row {
+    -fx-background-color: transparent;
+    -fx-padding: 5px 7px;
+}
+
+.detail-alternative-separator {
+    -fx-font-size: 14px;
+    -fx-font-style: italic;
+    -fx-padding: 0 0 0 132px;
+    -fx-text-fill: -md-text-muted;
+}
+
+.detail-standard-badge {
+    -fx-background-color: -md-accent-soft;
+    -fx-background-radius: 999px;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 8px;
+    -fx-text-fill: -md-accent;
 }
 
 .detail-step-position {

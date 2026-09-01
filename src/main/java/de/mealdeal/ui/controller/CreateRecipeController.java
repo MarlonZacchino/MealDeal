@@ -43,7 +43,7 @@ public final class CreateRecipeController implements NavigationAware {
     private final IngredientRepository ingredientRepository;
     private final TasteRepository tasteRepository;
     private final RecipeFormService formService;
-    private final List<IngredientFormRow> ingredientRows = new ArrayList<>();
+    private final List<IngredientGroupFormRow> ingredientGroups = new ArrayList<>();
     private final List<RecipeStepFormRow> stepRows = new ArrayList<>();
     private final List<Ingredient> availableIngredients = new ArrayList<>();
 
@@ -135,11 +135,11 @@ public final class CreateRecipeController implements NavigationAware {
 
     @FXML
     private void addIngredientRow() {
-        IngredientFormRow row = new IngredientFormRow(
-                availableIngredients, this::removeIngredientRow);
-        ingredientRows.add(row);
-        ingredientRowsContainer.getChildren().add(row.container());
-        updateIngredientRemoveButtons();
+        IngredientGroupFormRow group = new IngredientGroupFormRow(
+                availableIngredients, this::removeIngredientGroup);
+        ingredientGroups.add(group);
+        ingredientRowsContainer.getChildren().add(group.container());
+        updateIngredientGroupRemoveButtons();
     }
 
     @FXML
@@ -201,19 +201,18 @@ public final class CreateRecipeController implements NavigationAware {
     }
 
     private void fillIngredients(Recipe recipe) {
-        ingredientRows.clear();
+        ingredientGroups.clear();
         ingredientRowsContainer.getChildren().clear();
-        recipe.getIngredients().forEach(recipeIngredient -> {
-            IngredientFormRow row = new IngredientFormRow(
-                    availableIngredients, this::removeIngredientRow);
-            row.setValue(recipeIngredient);
-            ingredientRows.add(row);
-            ingredientRowsContainer.getChildren().add(row.container());
+        recipe.getIngredientGroups().forEach(recipeGroup -> {
+            IngredientGroupFormRow group = new IngredientGroupFormRow(
+                    availableIngredients, this::removeIngredientGroup, recipeGroup);
+            ingredientGroups.add(group);
+            ingredientRowsContainer.getChildren().add(group.container());
         });
-        if (ingredientRows.isEmpty()) {
+        if (ingredientGroups.isEmpty()) {
             addIngredientRow();
         } else {
-            updateIngredientRemoveButtons();
+            updateIngredientGroupRemoveButtons();
         }
     }
 
@@ -247,7 +246,7 @@ public final class CreateRecipeController implements NavigationAware {
                     .sorted(Comparator.comparing(Ingredient::getName,
                             String.CASE_INSENSITIVE_ORDER))
                     .toList());
-            ingredientRows.forEach(IngredientFormRow::refreshIngredients);
+            ingredientGroups.forEach(IngredientGroupFormRow::refreshIngredients);
             tasteRepository.findAll().stream()
                     .sorted(Comparator.comparing(Taste::getName, String.CASE_INSENSITIVE_ORDER))
                     .forEach(taste -> addTasteOption(taste.getName(), false));
@@ -259,7 +258,7 @@ public final class CreateRecipeController implements NavigationAware {
     }
 
     private RecipeFormInput readFormInput() {
-        var ingredients = ingredientRows.stream().map(IngredientFormRow::toInput).toList();
+        var groups = ingredientGroups.stream().map(IngredientGroupFormRow::toInput).toList();
         List<String> tastes = tasteOptionsContainer.getChildren().stream()
                 .filter(CheckBox.class::isInstance)
                 .map(CheckBox.class::cast)
@@ -267,20 +266,20 @@ public final class CreateRecipeController implements NavigationAware {
                 .map(CheckBox::getText)
                 .toList();
         List<String> steps = stepRows.stream().map(RecipeStepFormRow::description).toList();
-        return new RecipeFormInput(nameField.getText(), servingCountField.getText(),
-                ingredients, tastes, steps, preparationTimeField.getText(),
+        return RecipeFormInput.withIngredientGroups(nameField.getText(),
+                servingCountField.getText(), groups, tastes, steps, preparationTimeField.getText(),
                 cookingTimeField.getText(), bakingTimeField.getText(), caloriesField.getText(),
                 proteinField.getText(),
                 carbohydratesField.getText(), fatField.getText(), dishTypeBox.getValue());
     }
 
-    private void removeIngredientRow(IngredientFormRow row) {
-        if (ingredientRows.size() <= 1) {
+    private void removeIngredientGroup(IngredientGroupFormRow group) {
+        if (ingredientGroups.size() <= 1) {
             return;
         }
-        ingredientRows.remove(row);
-        ingredientRowsContainer.getChildren().remove(row.container());
-        updateIngredientRemoveButtons();
+        ingredientGroups.remove(group);
+        ingredientRowsContainer.getChildren().remove(group.container());
+        updateIngredientGroupRemoveButtons();
     }
 
     private void removeStepRow(RecipeStepFormRow row) {
@@ -289,9 +288,9 @@ public final class CreateRecipeController implements NavigationAware {
         renumberSteps();
     }
 
-    private void updateIngredientRemoveButtons() {
-        boolean disable = ingredientRows.size() == 1;
-        ingredientRows.forEach(row -> row.setRemovalDisabled(disable));
+    private void updateIngredientGroupRemoveButtons() {
+        boolean disable = ingredientGroups.size() == 1;
+        ingredientGroups.forEach(group -> group.setGroupRemovalDisabled(disable));
     }
 
     private void renumberSteps() {

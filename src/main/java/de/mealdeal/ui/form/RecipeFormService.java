@@ -4,7 +4,8 @@ import de.mealdeal.domain.Ingredient;
 import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.domain.Recipe;
-import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.domain.RecipeIngredientGroup;
+import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.domain.RecipeStep;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.persistence.repository.IngredientRepository;
@@ -58,17 +59,21 @@ public final class RecipeFormService {
 
         List<Ingredient> existingIngredients = ingredientRepository.findAll();
         List<Taste> existingTastes = tasteRepository.findAll();
-        List<RecipeIngredient> recipeIngredients = new ArrayList<>();
-
-        for (ValidatedIngredient ingredientInput : validated.ingredients()) {
-            Ingredient ingredient = findIngredient(existingIngredients, ingredientInput.name());
-            if (ingredient == null) {
-                ingredient = new Ingredient(ingredientInput.name());
-                ingredientRepository.save(ingredient);
-                existingIngredients = append(existingIngredients, ingredient);
+        List<RecipeIngredientGroup> ingredientGroups = new ArrayList<>();
+        for (ValidatedIngredientGroup groupInput : validated.ingredientGroups()) {
+            List<RecipeIngredientOption> options = new ArrayList<>();
+            for (ValidatedIngredientOption optionInput : groupInput.options()) {
+                Ingredient ingredient = findIngredient(existingIngredients, optionInput.name());
+                if (ingredient == null) {
+                    ingredient = new Ingredient(optionInput.name());
+                    ingredientRepository.save(ingredient);
+                    existingIngredients = append(existingIngredients, ingredient);
+                }
+                options.add(new RecipeIngredientOption(optionInput.id(), ingredient,
+                        optionInput.quantity(), optionInput.unit(), optionInput.position()));
             }
-            recipeIngredients.add(new RecipeIngredient(
-                    ingredient, ingredientInput.quantity(), ingredientInput.unit()));
+            ingredientGroups.add(new RecipeIngredientGroup(groupInput.id(), options,
+                    groupInput.standardOptionId()));
         }
 
         List<Taste> recipeTastes = new ArrayList<>();
@@ -87,17 +92,11 @@ public final class RecipeFormService {
             steps.add(new RecipeStep(index + 1, validated.stepDescriptions().get(index)));
         }
 
-        Recipe recipe = recipeId == null
-                ? new Recipe(validated.name(), validated.servingCount(),
-                        recipeIngredients, steps, recipeTastes,
-                        validated.preparationTimeMinutes(), validated.cookingTimeMinutes(),
-                        validated.bakingTimeMinutes(),
-                        validated.nutritionInfo(), validated.dishType())
-                : new Recipe(recipeId, validated.name(), validated.servingCount(),
-                        recipeIngredients, steps, recipeTastes,
-                        validated.preparationTimeMinutes(), validated.cookingTimeMinutes(),
-                        validated.bakingTimeMinutes(),
-                        validated.nutritionInfo(), validated.dishType());
+        UUID stableRecipeId = recipeId == null ? UUID.randomUUID() : recipeId;
+        Recipe recipe = Recipe.withIngredientGroups(stableRecipeId, validated.name(),
+                validated.servingCount(), ingredientGroups, steps, recipeTastes,
+                validated.preparationTimeMinutes(), validated.cookingTimeMinutes(),
+                validated.bakingTimeMinutes(), validated.nutritionInfo(), validated.dishType());
         recipeRepository.save(recipe);
         return recipe;
     }
@@ -110,7 +109,7 @@ public final class RecipeFormService {
         }
 
         int servingCount = parseServingCount(input.standardServingCount(), errors);
-        List<ValidatedIngredient> ingredients = validateIngredients(input.ingredients(), errors);
+        List<ValidatedIngredientGroup> ingredientGroups = validateIngredientGroups(input, errors);
         List<String> tasteNames = validateTastes(input.tasteNames(), errors);
         List<String> steps = validateSteps(input.stepDescriptions());
         Integer preparationTime = parseOptionalMinutes(
@@ -134,7 +133,7 @@ public final class RecipeFormService {
         if (!errors.isEmpty()) {
             throw new RecipeFormValidationException(errors);
         }
-        return new ValidatedForm(name, servingCount, ingredients, tasteNames, steps,
+        return new ValidatedForm(name, servingCount, ingredientGroups, tasteNames, steps,
                 preparationTime, cookingTime, bakingTime,
                 new NutritionInfo(calories, protein, carbohydrates, fat), dishType);
     }
@@ -202,40 +201,88 @@ public final class RecipeFormService {
         }
     }
 
-    private static List<ValidatedIngredient> validateIngredients(
-            List<IngredientFormInput> inputs, List<String> errors) {
+    private static List<ValidatedIngredientGroup> validateIngredientGroups(
+            RecipeFormInput form, List<String> errors) {
+        List<IngredientGroupFormInput> inputs = form.ingredientGroups().isEmpty()
+                ? legacyIngredientGroups(form.ingredients()) : form.ingredientGroups();
         if (inputs.isEmpty()) {
             errors.add("Füge mindestens eine Zutat hinzu.");
             return List.of();
         }
 
-        List<ValidatedIngredient> result = new ArrayList<>();
+        List<ValidatedIngredientGroup> result = new ArrayList<>();
         Set<String> names = new HashSet<>();
-        for (int index = 0; index < inputs.size(); index++) {
-            IngredientFormInput input = inputs.get(index);
-            int row = index + 1;
-            String name = input == null ? "" : stripped(input.ingredientName());
-            if (name.isEmpty()) {
-                errors.add("Zutat " + row + ": Bitte wähle oder benenne eine Zutat.");
-            } else if (!names.add(normalized(name))) {
-                errors.add("Zutat " + row + ": Diese Zutat wurde bereits hinzugefügt.");
+        Set<UUID> groupIds = new HashSet<>();
+        Set<UUID> optionIds = new HashSet<>();
+        for (int groupIndex = 0; groupIndex < inputs.size(); groupIndex++) {
+            IngredientGroupFormInput group = inputs.get(groupIndex);
+            int displayedGroup = groupIndex + 1;
+            if (group == null || group.options().isEmpty()) {
+                errors.add("Zutatengruppe " + displayedGroup
+                        + ": Füge mindestens eine Option hinzu.");
+                continue;
             }
-
-            BigDecimal quantity = null;
-            try {
-                quantity = DecimalInputParser.parsePositive(input == null ? null : input.quantity());
-            } catch (IllegalArgumentException exception) {
-                errors.add("Zutat " + row + ": Die Menge muss eine positive Zahl sein.");
+            UUID groupId = group.groupId() == null ? UUID.randomUUID() : group.groupId();
+            if (!groupIds.add(groupId)) {
+                errors.add("Zutatengruppe " + displayedGroup + ": Die Gruppen-ID ist doppelt.");
             }
-
-            if (input == null || input.unit() == null) {
-                errors.add("Zutat " + row + ": Bitte wähle eine Einheit.");
+            List<ValidatedIngredientOption> options = new ArrayList<>();
+            for (int optionIndex = 0; optionIndex < group.options().size(); optionIndex++) {
+                IngredientOptionFormInput option = group.options().get(optionIndex);
+                int displayedOption = optionIndex + 1;
+                String prefix = "Zutatengruppe " + displayedGroup + ", Option "
+                        + displayedOption + ": ";
+                String optionName = option == null ? "" : stripped(option.ingredientName());
+                if (optionName.isEmpty()) {
+                    errors.add(prefix + "Bitte wähle oder benenne eine Zutat.");
+                } else if (!names.add(normalized(optionName))) {
+                    errors.add(prefix + "Diese Zutat wurde bereits hinzugefügt.");
+                }
+                BigDecimal quantity = null;
+                try {
+                    quantity = DecimalInputParser.parsePositive(
+                            option == null ? null : option.quantity());
+                } catch (IllegalArgumentException exception) {
+                    errors.add(prefix + "Die Menge muss eine positive Zahl sein.");
+                }
+                if (option == null || option.unit() == null) {
+                    errors.add(prefix + "Bitte wähle eine Einheit.");
+                }
+                UUID optionId = option == null || option.optionId() == null
+                        ? UUID.randomUUID() : option.optionId();
+                if (!optionIds.add(optionId)) {
+                    errors.add(prefix + "Die Options-ID ist doppelt.");
+                }
+                if (!optionName.isEmpty() && quantity != null
+                        && option != null && option.unit() != null) {
+                    options.add(new ValidatedIngredientOption(optionId, optionName, quantity,
+                            option.unit(), optionIndex));
+                }
             }
-            if (!name.isEmpty() && quantity != null && input != null && input.unit() != null) {
-                result.add(new ValidatedIngredient(name, quantity, input.unit()));
+            UUID standardId = group.standardOptionId();
+            if (standardId == null || group.options().stream()
+                    .filter(Objects::nonNull)
+                    .noneMatch(option -> standardId.equals(option.optionId()))) {
+                errors.add("Zutatengruppe " + displayedGroup
+                        + ": Bitte wähle genau eine Standardoption.");
+            }
+            if (options.size() == group.options().size() && standardId != null) {
+                result.add(new ValidatedIngredientGroup(groupId, List.copyOf(options), standardId));
             }
         }
         return List.copyOf(result);
+    }
+
+    private static List<IngredientGroupFormInput> legacyIngredientGroups(
+            List<IngredientFormInput> ingredients) {
+        return ingredients.stream().map(ingredient -> {
+            UUID optionId = UUID.randomUUID();
+            return new IngredientGroupFormInput(UUID.randomUUID(), List.of(
+                    new IngredientOptionFormInput(optionId,
+                            ingredient == null ? null : ingredient.ingredientName(),
+                            ingredient == null ? null : ingredient.quantity(),
+                            ingredient == null ? null : ingredient.unit(), 0)), optionId);
+        }).toList();
     }
 
     private static List<String> validateTastes(List<String> inputs, List<String> errors) {
@@ -288,12 +335,17 @@ public final class RecipeFormService {
         return result;
     }
 
-    private record ValidatedIngredient(String name, BigDecimal quantity,
-                                       de.mealdeal.domain.Unit unit) {
+    private record ValidatedIngredientOption(UUID id, String name, BigDecimal quantity,
+                                             de.mealdeal.domain.Unit unit, int position) {
+    }
+
+    private record ValidatedIngredientGroup(UUID id,
+                                            List<ValidatedIngredientOption> options,
+                                            UUID standardOptionId) {
     }
 
     private record ValidatedForm(String name, int servingCount,
-                                 List<ValidatedIngredient> ingredients,
+                                 List<ValidatedIngredientGroup> ingredientGroups,
                                  List<String> tasteNames,
                                  List<String> stepDescriptions,
                                  Integer preparationTimeMinutes,

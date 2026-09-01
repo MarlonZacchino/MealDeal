@@ -1,7 +1,7 @@
 package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.Recipe;
-import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.domain.RecipeIngredientGroup;
 import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.RecipeDeletionRestrictedException;
@@ -168,13 +168,15 @@ public final class RecipeDetailController implements NavigationAware {
 
     private void renderIngredients(int servingCount) {
         ingredientsContainer.getChildren().clear();
-        var scaledIngredients = recipeScaler.scale(recipe, servingCount);
-        if (scaledIngredients.isEmpty()) {
+        var groups = ingredientGroupDisplays(recipe, servingCount, recipeScaler);
+        if (groups.isEmpty()) {
             ingredientsContainer.getChildren().add(emptyLabel("Keine Zutaten angegeben."));
             return;
         }
-        scaledIngredients.forEach(ingredient ->
-                ingredientsContainer.getChildren().add(ingredientRow(ingredient)));
+        groups.forEach(group -> ingredientsContainer.getChildren().add(
+                group.options().size() == 1
+                        ? ingredientOptionRow(group.options().getFirst(), false)
+                        : ingredientGroup(group)));
     }
 
     private void renderSteps() {
@@ -267,14 +269,51 @@ public final class RecipeDetailController implements NavigationAware {
         timesContainer.getChildren().add(row);
     }
 
-    private static HBox ingredientRow(RecipeIngredient ingredient) {
-        Label quantity = new Label(GermanRecipeDisplay.quantity(
-                ingredient.getQuantity(), ingredient.getUnit()));
+    static List<IngredientGroupDisplay> ingredientGroupDisplays(
+            Recipe recipe, int servingCount, RecipeScaler scaler) {
+        Objects.requireNonNull(recipe, "Recipe must not be null.");
+        Objects.requireNonNull(scaler, "Recipe scaler must not be null.");
+        return scaler.scaleIngredientGroups(recipe, servingCount).stream()
+                .map(RecipeDetailController::ingredientGroupDisplay)
+                .toList();
+    }
+
+    private static IngredientGroupDisplay ingredientGroupDisplay(RecipeIngredientGroup group) {
+        return new IngredientGroupDisplay(group.getOptions().stream()
+                .map(option -> new IngredientOptionDisplay(
+                        GermanRecipeDisplay.quantity(option.getQuantity(), option.getUnit()),
+                        option.getIngredient().getName(),
+                        option.getId().equals(group.getStandardOptionId())))
+                .toList());
+    }
+
+    private static VBox ingredientGroup(IngredientGroupDisplay group) {
+        VBox container = new VBox(7);
+        container.getStyleClass().add("detail-ingredient-group");
+        for (int index = 0; index < group.options().size(); index++) {
+            if (index > 0) {
+                Label separator = new Label("oder");
+                separator.getStyleClass().add("detail-alternative-separator");
+                container.getChildren().add(separator);
+            }
+            container.getChildren().add(ingredientOptionRow(group.options().get(index), true));
+        }
+        return container;
+    }
+
+    private static HBox ingredientOptionRow(IngredientOptionDisplay option,
+                                            boolean showStandard) {
+        Label quantity = new Label(option.quantity());
         quantity.getStyleClass().add("detail-quantity");
-        Label name = new Label(ingredient.getIngredient().getName());
+        Label name = new Label(option.ingredientName());
         name.getStyleClass().add("detail-row-text");
         HBox row = new HBox(16, quantity, name);
         row.getStyleClass().add("detail-row");
+        if (showStandard && option.standard()) {
+            Label standard = new Label("Standard");
+            standard.getStyleClass().add("detail-standard-badge");
+            row.getChildren().add(standard);
+        }
         return row;
     }
 
@@ -295,5 +334,14 @@ public final class RecipeDetailController implements NavigationAware {
     }
 
     record TimeDisplay(String label, String minutes) {
+    }
+
+    record IngredientGroupDisplay(List<IngredientOptionDisplay> options) {
+        IngredientGroupDisplay {
+            options = List.copyOf(options);
+        }
+    }
+
+    record IngredientOptionDisplay(String quantity, String ingredientName, boolean standard) {
     }
 }

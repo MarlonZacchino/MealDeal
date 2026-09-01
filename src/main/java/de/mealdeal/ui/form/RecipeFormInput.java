@@ -9,6 +9,7 @@ public record RecipeFormInput(
         String name,
         String standardServingCount,
         List<IngredientFormInput> ingredients,
+        List<IngredientGroupFormInput> ingredientGroups,
         List<String> tasteNames,
         List<String> stepDescriptions,
         String preparationTimeMinutes,
@@ -22,6 +23,7 @@ public record RecipeFormInput(
 
     public RecipeFormInput {
         ingredients = ingredients == null ? List.of() : List.copyOf(ingredients);
+        ingredientGroups = ingredientGroups == null ? List.of() : List.copyOf(ingredientGroups);
         tasteNames = tasteNames == null ? List.of() : List.copyOf(tasteNames);
         stepDescriptions = stepDescriptions == null ? List.of() : List.copyOf(stepDescriptions);
     }
@@ -64,5 +66,31 @@ public record RecipeFormInput(
         this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
                 preparationTimeMinutes, cookingTimeMinutes, null, caloriesKcal, proteinGrams,
                 carbohydrateGrams, fatGrams, dishType);
+    }
+
+    /** Keeps the complete pre-group form call source-compatible. */
+    public RecipeFormInput(String name, String standardServingCount,
+                           List<IngredientFormInput> ingredients, List<String> tasteNames,
+                           List<String> stepDescriptions, String preparationTimeMinutes,
+                           String cookingTimeMinutes, String bakingTimeMinutes,
+                           String caloriesKcal, String proteinGrams, String carbohydrateGrams,
+                           String fatGrams, DishType dishType) {
+        this(name, standardServingCount, ingredients, List.of(), tasteNames, stepDescriptions,
+                preparationTimeMinutes, cookingTimeMinutes, bakingTimeMinutes, caloriesKcal,
+                proteinGrams, carbohydrateGrams, fatGrams, dishType);
+    }
+
+    /** Creates the complete form snapshot from ordered ingredient groups. */
+    public static RecipeFormInput withIngredientGroups(
+            String name, String standardServingCount,
+            List<IngredientGroupFormInput> ingredientGroups,
+            List<String> tasteNames, List<String> stepDescriptions,
+            String preparationTimeMinutes, String cookingTimeMinutes,
+            String bakingTimeMinutes, String caloriesKcal, String proteinGrams,
+            String carbohydrateGrams, String fatGrams, DishType dishType) {
+        return new RecipeFormInput(name, standardServingCount, List.of(), ingredientGroups,
+                tasteNames, stepDescriptions, preparationTimeMinutes, cookingTimeMinutes,
+                bakingTimeMinutes, caloriesKcal, proteinGrams, carbohydrateGrams, fatGrams,
+                dishType);
     }
 }

@@ -102,11 +102,11 @@
                     <HBox alignment="CENTER_LEFT" spacing="12.0">
                         <VBox spacing="4.0">
                             <Label text="Zutaten" styleClass="card-title"/>
-                            <Label text="Vorhandene Zutaten auswählen oder einen neuen Namen eingeben."
+                            <Label text="Pro Zutatengruppe kannst du Alternativen mit eigener Menge und Einheit ergänzen."
                                    wrapText="true" styleClass="card-text"/>
                         </VBox>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Button text="Zutat hinzufügen" onAction="#addIngredientRow"
+                        <Button text="Zutatengruppe hinzufügen" onAction="#addIngredientRow"
                                 styleClass="secondary-button"/>
                     </HBox>
                     <VBox fx:id="ingredientRowsContainer" spacing="12.0"/>

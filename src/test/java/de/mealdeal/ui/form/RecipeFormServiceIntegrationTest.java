@@ -12,6 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -157,5 +158,56 @@ class RecipeFormServiceIntegrationTest {
         assertEquals(DishType.SIDE, created.getDishType());
         assertEquals(DishType.SIDE, updated.getDishType());
         assertEquals(DishType.SIDE, loaded.getDishType());
+    }
+
+    @Test
+    void createsAndEditsAlternativeGroupsWithStableExistingIds() {
+        SqliteDatabase database = new SqliteDatabase(
+                temporaryDirectory.resolve("alternative-form.db"));
+        var ingredients = new SqliteIngredientRepository(database);
+        var tastes = new SqliteTasteRepository(database);
+        var recipes = new SqliteRecipeRepository(database);
+        RecipeFormService service = new RecipeFormService(recipes, ingredients, tastes);
+        UUID groupId = UUID.randomUUID();
+        UUID vealId = UUID.randomUUID();
+        UUID chickenId = UUID.randomUUID();
+        Recipe created = service.createAndSave(groupInput(groupId, List.of(
+                option(vealId, "Kalb", "400", Unit.GRAM, 0),
+                option(chickenId, "Hähnchen", "350", Unit.GRAM, 1)), vealId));
+
+        Recipe initiallyLoaded = recipes.findById(created.getId()).orElseThrow();
+        assertEquals(List.of(vealId, chickenId), initiallyLoaded.getIngredientGroups().getFirst()
+                .getOptions().stream().map(value -> value.getId()).toList());
+
+        UUID porkId = UUID.randomUUID();
+        service.updateAndSave(created.getId(), groupInput(groupId, List.of(
+                option(chickenId, "Hähnchen", "2", Unit.PIECE, 0),
+                option(porkId, "Schwein", "425", Unit.GRAM, 1)), porkId));
+
+        Recipe edited = recipes.findById(created.getId()).orElseThrow();
+        var editedGroup = edited.getIngredientGroups().getFirst();
+        assertEquals(created.getId(), edited.getId());
+        assertEquals(groupId, editedGroup.getId());
+        assertEquals(List.of(chickenId, porkId), editedGroup.getOptions().stream()
+                .map(value -> value.getId()).toList());
+        assertEquals(porkId, editedGroup.getStandardOptionId());
+        assertEquals(List.of(Unit.PIECE, Unit.GRAM), editedGroup.getOptions().stream()
+                .map(value -> value.getUnit()).toList());
+        assertEquals(List.of("Hähnchen", "Kalb", "Schwein"), ingredients.findAll().stream()
+                .map(value -> value.getName()).sorted().toList());
+    }
+
+    private static RecipeFormInput groupInput(UUID groupId,
+                                               List<IngredientOptionFormInput> options,
+                                               UUID standardId) {
+        return RecipeFormInput.withIngredientGroups("Schnitzel", "2",
+                List.of(new IngredientGroupFormInput(groupId, options, standardId)),
+                List.of("Herzhaft"), List.of(), "", "", "", "", "", "", "",
+                DishType.MAIN);
+    }
+
+    private static IngredientOptionFormInput option(UUID id, String name, String quantity,
+                                                    Unit unit, int position) {
+        return new IngredientOptionFormInput(id, name, quantity, unit, position);
     }
 }

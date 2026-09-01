@@ -57,6 +57,60 @@ class RecipeFormServiceTest {
     }
 
     @Test
+    void createsOrderedAlternativeGroupWithSelectedStandardAndStableIds() {
+        MemoryIngredientRepository ingredients = new MemoryIngredientRepository();
+        MemoryTasteRepository tastes = new MemoryTasteRepository();
+        MemoryRecipeRepository recipes = new MemoryRecipeRepository();
+        RecipeFormService service = new RecipeFormService(recipes, ingredients, tastes);
+        UUID groupId = UUID.randomUUID();
+        UUID vealId = UUID.randomUUID();
+        UUID chickenId = UUID.randomUUID();
+        RecipeFormInput input = RecipeFormInput.withIngredientGroups(
+                "Schnitzel", "2", List.of(new IngredientGroupFormInput(groupId, List.of(
+                        new IngredientOptionFormInput(vealId, "Kalbsschnitzel", "400",
+                                Unit.GRAM, 0),
+                        new IngredientOptionFormInput(chickenId, "Hähnchenschnitzel", "2",
+                                Unit.PIECE, 1)), chickenId)),
+                List.of("Herzhaft"), List.of(), "", "", "", "", "", "", "",
+                DishType.MAIN);
+
+        Recipe recipe = service.createAndSave(input);
+
+        var group = recipe.getIngredientGroups().getFirst();
+        assertEquals(groupId, group.getId());
+        assertEquals(List.of(vealId, chickenId), group.getOptions().stream()
+                .map(option -> option.getId()).toList());
+        assertEquals(chickenId, group.getStandardOptionId());
+        assertEquals(List.of(new BigDecimal("400"), new BigDecimal("2")),
+                group.getOptions().stream().map(option -> option.getQuantity()).toList());
+        assertEquals(List.of(Unit.GRAM, Unit.PIECE), group.getOptions().stream()
+                .map(option -> option.getUnit()).toList());
+        assertEquals(List.of("Kalbsschnitzel", "Hähnchenschnitzel"),
+                ingredients.values.stream().map(Ingredient::getName).toList());
+    }
+
+    @Test
+    void rejectsEmptyGroupAndInvalidStandardSelection() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+        RecipeFormInput input = RecipeFormInput.withIngredientGroups(
+                "Ungültig", "2", List.of(
+                        new IngredientGroupFormInput(UUID.randomUUID(), List.of(), null),
+                        new IngredientGroupFormInput(UUID.randomUUID(), List.of(
+                                new IngredientOptionFormInput(UUID.randomUUID(), "Kartoffel", "2",
+                                        Unit.PIECE, 0)), UUID.randomUUID())),
+                List.of("Herzhaft"), List.of(), "", "", "", "", "", "", "",
+                DishType.MAIN);
+
+        RecipeFormValidationException exception = assertThrows(
+                RecipeFormValidationException.class, () -> service.createAndSave(input));
+
+        assertTrue(exception.getErrors().stream().anyMatch(error -> error.contains("mindestens")));
+        assertTrue(exception.getErrors().stream().anyMatch(error -> error.contains("Standardoption")));
+    }
+
+    @Test
     void savesNewCentralDataBeforeRecipe() {
         List<String> events = new ArrayList<>();
         MemoryIngredientRepository ingredients = new MemoryIngredientRepository(events);

@@ -124,6 +124,10 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("Nährwerte pro Portion"));
         assertTrue(fxml.contains("fx:id=\"dishTypeBox\""));
         assertTrue(fxml.contains("text=\"Gerichtstyp\""));
+        assertTrue(fxml.contains("Zutatengruppe hinzufügen"));
+        assertTrue(fxml.contains("Alternativen mit eigener Menge und Einheit"));
+        assertTrue(readResource("/de/mealdeal/ui/styles.css")
+                .contains(".ingredient-group-form"));
     }
 
     @Test

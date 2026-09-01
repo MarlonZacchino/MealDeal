@@ -91,6 +91,30 @@ class RecipeScalerTest {
     }
 
     @Test
+    void scalesAllAlternativeOptionsAndKeepsGroupSemantics() {
+        Ingredient rice = new Ingredient("Rice");
+        RecipeIngredientOption pastaOption = new RecipeIngredientOption(
+                pasta, new BigDecimal("500"), Unit.GRAM, 0);
+        RecipeIngredientOption riceOption = new RecipeIngredientOption(
+                rice, new BigDecimal("300"), Unit.GRAM, 1);
+        RecipeIngredientGroup group = new RecipeIngredientGroup(
+                List.of(pastaOption, riceOption), riceOption);
+        Recipe recipe = Recipe.withIngredientGroups("Flexible", 2, List.of(group),
+                List.of(), List.of(new Taste("Savory")), DishType.MAIN);
+
+        RecipeIngredientGroup scaled = scaler.scaleIngredientGroups(recipe, 4).getFirst();
+
+        assertEquals(group.getId(), scaled.getId());
+        assertEquals(List.of(pastaOption.getId(), riceOption.getId()), scaled.getOptions().stream()
+                .map(option -> option.getId()).toList());
+        assertEquals(riceOption.getId(), scaled.getStandardOptionId());
+        assertEquals(List.of(new BigDecimal("1000"), new BigDecimal("600")),
+                scaled.getOptions().stream().map(option -> option.getQuantity()).toList());
+        assertEquals(List.of(0, 1), scaled.getOptions().stream()
+                .map(option -> option.getPosition()).toList());
+    }
+
+    @Test
     void scalesToOddServingCount() {
         assertScaledAmount(recipe(2, "500"), 5, "1250");
     }
