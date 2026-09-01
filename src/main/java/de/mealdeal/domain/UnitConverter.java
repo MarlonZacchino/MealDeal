@@ -43,6 +43,15 @@ public final class UnitConverter {
                 "Cannot convert from " + sourceUnit + " to " + targetUnit + ".");
     }
 
+    /** Returns whether the two units can be converted by the supported exact rules. */
+    public static boolean canConvert(Unit sourceUnit, Unit targetUnit) {
+        Objects.requireNonNull(sourceUnit, "Source unit must not be null.");
+        Objects.requireNonNull(targetUnit, "Target unit must not be null.");
+        return sourceUnit == targetUnit
+                || isPair(sourceUnit, targetUnit, Unit.GRAM, Unit.KILOGRAM)
+                || isPair(sourceUnit, targetUnit, Unit.MILLILITER, Unit.LITER);
+    }
+
     private static boolean isPair(Unit source, Unit target, Unit smaller, Unit larger) {
         return source == smaller && target == larger
                 || source == larger && target == smaller;

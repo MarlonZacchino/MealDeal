@@ -184,12 +184,35 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("onAction=\"#showToday\""));
         assertTrue(fxml.contains("fx:id=\"weekMode\""));
         assertTrue(fxml.contains("onAction=\"#showCurrentWeek\""));
+        assertTrue(fxml.contains("fx:id=\"withoutInventoryMode\""));
+        assertTrue(fxml.contains("onAction=\"#showWithoutInventory\""));
+        assertTrue(fxml.contains("fx:id=\"withInventoryMode\""));
+        assertTrue(fxml.contains("onAction=\"#showWithInventory\""));
         assertTrue(fxml.contains("fx:id=\"itemsContainer\""));
         assertTrue(fxml.contains("fx:id=\"emptyState\""));
         assertTrue(fxml.contains("Für heute ist nichts einzukaufen."));
         assertTrue(fxml.contains("fx:id=\"errorState\""));
         assertTrue(css.contains(".shopping-mode-button:selected"));
         assertTrue(css.contains(".shopping-list-row"));
+    }
+
+    @Test
+    void inventoryViewDefinesAddGroupedEditDeleteAndEmptyStates() throws Exception {
+        String main = readResource(MAIN_VIEW);
+        String fxml = readResource("/de/mealdeal/ui/inventory-view.fxml");
+        String css = readResource("/de/mealdeal/ui/styles.css");
+
+        assertTrue(main.contains("fx:id=\"inventoryButton\""));
+        assertTrue(main.contains("onAction=\"#showInventory\""));
+        assertTrue(fxml.contains("fx:controller=\"de.mealdeal.ui.controller.InventoryController\""));
+        assertTrue(fxml.contains("fx:id=\"ingredientBox\""));
+        assertTrue(fxml.contains("fx:id=\"quantityField\""));
+        assertTrue(fxml.contains("fx:id=\"unitBox\""));
+        assertTrue(fxml.contains("onAction=\"#addItem\""));
+        assertTrue(fxml.contains("fx:id=\"categoryContainer\""));
+        assertTrue(fxml.contains("fx:id=\"emptyState\""));
+        assertTrue(css.contains(".inventory-category-card"));
+        assertTrue(css.contains(".inventory-row"));
     }
 
     private static String readResource(String path) throws Exception {

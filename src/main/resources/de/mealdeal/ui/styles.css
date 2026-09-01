@@ -525,6 +525,58 @@
     -fx-padding: 48px 28px;
 }
 
+.inventory-add-card {
+    -fx-background-color: -md-accent-soft;
+}
+
+.inventory-ingredient-picker {
+    -fx-pref-width: 340px;
+}
+
+.inventory-quantity-input,
+.inventory-edit-quantity {
+    -fx-pref-width: 180px;
+}
+
+.inventory-unit-picker,
+.inventory-edit-unit {
+    -fx-pref-width: 150px;
+}
+
+.inventory-category-card {
+    -fx-padding: 24px 30px;
+}
+
+.inventory-row {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 11px;
+    -fx-padding: 13px 17px;
+}
+
+.inventory-ingredient,
+.inventory-quantity,
+.inventory-unit {
+    -fx-font-size: 17px;
+    -fx-text-fill: -md-text;
+}
+
+.inventory-ingredient {
+    -fx-font-weight: bold;
+}
+
+.inventory-quantity {
+    -fx-alignment: center-right;
+    -fx-min-width: 105px;
+}
+
+.inventory-unit {
+    -fx-min-width: 85px;
+}
+
+.inventory-state {
+    -fx-padding: 48px 28px;
+}
+
 .recipe-state-card {
     -fx-alignment: center;
     -fx-padding: 48px 34px;

@@ -29,14 +29,26 @@ public final class ShoppingListController {
         CURRENT_WEEK
     }
 
+    enum InventoryMode {
+        WITHOUT_INVENTORY,
+        WITH_INVENTORY
+    }
+
     private final Supplier<ShoppingList> todayList;
     private final Supplier<ShoppingList> currentWeekList;
+    private final Supplier<ShoppingList> todayListWithInventory;
+    private final Supplier<ShoppingList> currentWeekListWithInventory;
     private ViewMode viewMode = ViewMode.TODAY;
+    private InventoryMode inventoryMode = InventoryMode.WITHOUT_INVENTORY;
 
     @FXML
     private ToggleButton todayMode;
     @FXML
     private ToggleButton weekMode;
+    @FXML
+    private ToggleButton withoutInventoryMode;
+    @FXML
+    private ToggleButton withInventoryMode;
     @FXML
     private Label modeDescription;
     @FXML
@@ -58,14 +70,28 @@ public final class ShoppingListController {
     public ShoppingListController(ShoppingListService shoppingListService) {
         this(Objects.requireNonNull(shoppingListService,
                         "Shopping list service must not be null.")::buildForToday,
-                shoppingListService::buildForCurrentWeek);
+                shoppingListService::buildForCurrentWeek,
+                shoppingListService::buildForTodayWithInventory,
+                shoppingListService::buildForCurrentWeekWithInventory);
     }
 
     ShoppingListController(Supplier<ShoppingList> todayList,
                            Supplier<ShoppingList> currentWeekList) {
+        this(todayList, currentWeekList, todayList, currentWeekList);
+    }
+
+    ShoppingListController(Supplier<ShoppingList> todayList,
+                           Supplier<ShoppingList> currentWeekList,
+                           Supplier<ShoppingList> todayListWithInventory,
+                           Supplier<ShoppingList> currentWeekListWithInventory) {
         this.todayList = Objects.requireNonNull(todayList, "Today list must not be null.");
         this.currentWeekList = Objects.requireNonNull(
                 currentWeekList, "Current-week list must not be null.");
+        this.todayListWithInventory = Objects.requireNonNull(
+                todayListWithInventory, "Today list with inventory must not be null.");
+        this.currentWeekListWithInventory = Objects.requireNonNull(
+                currentWeekListWithInventory,
+                "Current-week list with inventory must not be null.");
     }
 
     @FXML
@@ -73,6 +99,11 @@ public final class ShoppingListController {
         ToggleGroup modeGroup = new ToggleGroup();
         todayMode.setToggleGroup(modeGroup);
         weekMode.setToggleGroup(modeGroup);
+        ToggleGroup inventoryGroup = new ToggleGroup();
+        withoutInventoryMode.setToggleGroup(inventoryGroup);
+        withInventoryMode.setToggleGroup(inventoryGroup);
+        inventoryMode = InventoryMode.WITHOUT_INVENTORY;
+        withoutInventoryMode.setSelected(true);
         selectMode(ViewMode.TODAY);
     }
 
@@ -84,6 +115,16 @@ public final class ShoppingListController {
     @FXML
     private void showCurrentWeek() {
         selectMode(ViewMode.CURRENT_WEEK);
+    }
+
+    @FXML
+    private void showWithoutInventory() {
+        selectInventoryMode(InventoryMode.WITHOUT_INVENTORY);
+    }
+
+    @FXML
+    private void showWithInventory() {
+        selectInventoryMode(InventoryMode.WITH_INVENTORY);
     }
 
     /** Reloads the selected derived list without retaining a second copy in the UI. */
@@ -98,9 +139,17 @@ public final class ShoppingListController {
     }
 
     ShoppingList loadForMode(ViewMode mode) {
-        return switch (Objects.requireNonNull(mode, "View mode must not be null.")) {
-            case TODAY -> todayList.get();
-            case CURRENT_WEEK -> currentWeekList.get();
+        return loadForMode(mode, inventoryMode);
+    }
+
+    ShoppingList loadForMode(ViewMode mode, InventoryMode selectedInventoryMode) {
+        Objects.requireNonNull(mode, "View mode must not be null.");
+        Objects.requireNonNull(selectedInventoryMode, "Inventory mode must not be null.");
+        return switch (mode) {
+            case TODAY -> selectedInventoryMode == InventoryMode.WITH_INVENTORY
+                    ? todayListWithInventory.get() : todayList.get();
+            case CURRENT_WEEK -> selectedInventoryMode == InventoryMode.WITH_INVENTORY
+                    ? currentWeekListWithInventory.get() : currentWeekList.get();
         };
     }
 
@@ -110,9 +159,23 @@ public final class ShoppingListController {
         todayMode.setSelected(todaySelected);
         weekMode.setSelected(!todaySelected);
         modeDescription.setText(todaySelected
-                ? "Zutaten aus deiner Planung für heute."
-                : "Zutaten aus allen Planungen von heute bis einschließlich Sonntag.");
+                ? description("Zutaten aus deiner Planung für heute.")
+                : description("Zutaten aus allen Planungen von heute bis einschließlich Sonntag."));
         refresh();
+    }
+
+    private void selectInventoryMode(InventoryMode selectedMode) {
+        inventoryMode = Objects.requireNonNull(selectedMode, "Inventory mode must not be null.");
+        boolean withoutInventory = inventoryMode == InventoryMode.WITHOUT_INVENTORY;
+        withoutInventoryMode.setSelected(withoutInventory);
+        withInventoryMode.setSelected(!withoutInventory);
+        selectMode(viewMode);
+    }
+
+    private String description(String periodDescription) {
+        return periodDescription + (inventoryMode == InventoryMode.WITH_INVENTORY
+                ? " Vorhandener kompatibler Bestand ist bereits abgezogen."
+                : " Dein Inventar wird nicht berücksichtigt.");
     }
 
     private void render(ShoppingList shoppingList) {
@@ -176,14 +239,20 @@ public final class ShoppingListController {
                 ? "Für heute ist nichts einzukaufen."
                 : "Für den Rest der Woche ist nichts einzukaufen.");
         emptyMessage.setText(todaySelected
-                ? "Plane für heute ein Gericht, damit hier die Zutaten erscheinen."
-                : "Plane ein Gericht zwischen heute und Sonntag, damit hier die Zutaten erscheinen.");
+                ? emptyMessage("Plane für heute ein Gericht, damit hier die Zutaten erscheinen.")
+                : emptyMessage("Plane ein Gericht zwischen heute und Sonntag, damit hier die Zutaten erscheinen."));
         itemCountLabel.setManaged(false);
         itemCountLabel.setVisible(false);
         itemsContainer.setManaged(false);
         itemsContainer.setVisible(false);
         emptyState.setManaged(true);
         emptyState.setVisible(true);
+    }
+
+    private String emptyMessage(String withoutInventoryMessage) {
+        return inventoryMode == InventoryMode.WITH_INVENTORY
+                ? "Dein kompatibler Bestand deckt den berechneten Bedarf vollständig oder es ist nichts geplant."
+                : withoutInventoryMessage;
     }
 
     private void showLoadError() {

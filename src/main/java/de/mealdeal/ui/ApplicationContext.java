@@ -5,23 +5,27 @@ import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.repository.IngredientRepository;
 import de.mealdeal.persistence.repository.IngredientCategoryRepository;
 import de.mealdeal.persistence.repository.MealPlanRepository;
+import de.mealdeal.persistence.repository.InventoryRepository;
 import de.mealdeal.persistence.repository.RecipeRepository;
 import de.mealdeal.persistence.repository.TasteRepository;
 import de.mealdeal.persistence.sqlite.SqliteDatabase;
 import de.mealdeal.persistence.sqlite.SqliteIngredientRepository;
 import de.mealdeal.persistence.sqlite.SqliteIngredientCategoryRepository;
 import de.mealdeal.persistence.sqlite.SqliteMealPlanRepository;
+import de.mealdeal.persistence.sqlite.SqliteInventoryRepository;
 import de.mealdeal.persistence.sqlite.SqliteRecipeRepository;
 import de.mealdeal.persistence.sqlite.SqliteTasteRepository;
 import de.mealdeal.ui.controller.CreateRecipeController;
 import de.mealdeal.ui.controller.HomeController;
 import de.mealdeal.ui.controller.IngredientSearchController;
+import de.mealdeal.ui.controller.InventoryController;
 import de.mealdeal.ui.controller.MainController;
 import de.mealdeal.ui.controller.RecipeDetailController;
 import de.mealdeal.ui.controller.RecipesController;
 import de.mealdeal.ui.controller.ShoppingListController;
 import de.mealdeal.ui.controller.WeekPlanController;
 import de.mealdeal.service.CombinedRecipeSearchService;
+import de.mealdeal.service.InventoryService;
 import de.mealdeal.service.RecipeScaler;
 import de.mealdeal.service.RecipeSearchService;
 import de.mealdeal.service.ShoppingListService;
@@ -53,6 +57,7 @@ public final class ApplicationContext {
     private final IngredientCategoryRepository ingredientCategoryRepository;
     private final TasteRepository tasteRepository;
     private final MealPlanRepository mealPlanRepository;
+    private final InventoryRepository inventoryRepository;
     private final RecipeScaler recipeScaler = new RecipeScaler();
     private final RecipeSearchService recipeSearchService = new RecipeSearchService();
     private final CombinedRecipeSearchService combinedSearchService =
@@ -60,6 +65,7 @@ public final class ApplicationContext {
     private final ThemeService themeService;
     private final WeeklyMealPlanService weeklyMealPlanService;
     private final ShoppingListService shoppingListService;
+    private final InventoryService inventoryService;
 
     /**
      * Preserves the earlier isolated-test composition without requiring a meal-plan fixture.
@@ -93,7 +99,8 @@ public final class ApplicationContext {
     private ApplicationContext(SqliteDatabase database, ThemeService themeService) {
         this(new SqliteRecipeRepository(database), new SqliteIngredientRepository(database),
                 new SqliteTasteRepository(database), new SqliteMealPlanRepository(database),
-                new SqliteIngredientCategoryRepository(database), themeService);
+                new SqliteIngredientCategoryRepository(database),
+                new SqliteInventoryRepository(database), themeService);
     }
 
     /** Creates a composition with explicit repositories, primarily for isolated tests. */
@@ -123,6 +130,18 @@ public final class ApplicationContext {
                               MealPlanRepository mealPlanRepository,
                               IngredientCategoryRepository ingredientCategoryRepository,
                               ThemeService themeService) {
+        this(recipeRepository, ingredientRepository, tasteRepository, mealPlanRepository,
+                ingredientCategoryRepository, new EmptyInventoryRepository(), themeService);
+    }
+
+    /** Creates a composition with explicit inventory persistence, primarily for tests. */
+    public ApplicationContext(RecipeRepository recipeRepository,
+                              IngredientRepository ingredientRepository,
+                              TasteRepository tasteRepository,
+                              MealPlanRepository mealPlanRepository,
+                              IngredientCategoryRepository ingredientCategoryRepository,
+                              InventoryRepository inventoryRepository,
+                              ThemeService themeService) {
         this.recipeRepository = Objects.requireNonNull(
                 recipeRepository, "Recipe repository must not be null.");
         this.ingredientRepository = Objects.requireNonNull(
@@ -134,11 +153,16 @@ public final class ApplicationContext {
                 tasteRepository, "Taste repository must not be null.");
         this.mealPlanRepository = Objects.requireNonNull(
                 mealPlanRepository, "Meal plan repository must not be null.");
+        this.inventoryRepository = Objects.requireNonNull(
+                inventoryRepository, "Inventory repository must not be null.");
         this.themeService = Objects.requireNonNull(
                 themeService, "Theme service must not be null.");
         this.weeklyMealPlanService = new WeeklyMealPlanService(
                 this.mealPlanRepository, this.recipeRepository);
-        this.shoppingListService = new ShoppingListService(this.mealPlanRepository);
+        this.inventoryService = new InventoryService(
+                this.inventoryRepository, this.ingredientRepository);
+        this.shoppingListService = new ShoppingListService(
+                this.mealPlanRepository, this.inventoryRepository);
     }
 
     /** Loads the application's single main view. */
@@ -182,6 +206,9 @@ public final class ApplicationContext {
         }
         if (controllerType == ShoppingListController.class) {
             return new ShoppingListController(shoppingListService);
+        }
+        if (controllerType == InventoryController.class) {
+            return new InventoryController(inventoryService);
         }
         try {
             return controllerType.getDeclaredConstructor().newInstance();
@@ -262,5 +289,19 @@ public final class ApplicationContext {
         public List<de.mealdeal.domain.IngredientCategory> findAll() {
             return de.mealdeal.domain.IngredientCategories.all();
         }
+    }
+
+    private static final class EmptyInventoryRepository implements InventoryRepository {
+        @Override public void save(de.mealdeal.domain.InventoryItem item) {
+            throw new UnsupportedOperationException(
+                    "Inventory repository is not configured in this isolated composition.");
+        }
+        @Override public Optional<de.mealdeal.domain.InventoryItem> findById(UUID id) {
+            return Optional.empty();
+        }
+        @Override public List<de.mealdeal.domain.InventoryItem> findAll() {
+            return List.of();
+        }
+        @Override public boolean deleteById(UUID id) { return false; }
     }
 }

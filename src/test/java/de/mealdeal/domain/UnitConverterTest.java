@@ -10,6 +10,8 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class UnitConverterTest {
 
@@ -82,5 +84,14 @@ class UnitConverterTest {
         BigDecimal converted = UnitConverter.convert(amount, Unit.KILOGRAM, Unit.GRAM);
 
         assertEquals(new BigDecimal("12345678901234567890123456789012345678.9000"), converted);
+    }
+
+    @Test
+    void reportsOnlyActuallySupportedConversionsAsCompatible() {
+        assertTrue(UnitConverter.canConvert(Unit.GRAM, Unit.KILOGRAM));
+        assertTrue(UnitConverter.canConvert(Unit.MILLILITER, Unit.LITER));
+        assertTrue(UnitConverter.canConvert(Unit.CLOVE, Unit.CLOVE));
+        assertFalse(UnitConverter.canConvert(Unit.PIECE, Unit.SLICE));
+        assertFalse(UnitConverter.canConvert(Unit.CLOVE, Unit.SPRIG));
     }
 }

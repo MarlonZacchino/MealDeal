@@ -99,6 +99,8 @@ SQLite
 
 `ShoppingListService` berechnet eine Einkaufsliste deterministisch aus allen aktuellen Planungs- und Recipe-Daten. Sie berücksichtigt für Heute sämtliche `MAIN`-, `SIDE`- und `DESSERT`-Einträge des Tages und für die Woche alle Einträge von Heute bis Sonntag, einschließlich reiner Beilagen- oder Nachtisch-Tage. Für jede IngredientGroup skaliert sie die konkret im `MealPlanEntry` gewählte Option beziehungsweise ohne explizite Auswahl deren aktuelle Standardoption. MealRole und rollenlokale Position beeinflussen die Aggregation nicht; jede Zutatenmenge wird ausschließlich mit der individuellen Portionszahl ihres `MealPlanEntry` skaliert. Die Liste wird nicht persistiert, damit keine doppelte oder nach Recipe-Änderungen veraltete Datenhaltung entsteht.
 
+Optional zieht derselbe Service anschließend den über `InventoryRepository` gelesenen Bestand ab. Der Standardmodus „Ohne Inventar“ liefert unverändert die bisherige Berechnung. „Mit Inventar“ vergleicht Ingredients ausschließlich per UUID, addiert mit `UnitConverter` kompatible Bestände und entfernt vollständig gedeckte Positionen. Das Inventar bleibt dabei strikt unverändert. `InventoryService` kapselt Laden, Kategoriegruppierung und manuelle CRUD-Operationen für die Inventaransicht. Ein Ingredient und dieselbe Unit dürfen nur einmal vorkommen; Service und SQLite-Repository weisen Duplikate zurück, während verschiedene Units bewusst getrennte Einträge bleiben. Dafür ist keine weitere Schema-Migration erforderlich.
+
 ```text
 MealPlanRepository
         ↓

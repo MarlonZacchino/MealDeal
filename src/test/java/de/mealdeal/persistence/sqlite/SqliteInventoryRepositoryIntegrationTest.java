@@ -41,7 +41,7 @@ class SqliteInventoryRepositoryIntegrationTest {
         Ingredient flour = saveIngredient("Mehl", IngredientCategories.BAKING);
         InventoryItem zero = new InventoryItem(flour, BigDecimal.ZERO, Unit.GRAM);
         InventoryItem positive = new InventoryItem(
-                flour, new BigDecimal("1250.50"), Unit.GRAM);
+                flour, new BigDecimal("1.25050"), Unit.KILOGRAM);
 
         inventoryRepository.save(zero);
         inventoryRepository.save(positive);
@@ -51,8 +51,8 @@ class SqliteInventoryRepositoryIntegrationTest {
                 positive.getId()).orElseThrow();
         assertEquals(zero.getId(), loadedZero.getId());
         assertEquals(BigDecimal.ZERO, loadedZero.getQuantity());
-        assertEquals(new BigDecimal("1250.50"), loadedPositive.getQuantity());
-        assertEquals(Unit.GRAM, loadedPositive.getUnit());
+        assertEquals(new BigDecimal("1.25050"), loadedPositive.getQuantity());
+        assertEquals(Unit.KILOGRAM, loadedPositive.getUnit());
         assertEquals(IngredientCategories.BAKING,
                 loadedPositive.getIngredient().getCategory());
     }
@@ -85,6 +85,19 @@ class SqliteInventoryRepositoryIntegrationTest {
 
         assertEquals(Set.of(Unit.PIECE, Unit.SLICE), inventoryRepository.findAll().stream()
                 .map(InventoryItem::getUnit).collect(java.util.stream.Collectors.toSet()));
+    }
+
+    @Test
+    void rejectsDuplicateIngredientAndUnitButAllowsDifferentUnits() {
+        Ingredient flour = saveIngredient("Mehl", IngredientCategories.BAKING);
+        inventoryRepository.save(new InventoryItem(flour, BigDecimal.ONE, Unit.GRAM));
+
+        assertThrows(de.mealdeal.persistence.DuplicateInventoryItemException.class,
+                () -> inventoryRepository.save(
+                        new InventoryItem(flour, BigDecimal.TEN, Unit.GRAM)));
+        inventoryRepository.save(new InventoryItem(flour, BigDecimal.ONE, Unit.KILOGRAM));
+
+        assertEquals(2, inventoryRepository.findAll().size());
     }
 
     @Test

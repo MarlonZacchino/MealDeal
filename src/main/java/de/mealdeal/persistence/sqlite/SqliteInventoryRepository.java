@@ -4,6 +4,7 @@ import de.mealdeal.domain.Ingredient;
 import de.mealdeal.domain.IngredientCategory;
 import de.mealdeal.domain.InventoryItem;
 import de.mealdeal.domain.Unit;
+import de.mealdeal.persistence.DuplicateInventoryItemException;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.repository.InventoryRepository;
 
@@ -45,17 +46,39 @@ public final class SqliteInventoryRepository implements InventoryRepository {
                     quantity = excluded.quantity,
                     unit = excluded.unit
                 """;
-        try (var connection = database.openConnection();
-             var statement = connection.prepareStatement(sql)) {
-            statement.setString(1, item.getId().toString());
-            statement.setString(2, item.getIngredient().getId().toString());
-            statement.setString(3, item.getQuantity().toPlainString());
-            statement.setString(4, item.getUnit().name());
-            statement.executeUpdate();
+        try (var connection = database.openConnection()) {
+            rejectDuplicate(connection, item);
+            try (var statement = connection.prepareStatement(sql)) {
+                statement.setString(1, item.getId().toString());
+                statement.setString(2, item.getIngredient().getId().toString());
+                statement.setString(3, item.getQuantity().toPlainString());
+                statement.setString(4, item.getUnit().name());
+                statement.executeUpdate();
+            }
         } catch (SQLException exception) {
             throw new PersistenceException(
                     "Could not save inventory item. Its ingredient must already exist.",
                     exception);
+        }
+    }
+
+    private static void rejectDuplicate(java.sql.Connection connection, InventoryItem item)
+            throws SQLException {
+        String sql = """
+                SELECT id FROM inventory_items
+                WHERE ingredient_id = ? AND unit = ? AND id <> ?
+                LIMIT 1
+                """;
+        try (var statement = connection.prepareStatement(sql)) {
+            statement.setString(1, item.getIngredient().getId().toString());
+            statement.setString(2, item.getUnit().name());
+            statement.setString(3, item.getId().toString());
+            try (var resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    throw new DuplicateInventoryItemException(
+                            "Inventory already contains this ingredient and unit.");
+                }
+            }
         }
     }
 
