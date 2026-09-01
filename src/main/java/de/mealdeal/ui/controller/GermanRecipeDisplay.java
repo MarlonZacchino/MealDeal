@@ -35,6 +35,8 @@ final class GermanRecipeDisplay {
             case LITER -> "l";
             case PIECE -> "Stück";
             case SLICE -> "Scheibe";
+            case CLOVE -> "Zehe";
+            case SPRIG -> "Zweig";
             case TABLESPOON -> "EL";
             case TEASPOON -> "TL";
             case PINCH -> "Prise";
@@ -43,8 +45,13 @@ final class GermanRecipeDisplay {
 
     static String unit(BigDecimal amount, Unit unit) {
         Objects.requireNonNull(amount, "Amount must not be null.");
-        if (unit == Unit.SLICE && amount.compareTo(BigDecimal.ONE) != 0) {
-            return "Scheiben";
+        if (amount.compareTo(BigDecimal.ONE) != 0) {
+            return switch (unit) {
+                case SLICE -> "Scheiben";
+                case CLOVE -> "Zehen";
+                case SPRIG -> "Zweige";
+                default -> unit(unit);
+            };
         }
         return unit(unit);
     }

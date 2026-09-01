@@ -55,6 +55,21 @@ class RecipeScalerTest {
     }
 
     @Test
+    void scalesClovesAndSprigsWithoutChangingTheirUnits() {
+        Recipe recipe = new Recipe("Seasoning", 2, List.of(
+                new RecipeIngredient(pasta, new BigDecimal("2"), Unit.CLOVE),
+                new RecipeIngredient(new Ingredient("Thyme"), BigDecimal.ONE, Unit.SPRIG)),
+                List.of(), List.of(new Taste("Savory")));
+
+        List<RecipeIngredient> scaled = scaler.scale(recipe, 4);
+
+        assertEquals(new BigDecimal("4"), scaled.get(0).getQuantity());
+        assertEquals(Unit.CLOVE, scaled.get(0).getUnit());
+        assertEquals(new BigDecimal("2"), scaled.get(1).getQuantity());
+        assertEquals(Unit.SPRIG, scaled.get(1).getUnit());
+    }
+
+    @Test
     void scalesToOddServingCount() {
         assertScaledAmount(recipe(2, "500"), 5, "1250");
     }

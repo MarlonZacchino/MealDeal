@@ -109,6 +109,8 @@ public final class ShoppingListService {
             case MILLILITER, LITER -> CompatibilityGroup.VOLUME;
             case PIECE -> CompatibilityGroup.PIECE;
             case SLICE -> CompatibilityGroup.SLICE;
+            case CLOVE -> CompatibilityGroup.CLOVE;
+            case SPRIG -> CompatibilityGroup.SPRIG;
             case TABLESPOON -> CompatibilityGroup.TABLESPOON;
             case TEASPOON -> CompatibilityGroup.TEASPOON;
             case PINCH -> CompatibilityGroup.PINCH;
@@ -120,6 +122,8 @@ public final class ShoppingListService {
         VOLUME,
         PIECE,
         SLICE,
+        CLOVE,
+        SPRIG,
         TABLESPOON,
         TEASPOON,
         PINCH

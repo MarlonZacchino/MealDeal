@@ -86,6 +86,21 @@ class SqliteRecipeRepositoryIntegrationTest {
     }
 
     @Test
+    void savesAndLoadsCloveAndSprigUnitsByTheirEnumNames() {
+        Recipe recipe = new Recipe("Seasoning", List.of(
+                new RecipeIngredient(pasta, new BigDecimal("2"), Unit.CLOVE),
+                new RecipeIngredient(new Ingredient("Thyme"), BigDecimal.ONE, Unit.SPRIG)),
+                List.of(), List.of(savory));
+        ingredientRepository.save(recipe.getIngredients().get(1).getIngredient());
+
+        recipeRepository.save(recipe);
+
+        List<Unit> loadedUnits = recipeRepository.findById(recipe.getId()).orElseThrow()
+                .getIngredients().stream().map(RecipeIngredient::getUnit).toList();
+        assertEquals(List.of(Unit.CLOVE, Unit.SPRIG), loadedUnits);
+    }
+
+    @Test
     void savesAndLoadsMandatoryDishType() {
         Recipe sideRecipe = new Recipe("Garlic bread", 2,
                 List.of(new RecipeIngredient(pasta, BigDecimal.ONE, Unit.SLICE)),

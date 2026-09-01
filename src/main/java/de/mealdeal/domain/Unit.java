@@ -14,6 +14,8 @@ public enum Unit {
     LITER("l", UnitDimension.VOLUME),
     PIECE("piece", UnitDimension.COUNT),
     SLICE("slice", UnitDimension.COUNT),
+    CLOVE("clove", UnitDimension.COUNT),
+    SPRIG("sprig", UnitDimension.COUNT),
     TABLESPOON("tbsp", UnitDimension.KITCHEN_MEASURE),
     TEASPOON("tsp", UnitDimension.KITCHEN_MEASURE),
     PINCH("pinch", UnitDimension.KITCHEN_MEASURE);

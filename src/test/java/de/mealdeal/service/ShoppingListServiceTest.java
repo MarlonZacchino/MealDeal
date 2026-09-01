@@ -126,6 +126,8 @@ class ShoppingListServiceTest {
                 Arguments.of("500", Unit.MILLILITER, "1", Unit.LITER, "1500"),
                 Arguments.of("2", Unit.PIECE, "3", Unit.PIECE, "5"),
                 Arguments.of("2", Unit.SLICE, "3", Unit.SLICE, "5"),
+                Arguments.of("2", Unit.CLOVE, "3", Unit.CLOVE, "5"),
+                Arguments.of("2", Unit.SPRIG, "3", Unit.SPRIG, "5"),
                 Arguments.of("1", Unit.TABLESPOON, "2", Unit.TABLESPOON, "3")
         );
     }
@@ -149,6 +151,11 @@ class ShoppingListServiceTest {
         return Stream.of(
                 Arguments.of(Unit.PIECE, Unit.GRAM),
                 Arguments.of(Unit.SLICE, Unit.PIECE),
+                Arguments.of(Unit.CLOVE, Unit.PIECE),
+                Arguments.of(Unit.CLOVE, Unit.SLICE),
+                Arguments.of(Unit.SPRIG, Unit.PIECE),
+                Arguments.of(Unit.SPRIG, Unit.SLICE),
+                Arguments.of(Unit.CLOVE, Unit.SPRIG),
                 Arguments.of(Unit.TABLESPOON, Unit.MILLILITER),
                 Arguments.of(Unit.TABLESPOON, Unit.TEASPOON)
         );

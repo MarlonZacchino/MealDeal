@@ -8,7 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class IngredientFormRowTest {
 
     @Test
-    void offersSliceInTheIngredientUnitSelection() {
+    void offersCountUnitsInTheIngredientUnitSelection() {
         assertTrue(IngredientFormRow.availableUnits().contains(Unit.SLICE));
+        assertTrue(IngredientFormRow.availableUnits().contains(Unit.CLOVE));
+        assertTrue(IngredientFormRow.availableUnits().contains(Unit.SPRIG));
     }
 }

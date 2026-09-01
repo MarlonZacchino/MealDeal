@@ -37,6 +37,14 @@ class GermanRecipeDisplayTest {
     }
 
     @Test
+    void displaysClovesAndSprigsWithGermanSingularAndPlural() {
+        assertEquals("1 Zehe", GermanRecipeDisplay.quantity(BigDecimal.ONE, Unit.CLOVE));
+        assertEquals("2 Zehen", GermanRecipeDisplay.quantity(new BigDecimal("2"), Unit.CLOVE));
+        assertEquals("1 Zweig", GermanRecipeDisplay.quantity(BigDecimal.ONE, Unit.SPRIG));
+        assertEquals("2 Zweige", GermanRecipeDisplay.quantity(new BigDecimal("2"), Unit.SPRIG));
+    }
+
+    @Test
     void formatsMinutesAsGermanDurations() {
         assertEquals("25 Min.", GermanRecipeDisplay.duration(25));
         assertEquals("1 Std. 20 Min.", GermanRecipeDisplay.duration(80));
