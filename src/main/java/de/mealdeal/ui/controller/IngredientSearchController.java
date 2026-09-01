@@ -408,9 +408,12 @@ public final class IngredientSearchController implements NavigationAware {
         throw new IllegalStateException("A taste filter mode must be selected.");
     }
 
-    private static String ingredientMissingText(IngredientSearchResult result) {
-        return result.getMissingIngredients().stream()
-                .map(Ingredient::getName)
+    static String ingredientMissingText(IngredientSearchResult result) {
+        return result.getMissingGroups().stream()
+                .map(group -> group.getOptions().stream()
+                        .map(option -> option.getIngredient().getName())
+                        .reduce((first, second) -> first + " oder " + second)
+                        .orElseThrow())
                 .reduce((first, second) -> first + ", " + second)
                 .orElse("");
     }

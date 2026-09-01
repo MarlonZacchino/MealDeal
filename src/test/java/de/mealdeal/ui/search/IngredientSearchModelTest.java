@@ -59,9 +59,11 @@ class IngredientSearchModelTest {
         Ingredient pasta = new Ingredient("Pasta");
         Ingredient tomato = new Ingredient("Tomate");
         Ingredient cheese = new Ingredient("Käse");
+        Ingredient rice = new Ingredient("Reis");
+        Ingredient salt = new Ingredient("Salz");
         Recipe perfect = recipe("Perfekt", pasta, tomato, cheese);
-        Recipe good = recipe("Gut", pasta, tomato);
-        Recipe partial = recipe("Teilweise", pasta);
+        Recipe good = recipe("Gut", pasta, tomato, rice);
+        Recipe partial = recipe("Teilweise", pasta, rice, salt);
         IngredientSearchModel model = model(
                 List.of(pasta, tomato, cheese), List.of(partial, good, perfect));
         model.select(pasta);
@@ -76,7 +78,7 @@ class IngredientSearchModelTest {
                 results.stream().map(IngredientSearchResult::getMatchQuality).toList());
         assertEquals(2, results.get(1).getMatchedCount());
         assertEquals(3, results.get(1).getSelectedCount());
-        assertEquals(List.of(cheese), results.get(1).getMissingIngredients());
+        assertEquals(List.of(rice), results.get(1).getMissingIngredients());
     }
 
     @Test

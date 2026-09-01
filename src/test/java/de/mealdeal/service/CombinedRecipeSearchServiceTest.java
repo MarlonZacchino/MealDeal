@@ -1,8 +1,11 @@
 package de.mealdeal.service;
 
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.Ingredient;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.domain.RecipeIngredientGroup;
+import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.domain.Unit;
 import org.junit.jupiter.api.BeforeEach;
@@ -104,9 +107,9 @@ class CombinedRecipeSearchServiceTest {
         Recipe ingredientWinner = recipe(
                 "Zutaten-Sieger", List.of(pasta, tomato, cheese), savory);
         Recipe tasteWinner = recipe(
-                "Zulu", List.of(pasta, tomato), savory, spicy);
+                "Zulu", List.of(pasta, tomato, rice), savory, spicy);
         Recipe lowerTasteMatch = recipe(
-                "Alpha", List.of(pasta, tomato), savory);
+                "Alpha", List.of(pasta, tomato, rice), savory);
 
         List<CombinedSearchResult> results = service.search(
                 List.of(lowerTasteMatch, tasteWinner, ingredientWinner),
@@ -119,6 +122,52 @@ class CombinedRecipeSearchServiceTest {
                 results.get(1).getIngredientResult().orElseThrow().getMatchQuality());
         assertEquals(MatchQuality.PERFECT,
                 results.get(1).getTasteResult().orElseThrow().getMatchQuality());
+    }
+
+    @Test
+    void combinedSearchMatchesAlternativeWithoutChangingTasteFiltering() {
+        RecipeIngredientOption pastaOption = new RecipeIngredientOption(
+                pasta, BigDecimal.ONE, Unit.PIECE, 0);
+        RecipeIngredientOption tomatoOption = new RecipeIngredientOption(
+                tomato, BigDecimal.ONE, Unit.PIECE, 1);
+        Recipe flexible = Recipe.withIngredientGroups("Flexibel", 2,
+                List.of(new RecipeIngredientGroup(
+                        List.of(pastaOption, tomatoOption), pastaOption)),
+                List.of(), List.of(savory, spicy), DishType.MAIN);
+        RecipeIngredientOption wrongTasteOption = new RecipeIngredientOption(
+                tomato, BigDecimal.ONE, Unit.PIECE, 0);
+        Recipe wrongTaste = Recipe.withIngredientGroups("Falscher Geschmack", 2,
+                List.of(new RecipeIngredientGroup(
+                        List.of(wrongTasteOption), wrongTasteOption)),
+                List.of(), List.of(fresh), DishType.MAIN);
+
+        List<CombinedSearchResult> results = service.search(
+                List.of(wrongTaste, flexible), List.of(tomato), List.of(savory, spicy),
+                TasteFilterMode.AND);
+
+        assertEquals(List.of(flexible), resultRecipes(results));
+        assertEquals(MatchQuality.PERFECT,
+                results.getFirst().getIngredientResult().orElseThrow().getMatchQuality());
+        assertEquals(MatchQuality.PERFECT,
+                results.getFirst().getTasteResult().orElseThrow().getMatchQuality());
+    }
+
+    @Test
+    void ingredientGroupRatioRemainsAheadOfTasteRanking() {
+        Recipe perfectIngredients = recipe(
+                "Perfekte Zutaten", List.of(pasta, tomato), savory);
+        Recipe betterTaste = recipe(
+                "Mehr Geschmack", List.of(pasta, tomato, rice), savory, spicy);
+
+        List<CombinedSearchResult> results = service.search(
+                List.of(betterTaste, perfectIngredients), List.of(pasta, tomato),
+                List.of(savory, spicy), TasteFilterMode.RANKING);
+
+        assertEquals(List.of(perfectIngredients, betterTaste), resultRecipes(results));
+        assertEquals(MatchQuality.PERFECT,
+                results.getFirst().getIngredientResult().orElseThrow().getMatchQuality());
+        assertEquals(MatchQuality.GOOD,
+                results.get(1).getIngredientResult().orElseThrow().getMatchQuality());
     }
 
     @Test

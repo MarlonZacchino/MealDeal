@@ -58,7 +58,7 @@ class RecipeSearchServiceTest {
     }
 
     @Test
-    void searchesAlternativeGroupsOnlyThroughTheirStandardOptions() {
+    void matchesAnAlternativeGroupThroughEveryOption() {
         RecipeIngredientOption pastaOption = new RecipeIngredientOption(
                 pasta, BigDecimal.ONE, Unit.PIECE, 0);
         RecipeIngredientOption tomatoOption = new RecipeIngredientOption(
@@ -68,16 +68,53 @@ class RecipeSearchServiceTest {
         Recipe recipe = Recipe.withIngredientGroups("Flexible", 2, List.of(group),
                 List.of(), List.of(savory), DishType.MAIN);
 
-        assertTrue(service.searchByIngredients(List.of(recipe), List.of(pasta)).isEmpty());
+        IngredientSearchResult pastaResult = service.searchByIngredients(
+                List.of(recipe), List.of(pasta)).getFirst();
+        IngredientSearchResult tomatoResult = service.searchByIngredients(
+                List.of(recipe), List.of(tomato)).getFirst();
+
+        assertEquals(recipe, pastaResult.getRecipe());
+        assertEquals(List.of(pasta), pastaResult.getMatchedIngredients());
+        assertEquals(MatchQuality.PERFECT, pastaResult.getMatchQuality());
         assertEquals(recipe, service.searchByIngredients(List.of(recipe), List.of(tomato))
                 .getFirst().getRecipe());
+        assertEquals(List.of(tomato), tomatoResult.getMatchedIngredients());
+        assertTrue(service.searchByIngredients(List.of(recipe),
+                List.of(new Ingredient("Pasta"))).isEmpty());
+    }
+
+    @Test
+    void countsAGroupOnlyOnceWhenSeveralOfItsOptionsAreSelected() {
+        RecipeIngredientOption pastaOption = new RecipeIngredientOption(
+                pasta, BigDecimal.ONE, Unit.PIECE, 0);
+        RecipeIngredientOption tomatoOption = new RecipeIngredientOption(
+                tomato, BigDecimal.ONE, Unit.PIECE, 1);
+        RecipeIngredientGroup alternatives = new RecipeIngredientGroup(
+                List.of(pastaOption, tomatoOption), pastaOption);
+        RecipeIngredientOption beefOption = new RecipeIngredientOption(
+                beef, BigDecimal.ONE, Unit.PIECE, 0);
+        RecipeIngredientGroup secondGroup = new RecipeIngredientGroup(
+                List.of(beefOption), beefOption);
+        Recipe recipe = Recipe.withIngredientGroups("Flexible", 2,
+                List.of(alternatives, secondGroup), List.of(), List.of(savory), DishType.MAIN);
+
+        IngredientSearchResult result = service.searchByIngredients(
+                List.of(recipe), List.of(pasta, tomato)).getFirst();
+
+        assertEquals(1, result.getMatchedCount());
+        assertEquals(2, result.getSelectedCount());
+        assertEquals(MatchQuality.PARTIAL, result.getMatchQuality());
+        assertEquals(List.of(pasta), result.getMatchedIngredients());
+        assertEquals(List.of(secondGroup), result.getMissingGroups());
     }
 
     @Test
     void ranksThreeTwoAndOneIngredientMatchesAndReportsDetails() {
         Recipe all = recipe("All", List.of(pasta, tomato, beef), List.of(savory));
-        Recipe two = recipe("Two", List.of(pasta, tomato), List.of(savory));
-        Recipe one = recipe("One", List.of(pasta), List.of(savory));
+        Ingredient rice = new Ingredient("Rice");
+        Ingredient cheese = new Ingredient("Cheese");
+        Recipe two = recipe("Two", List.of(pasta, tomato, rice), List.of(savory));
+        Recipe one = recipe("One", List.of(pasta, rice, cheese), List.of(savory));
         Recipe none = recipe("None", List.of(new Ingredient("Rice")), List.of(savory));
 
         List<IngredientSearchResult> results = service.searchByIngredients(
@@ -86,7 +123,7 @@ class RecipeSearchServiceTest {
         assertEquals(List.of(all, two, one), results.stream()
                 .map(IngredientSearchResult::getRecipe).toList());
         assertEquals(List.of(pasta, tomato), results.get(1).getMatchedIngredients());
-        assertEquals(List.of(beef), results.get(1).getMissingIngredients());
+        assertEquals(List.of(rice), results.get(1).getMissingIngredients());
         assertEquals(2, results.get(1).getMatchedCount());
         assertEquals(3, results.get(1).getSelectedCount());
         assertEquals(new BigDecimal("2").divide(new BigDecimal("3"), MathContext.DECIMAL128),
@@ -95,6 +132,37 @@ class RecipeSearchServiceTest {
         assertEquals(MatchQuality.PARTIAL, results.get(2).getMatchQuality());
         assertThrows(UnsupportedOperationException.class,
                 () -> results.get(1).getMissingIngredients().clear());
+        assertThrows(UnsupportedOperationException.class,
+                () -> results.get(1).getMissingGroups().clear());
+    }
+
+    @Test
+    void reportsMissingAlternativeGroupsInRecipeAndOptionOrder() {
+        RecipeIngredientOption pastaOption = new RecipeIngredientOption(
+                pasta, BigDecimal.ONE, Unit.PIECE, 0);
+        RecipeIngredientOption tomatoOption = new RecipeIngredientOption(
+                tomato, BigDecimal.ONE, Unit.PIECE, 0);
+        RecipeIngredientOption beefOption = new RecipeIngredientOption(
+                beef, BigDecimal.ONE, Unit.PIECE, 1);
+        Ingredient rice = new Ingredient("Rice");
+        RecipeIngredientOption riceOption = new RecipeIngredientOption(
+                rice, BigDecimal.ONE, Unit.PIECE, 0);
+        RecipeIngredientGroup matched = new RecipeIngredientGroup(
+                List.of(pastaOption), pastaOption);
+        RecipeIngredientGroup alternatives = new RecipeIngredientGroup(
+                List.of(tomatoOption, beefOption), beefOption);
+        RecipeIngredientGroup finalGroup = new RecipeIngredientGroup(
+                List.of(riceOption), riceOption);
+        Recipe recipe = Recipe.withIngredientGroups("Missing", 2,
+                List.of(matched, alternatives, finalGroup), List.of(), List.of(savory),
+                DishType.MAIN);
+
+        IngredientSearchResult result = service.searchByIngredients(
+                List.of(recipe), List.of(pasta)).getFirst();
+
+        assertEquals(List.of(alternatives, finalGroup), result.getMissingGroups());
+        assertEquals(List.of("Tomato", "Beef"), result.getMissingGroups().getFirst()
+                .getOptions().stream().map(option -> option.getIngredient().getName()).toList());
     }
 
     @Test

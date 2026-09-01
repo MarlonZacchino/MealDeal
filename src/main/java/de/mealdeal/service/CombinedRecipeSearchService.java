@@ -70,7 +70,9 @@ public final class CombinedRecipeSearchService {
         Comparator<CombinedSearchResult> order = Comparator
                 .comparingInt((CombinedSearchResult result) ->
                         result.ingredientResult().getMatchedCount())
-                .reversed();
+                .reversed()
+                .thenComparing(result -> result.ingredientResult().getMatchRatio(),
+                        Comparator.reverseOrder());
         if (tasteMode == TasteFilterMode.RANKING) {
             order = order.thenComparing(Comparator
                     .comparingInt((CombinedSearchResult result) ->

@@ -2,7 +2,7 @@ package de.mealdeal.service;
 
 import de.mealdeal.domain.Ingredient;
 import de.mealdeal.domain.Recipe;
-import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.domain.RecipeIngredientGroup;
 import de.mealdeal.domain.Taste;
 
 import java.math.BigDecimal;
@@ -74,19 +74,37 @@ public final class RecipeSearchService {
 
     private static IngredientSearchResult createIngredientResult(
             Recipe recipe, List<Ingredient> selected) {
-        Set<UUID> recipeIngredientIds = recipe.getIngredients().stream()
-                .map(RecipeIngredient::getIngredient)
-                .map(Ingredient::getId)
+        Set<UUID> selectedIds = selected.stream().map(Ingredient::getId)
                 .collect(java.util.stream.Collectors.toSet());
-        List<Ingredient> matched = selected.stream()
-                .filter(ingredient -> recipeIngredientIds.contains(ingredient.getId())).toList();
-        if (matched.isEmpty()) {
+        List<RecipeIngredientGroup> matchedGroups = recipe.getIngredientGroups().stream()
+                .filter(group -> isSatisfied(group, selectedIds))
+                .toList();
+        if (matchedGroups.isEmpty()) {
             return null;
         }
-        List<Ingredient> missing = selected.stream()
-                .filter(ingredient -> !recipeIngredientIds.contains(ingredient.getId())).toList();
-        return new IngredientSearchResult(recipe, matched, missing,
-                calculateRatio(matched.size(), selected.size()));
+        List<RecipeIngredientGroup> missingGroups = recipe.getIngredientGroups().stream()
+                .filter(group -> !isSatisfied(group, selectedIds))
+                .toList();
+        List<Ingredient> matchedIngredients = matchedGroups.stream()
+                .map(group -> firstSelectedOption(group, selectedIds))
+                .toList();
+        return new IngredientSearchResult(recipe, matchedGroups, missingGroups,
+                matchedIngredients, calculateRatio(
+                        matchedGroups.size(), recipe.getIngredientGroups().size()));
+    }
+
+    private static boolean isSatisfied(RecipeIngredientGroup group, Set<UUID> selectedIds) {
+        return group.getOptions().stream()
+                .anyMatch(option -> selectedIds.contains(option.getIngredient().getId()));
+    }
+
+    private static Ingredient firstSelectedOption(RecipeIngredientGroup group,
+                                                   Set<UUID> selectedIds) {
+        return group.getOptions().stream()
+                .filter(option -> selectedIds.contains(option.getIngredient().getId()))
+                .findFirst()
+                .orElseThrow()
+                .getIngredient();
     }
 
     private static TasteSearchResult createTasteResult(Recipe recipe, List<Taste> selected) {

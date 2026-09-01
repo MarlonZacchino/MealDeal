@@ -1,7 +1,12 @@
 package de.mealdeal.ui.controller;
 
+import de.mealdeal.domain.DishType;
+import de.mealdeal.domain.Ingredient;
 import de.mealdeal.domain.Recipe;
+import de.mealdeal.domain.RecipeIngredientGroup;
+import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.domain.Taste;
+import de.mealdeal.domain.Unit;
 import de.mealdeal.persistence.repository.IngredientRepository;
 import de.mealdeal.persistence.repository.RecipeRepository;
 import de.mealdeal.persistence.repository.TasteRepository;
@@ -11,11 +16,13 @@ import de.mealdeal.ui.search.IngredientSearchModel;
 import de.mealdeal.ui.search.TasteSearchModel;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 class IngredientSearchControllerTest {
@@ -38,6 +45,32 @@ class IngredientSearchControllerTest {
         controller.openRecipe(recipe);
 
         assertSame(recipe, navigatedRecipe.get());
+    }
+
+    @Test
+    void formatsMissingAlternativeGroupsInTheirOptionOrder() {
+        Ingredient pasta = new Ingredient("Pasta");
+        RecipeIngredientGroup matched = group(pasta);
+        RecipeIngredientGroup alternatives = group(
+                new Ingredient("Kalb"), new Ingredient("Hähnchen"));
+        RecipeIngredientGroup single = group(new Ingredient("Knoblauch"));
+        Recipe recipe = Recipe.withIngredientGroups("Flexibel", 2,
+                List.of(matched, alternatives, single), List.of(),
+                List.of(new Taste("Herzhaft")), DishType.MAIN);
+        var result = new RecipeSearchService().searchByIngredients(
+                List.of(recipe), List.of(pasta)).getFirst();
+
+        assertEquals("Kalb oder Hähnchen, Knoblauch",
+                IngredientSearchController.ingredientMissingText(result));
+    }
+
+    private static RecipeIngredientGroup group(Ingredient... ingredients) {
+        List<RecipeIngredientOption> options = java.util.stream.IntStream
+                .range(0, ingredients.length)
+                .mapToObj(index -> new RecipeIngredientOption(ingredients[index],
+                        BigDecimal.ONE, Unit.PIECE, index))
+                .toList();
+        return new RecipeIngredientGroup(options, options.getFirst());
     }
 
     private static final class EmptyTasteRepository implements TasteRepository {
