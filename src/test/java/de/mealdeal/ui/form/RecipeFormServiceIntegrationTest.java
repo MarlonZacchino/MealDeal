@@ -162,6 +162,28 @@ class RecipeFormServiceIntegrationTest {
     }
 
     @Test
+    void persistsSelectedDessertDishTypeThroughCreateAndEdit() {
+        SqliteDatabase database = new SqliteDatabase(
+                temporaryDirectory.resolve("dessert-form.db"));
+        var ingredients = new SqliteIngredientRepository(database);
+        var tastes = new SqliteTasteRepository(database);
+        var recipes = new SqliteRecipeRepository(database);
+        RecipeFormService service = new RecipeFormService(recipes, ingredients, tastes);
+        RecipeFormInput dessertInput = new RecipeFormInput("Pudding", "4",
+                List.of(new IngredientFormInput("Milch", "500", Unit.MILLILITER)),
+                List.of("Süß"), List.of(), "", "", "", "", "", "",
+                DishType.DESSERT);
+
+        Recipe created = service.createAndSave(dessertInput);
+        Recipe updated = service.updateAndSave(created.getId(), dessertInput);
+        Recipe loaded = recipes.findById(created.getId()).orElseThrow();
+
+        assertEquals(DishType.DESSERT, created.getDishType());
+        assertEquals(DishType.DESSERT, updated.getDishType());
+        assertEquals(DishType.DESSERT, loaded.getDishType());
+    }
+
+    @Test
     void createsAndEditsAlternativeGroupsWithStableExistingIds() {
         SqliteDatabase database = new SqliteDatabase(
                 temporaryDirectory.resolve("alternative-form.db"));

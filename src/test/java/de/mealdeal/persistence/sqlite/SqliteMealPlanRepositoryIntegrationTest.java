@@ -41,6 +41,8 @@ class SqliteMealPlanRepositoryIntegrationTest {
     private Recipe soupRecipe;
     private Recipe breadRecipe;
     private Recipe saladRecipe;
+    private Recipe puddingRecipe;
+    private Recipe iceCreamRecipe;
     private Ingredient pastaIngredient;
     private Ingredient vegetablesIngredient;
     private Taste savoryTaste;
@@ -64,10 +66,15 @@ class SqliteMealPlanRepositoryIntegrationTest {
         soupRecipe = recipe("Soup recipe", vegetablesIngredient, savoryTaste);
         breadRecipe = recipe("Bread recipe", pastaIngredient, savoryTaste, DishType.SIDE);
         saladRecipe = recipe("Salad recipe", vegetablesIngredient, savoryTaste, DishType.SIDE);
+        puddingRecipe = recipe("Pudding recipe", pastaIngredient, savoryTaste, DishType.DESSERT);
+        iceCreamRecipe = recipe(
+                "Ice cream recipe", vegetablesIngredient, savoryTaste, DishType.DESSERT);
         recipeRepository.save(pastaRecipe);
         recipeRepository.save(soupRecipe);
         recipeRepository.save(breadRecipe);
         recipeRepository.save(saladRecipe);
+        recipeRepository.save(puddingRecipe);
+        recipeRepository.save(iceCreamRecipe);
     }
 
     @Test
@@ -255,6 +262,38 @@ class SqliteMealPlanRepositoryIntegrationTest {
                 entries.stream().map(MealPlanEntry::getMealRole).toList());
         assertEquals(List.of(2, 6), entries.stream().map(MealPlanEntry::getServingCount).toList());
         assertEquals(main.getId(), mealPlanRepository.findByDate(date).orElseThrow().getId());
+    }
+
+    @Test
+    void savesAndReloadsDessertOnlyAndMixedDaysWithStableIdsOrderAndServings() {
+        LocalDate dessertOnlyDate = LocalDate.of(2026, 9, 1);
+        LocalDate mixedDate = LocalDate.of(2026, 9, 2);
+        MealPlanEntry dessertOnly = new MealPlanEntry(dessertOnlyDate, puddingRecipe, 6,
+                MealRole.DESSERT, 0);
+        MealPlanEntry main = new MealPlanEntry(mixedDate, pastaRecipe, 2);
+        MealPlanEntry side = new MealPlanEntry(mixedDate, breadRecipe, 4, MealRole.SIDE, 0);
+        MealPlanEntry secondDessert = new MealPlanEntry(
+                mixedDate, puddingRecipe, 5, MealRole.DESSERT, 1);
+        MealPlanEntry firstDessert = new MealPlanEntry(
+                mixedDate, iceCreamRecipe, 3, MealRole.DESSERT, 0);
+
+        mealPlanRepository.applyChanges(
+                List.of(dessertOnly, secondDessert, main, firstDessert, side), List.of());
+
+        List<MealPlanEntry> dessertOnlyLoaded = mealPlanRepository.findBetween(
+                dessertOnlyDate, dessertOnlyDate);
+        assertEquals(List.of(dessertOnly.getId()), dessertOnlyLoaded.stream()
+                .map(MealPlanEntry::getId).toList());
+        assertTrue(mealPlanRepository.findByDate(dessertOnlyDate).isEmpty());
+
+        List<MealPlanEntry> mixed = mealPlanRepository.findBetween(mixedDate, mixedDate);
+        assertEquals(List.of(MealRole.MAIN, MealRole.SIDE, MealRole.DESSERT, MealRole.DESSERT),
+                mixed.stream().map(MealPlanEntry::getMealRole).toList());
+        assertEquals(List.of(main.getId(), side.getId(), firstDessert.getId(),
+                        secondDessert.getId()),
+                mixed.stream().map(MealPlanEntry::getId).toList());
+        assertEquals(List.of(2, 4, 3, 5), mixed.stream()
+                .map(MealPlanEntry::getServingCount).toList());
     }
 
     @Test

@@ -109,13 +109,19 @@ class SqliteRecipeRepositoryIntegrationTest {
                 List.of(new RecipeIngredient(pasta, BigDecimal.ONE, Unit.SLICE)),
                 List.of(), List.of(savory), DishType.SIDE);
         Recipe mainRecipe = recipeNamed("Pasta");
+        Recipe dessertRecipe = new Recipe("Pudding", 4,
+                List.of(new RecipeIngredient(pasta, BigDecimal.ONE, Unit.PIECE)),
+                List.of(), List.of(savory), DishType.DESSERT);
 
         recipeRepository.save(sideRecipe);
         recipeRepository.save(mainRecipe);
+        recipeRepository.save(dessertRecipe);
 
         assertEquals(DishType.SIDE, recipeRepository.findById(sideRecipe.getId())
                 .orElseThrow().getDishType());
         assertEquals(DishType.MAIN, recipeRepository.findById(mainRecipe.getId())
+                .orElseThrow().getDishType());
+        assertEquals(DishType.DESSERT, recipeRepository.findById(dessertRecipe.getId())
                 .orElseThrow().getDishType());
     }
 

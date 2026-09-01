@@ -53,7 +53,7 @@ public final class WeeklyMealPlanService {
         this.clock = Objects.requireNonNull(clock, "Clock must not be null.");
     }
 
-    /** Loads all seven current-week dates with their optional main and ordered side entries. */
+    /** Loads all seven dates with their main, ordered sides and ordered desserts. */
     public List<MealPlanDay> loadCurrentWeek() {
         LocalDate today = LocalDate.now(clock);
         WeekRange week = weekService.weekContaining(today);
@@ -157,13 +157,18 @@ public final class WeeklyMealPlanService {
                 .filter(entry -> entry.getMealRole() == MealRole.SIDE)
                 .sorted(Comparator.comparingInt(MealPlanEntry::getPosition))
                 .toList();
-        return new MealPlanDay(date, today, mains.stream().findFirst(), sides);
+        List<MealPlanEntry> desserts = entries.stream()
+                .filter(entry -> entry.getMealRole() == MealRole.DESSERT)
+                .sorted(Comparator.comparingInt(MealPlanEntry::getPosition))
+                .toList();
+        return new MealPlanDay(date, today, mains.stream().findFirst(), sides, desserts);
     }
 
     private static List<MealPlanEntry> entriesOf(MealPlanDraft draft) {
         List<MealPlanEntry> entries = new ArrayList<>();
         draft.mainEntry().ifPresent(entries::add);
         entries.addAll(draft.sideEntries());
+        entries.addAll(draft.dessertEntries());
         return entries;
     }
 

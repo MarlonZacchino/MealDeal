@@ -72,6 +72,7 @@ final class GermanRecipeDisplay {
         return switch (dishType) {
             case MAIN -> "Hauptgericht";
             case SIDE -> "Beilage";
+            case DESSERT -> "Nachtisch";
         };
     }
 }

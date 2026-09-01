@@ -29,7 +29,7 @@ class ShoppingListServiceIntegrationTest {
     Path temporaryDirectory;
 
     @Test
-    void includesPersistedMainAndSideEntriesInTodayAndCurrentWeekLists() {
+    void includesPersistedMainSideAndDessertEntriesInTodayAndCurrentWeekLists() {
         SqliteDatabase database = new SqliteDatabase(temporaryDirectory.resolve("shopping.db"));
         var ingredientRepository = new SqliteIngredientRepository(database);
         var tasteRepository = new SqliteTasteRepository(database);
@@ -50,13 +50,19 @@ class ShoppingListServiceIntegrationTest {
         Recipe sideRecipe = new Recipe("Side recipe", 1,
                 List.of(new RecipeIngredient(pasta, new BigDecimal("250"), Unit.GRAM)),
                 List.of(), List.of(savory), DishType.SIDE);
+        Recipe dessertRecipe = new Recipe("Dessert recipe", 1,
+                List.of(new RecipeIngredient(pasta, new BigDecimal("100"), Unit.GRAM)),
+                List.of(), List.of(savory), DishType.DESSERT);
         recipeRepository.save(gramRecipe);
         recipeRepository.save(kilogramRecipe);
         recipeRepository.save(sideRecipe);
+        recipeRepository.save(dessertRecipe);
 
         LocalDate today = LocalDate.of(2026, 9, 1);
         mealPlanRepository.save(new MealPlanEntry(today, gramRecipe, 4));
         mealPlanRepository.save(new MealPlanEntry(today, sideRecipe, 2, MealRole.SIDE, 0));
+        mealPlanRepository.save(new MealPlanEntry(
+                today, dessertRecipe, 3, MealRole.DESSERT, 0));
         mealPlanRepository.save(new MealPlanEntry(today.plusDays(1), kilogramRecipe, 1));
 
         Clock clock = Clock.fixed(today.atStartOfDay(ZoneId.of("Europe/Berlin")).toInstant(),
@@ -69,12 +75,12 @@ class ShoppingListServiceIntegrationTest {
 
         assertEquals(1, todayList.getItems().size());
         assertEquals(pasta, todayList.getItems().getFirst().getIngredient());
-        assertEquals(new BigDecimal("1500"),
+        assertEquals(new BigDecimal("1800"),
                 todayList.getItems().getFirst().getQuantity().getAmount());
         assertEquals(Unit.GRAM, todayList.getItems().getFirst().getQuantity().getUnit());
 
         assertEquals(1, weekList.getItems().size());
-        assertEquals(new BigDecimal("2000.0"),
+        assertEquals(new BigDecimal("2300.0"),
                 weekList.getItems().getFirst().getQuantity().getAmount());
         assertEquals(Unit.GRAM, weekList.getItems().getFirst().getQuantity().getUnit());
     }

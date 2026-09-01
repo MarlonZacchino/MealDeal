@@ -36,6 +36,8 @@ class WeeklyMealPlanServiceTest {
     private Recipe soup;
     private Recipe bread;
     private Recipe salad;
+    private Recipe pudding;
+    private Recipe iceCream;
 
     @BeforeEach
     void setUp() {
@@ -43,8 +45,11 @@ class WeeklyMealPlanServiceTest {
         soup = recipe("Suppe", 4);
         bread = recipe("Brot", DishType.SIDE, 2);
         salad = recipe("Salat", DishType.SIDE, 3);
+        pudding = recipe("Pudding", DishType.DESSERT, 2);
+        iceCream = recipe("Eis", DishType.DESSERT, 1);
         mealPlans = new InMemoryMealPlanRepository();
-        recipes = new InMemoryRecipeRepository(List.of(soup, pasta, bread, salad));
+        recipes = new InMemoryRecipeRepository(
+                List.of(soup, pasta, bread, salad, pudding, iceCream));
         service = new WeeklyMealPlanService(
                 mealPlans, recipes, new WeekService(), clock(TODAY));
     }
@@ -128,6 +133,8 @@ class WeeklyMealPlanServiceTest {
                 .stream().map(Recipe::getName).toList());
         assertEquals(List.of("Brot", "Salat"), service.loadAvailableRecipes(DishType.SIDE)
                 .stream().map(Recipe::getName).toList());
+        assertEquals(List.of("Eis", "Pudding"), service.loadAvailableRecipes(DishType.DESSERT)
+                .stream().map(Recipe::getName).toList());
     }
 
     @Test
@@ -143,6 +150,28 @@ class WeeklyMealPlanServiceTest {
         assertEquals(main.getId(), day.mainEntry().orElseThrow().getId());
         assertEquals(List.of(salad.getId(), bread.getId()), day.sideEntries().stream()
                 .map(entry -> entry.getRecipe().getId()).toList());
+    }
+
+    @Test
+    void loadsMainSidesAndDessertsInSeparateStoredOrders() {
+        LocalDate monday = LocalDate.of(2026, 8, 24);
+        MealPlanEntry main = new MealPlanEntry(monday, pasta, 4);
+        MealPlanEntry side = new MealPlanEntry(monday, salad, 3, MealRole.SIDE, 0);
+        MealPlanEntry laterDessert = new MealPlanEntry(
+                monday, pudding, 5, MealRole.DESSERT, 1);
+        MealPlanEntry firstDessert = new MealPlanEntry(
+                monday, iceCream, 2, MealRole.DESSERT, 0);
+        mealPlans.entries.addAll(List.of(laterDessert, main, firstDessert, side));
+
+        MealPlanDay day = service.loadCurrentWeek().getFirst();
+
+        assertEquals(main.getId(), day.mainEntry().orElseThrow().getId());
+        assertEquals(List.of(side.getId()), day.sideEntries().stream()
+                .map(MealPlanEntry::getId).toList());
+        assertEquals(List.of(firstDessert.getId(), laterDessert.getId()),
+                day.dessertEntries().stream().map(MealPlanEntry::getId).toList());
+        assertEquals(List.of(2, 5), day.dessertEntries().stream()
+                .map(MealPlanEntry::getServingCount).toList());
     }
 
     @Test

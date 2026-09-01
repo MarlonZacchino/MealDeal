@@ -129,7 +129,8 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
         String sql = SELECT_COLUMNS
                 + " WHERE planned_date BETWEEN ? AND ?"
                 + " ORDER BY planned_date,"
-                + " CASE meal_role WHEN 'MAIN' THEN 0 ELSE 1 END, position, id";
+                + " CASE meal_role WHEN 'MAIN' THEN 0 WHEN 'SIDE' THEN 1 ELSE 2 END,"
+                + " position, id";
         List<EntryRow> rows = new ArrayList<>();
         try (var connection = database.openConnection();
              var statement = connection.prepareStatement(sql)) {

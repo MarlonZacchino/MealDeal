@@ -37,7 +37,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 
-/** Renders editable MAIN and SIDE planning state for the current week. */
+/** Renders editable main, side and dessert planning state for the current week. */
 public final class WeekPlanController implements NavigationAware {
 
     private static final System.Logger LOGGER =
@@ -72,6 +72,7 @@ public final class WeekPlanController implements NavigationAware {
     private Consumer<Recipe> detailNavigation;
     private List<Recipe> mainRecipes = List.of();
     private List<Recipe> sideRecipes = List.of();
+    private List<Recipe> dessertRecipes = List.of();
 
     @FXML private Label weekRangeLabel;
     @FXML private VBox dayCardsContainer;
@@ -110,6 +111,7 @@ public final class WeekPlanController implements NavigationAware {
         try {
             mainRecipes = mealPlanService.loadAvailableRecipes(DishType.MAIN);
             sideRecipes = mealPlanService.loadAvailableRecipes(DishType.SIDE);
+            dessertRecipes = mealPlanService.loadAvailableRecipes(DishType.DESSERT);
             renderWeek(mealPlanService.loadCurrentWeek());
             showContent();
             clearSaveMessage();
@@ -169,7 +171,8 @@ public final class WeekPlanController implements NavigationAware {
         localChangeNote.setWrapText(true);
         localChangeNote.getStyleClass().add("meal-plan-unsaved-note");
         card.getChildren().addAll(dayHeader(day), mainSection(day.date(), draft),
-                sideSection(day.date(), draft), localChangeNote);
+                sideSection(day.date(), draft), dessertSection(day.date(), draft),
+                localChangeNote);
         return card;
     }
 
@@ -317,6 +320,81 @@ public final class WeekPlanController implements NavigationAware {
             row.getChildren().add(alternatives);
         }
         row.getStyleClass().add("meal-plan-side-row");
+        return row;
+    }
+
+    private VBox dessertSection(LocalDate date, WeeklyMealPlanDayDraft draft) {
+        VBox section = new VBox(10);
+        section.getStyleClass().add("meal-plan-role-section");
+        HBox header = new HBox();
+        header.setAlignment(Pos.CENTER_LEFT);
+        Label title = new Label("Nachtische");
+        title.getStyleClass().add("section-title");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Button add = new Button("Nachtisch hinzufügen");
+        add.getStyleClass().add("secondary-button");
+        add.setDisable(dessertRecipes.isEmpty());
+        add.setOnAction(ignored -> {
+            draft.addDessert(dessertRecipes.getFirst());
+            rerenderDay(date);
+        });
+        header.getChildren().addAll(title, spacer, add);
+        section.getChildren().add(header);
+
+        if (draft.getDessertEntries().isEmpty()) {
+            Label empty = new Label(dessertRecipes.isEmpty()
+                    ? "Keine Nachtisch-Rezepte verfügbar." : "Kein Nachtisch geplant.");
+            empty.getStyleClass().add("card-text");
+            section.getChildren().add(empty);
+        } else {
+            VBox rows = new VBox(10);
+            for (int index = 0; index < draft.getDessertEntries().size(); index++) {
+                rows.getChildren().add(dessertRow(date, draft, index));
+            }
+            section.getChildren().add(rows);
+        }
+        return section;
+    }
+
+    private VBox dessertRow(LocalDate date, WeeklyMealPlanDayDraft draft, int index) {
+        MealPlanEntry dessert = draft.getDessertEntries().get(index);
+        ComboBox<Recipe> selection = recipeBox(dessertRecipes, "Nachtisch auswählen");
+        selection.setValue(dessert.getRecipe());
+        Spinner<Integer> servings = servingSpinner(dessert.getServingCount());
+        selection.valueProperty().addListener((ignored, previous, selected) -> {
+            if (selected != null) {
+                draft.setDessertRecipe(index, selected);
+                rerenderDay(date);
+            }
+        });
+        servings.valueProperty().addListener((ignored, previous, selected) -> {
+            draft.setDessertServingCount(index, selected);
+            rerenderDay(date);
+        });
+        Button up = new Button("↑");
+        up.setDisable(index == 0);
+        up.setAccessibleText("Nachtisch nach oben verschieben");
+        up.setOnAction(ignored -> { draft.moveDessertUp(index); rerenderDay(date); });
+        Button down = new Button("↓");
+        down.setDisable(index == draft.getDessertEntries().size() - 1);
+        down.setAccessibleText("Nachtisch nach unten verschieben");
+        down.setOnAction(ignored -> { draft.moveDessertDown(index); rerenderDay(date); });
+        Button remove = new Button("Entfernen");
+        remove.getStyleClass().add("danger-button");
+        remove.setOnAction(ignored -> { draft.removeDessert(index); rerenderDay(date); });
+
+        FlowPane controls = controls(labeledControl("Nachtisch", selection),
+                labeledControl("Personen", servings), up, down, remove);
+        VBox row = new VBox(7, recipeLink(dessert), controls);
+        VBox alternatives = alternativeSelections(dessert, (groupId, optionId) -> {
+            draft.setDessertIngredientOption(index, groupId, optionId);
+            rerenderDay(date);
+        });
+        if (!alternatives.getChildren().isEmpty()) {
+            row.getChildren().add(alternatives);
+        }
+        row.getStyleClass().add("meal-plan-dessert-row");
         return row;
     }
 

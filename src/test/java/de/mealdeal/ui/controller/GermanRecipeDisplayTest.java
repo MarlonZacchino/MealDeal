@@ -53,8 +53,9 @@ class GermanRecipeDisplayTest {
     }
 
     @Test
-    void displaysBothDishTypesInGermanForListAndDetailViews() {
+    void displaysAllDishTypesInGermanForListAndDetailViews() {
         assertEquals("Hauptgericht", GermanRecipeDisplay.dishType(DishType.MAIN));
         assertEquals("Beilage", GermanRecipeDisplay.dishType(DishType.SIDE));
+        assertEquals("Nachtisch", GermanRecipeDisplay.dishType(DishType.DESSERT));
     }
 }

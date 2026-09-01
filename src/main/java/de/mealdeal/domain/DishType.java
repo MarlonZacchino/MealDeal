@@ -1,7 +1,8 @@
 package de.mealdeal.domain;
 
-/** Classifies a recipe as a main dish or a side dish. */
+/** Classifies the role a recipe can have in a planned meal. */
 public enum DishType {
     MAIN,
-    SIDE
+    SIDE,
+    DESSERT
 }

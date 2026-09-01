@@ -74,6 +74,19 @@ class MealPlanEntryTest {
     }
 
     @Test
+    void acceptsOrderedDessertWithMatchingRecipeType() {
+        Recipe dessert = new Recipe("Pudding", 2, List.of(), List.of(),
+                List.of(new Taste("Sweet")), DishType.DESSERT);
+
+        MealPlanEntry entry = new MealPlanEntry(LocalDate.of(2026, 8, 31), dessert,
+                5, MealRole.DESSERT, 3);
+
+        assertEquals(MealRole.DESSERT, entry.getMealRole());
+        assertEquals(3, entry.getPosition());
+        assertEquals(5, entry.getServingCount());
+    }
+
+    @Test
     void rejectsRoleThatDoesNotMatchRecipeType() {
         Recipe sideRecipe = new Recipe("Bread", 2, List.of(), List.of(),
                 List.of(new Taste("Savory")), DishType.SIDE);

@@ -13,7 +13,8 @@ import java.util.UUID;
  * date.
  *
  * <p>The UUID is the stable technical identity. A date can have one main dish
- * and multiple ordered side dishes; the entry's role must match its recipe.</p>
+ * and multiple ordered side dishes and desserts; the entry's role must match
+ * its recipe.</p>
  */
 public final class MealPlanEntry {
 
@@ -31,7 +32,7 @@ public final class MealPlanEntry {
                 MealRole.forDishType(recipe.getDishType()), 0, Map.of());
     }
 
-    /** Creates an entry with its required role and its side-dish position. */
+    /** Creates an entry with its required role and its role-local position. */
     public MealPlanEntry(LocalDate date, Recipe recipe, int servingCount,
                          MealRole mealRole, int position) {
         this(UUID.randomUUID(), date, recipe, servingCount, mealRole, position, Map.of());
@@ -73,7 +74,8 @@ public final class MealPlanEntry {
             throw new IllegalArgumentException("Meal role must match the recipe dish type.");
         }
         if (position < 0 || (mealRole == MealRole.MAIN && position != 0)) {
-            throw new IllegalArgumentException("Only side dishes may have a positive position.");
+            throw new IllegalArgumentException(
+                    "Only side dishes and desserts may have a positive position.");
         }
         this.position = position;
         this.ingredientOptionSelections = validateSelections(
@@ -100,7 +102,7 @@ public final class MealPlanEntry {
         return mealRole;
     }
 
-    /** Returns the persisted order among side dishes; MAIN always has position zero. */
+    /** Returns the persisted order within its role; MAIN always has position zero. */
     public int getPosition() {
         return position;
     }

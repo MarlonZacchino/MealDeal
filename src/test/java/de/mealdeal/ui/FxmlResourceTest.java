@@ -169,6 +169,8 @@ class FxmlResourceTest {
         assertTrue(css.contains(".meal-plan-controls"));
         assertTrue(css.contains(".meal-plan-role-section"));
         assertTrue(css.contains(".meal-plan-side-row"));
+        assertTrue(css.contains(".meal-plan-dessert-row"));
+        assertTrue(css.contains(".home-plan-dessert-entry"));
     }
 
     @Test

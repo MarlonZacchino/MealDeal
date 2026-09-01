@@ -196,7 +196,8 @@
 }
 
 .home-plan-main-entry,
-.home-plan-side-entry {
+.home-plan-side-entry,
+.home-plan-dessert-entry {
     -fx-background-color: -md-surface-alt;
     -fx-background-radius: 9px;
     -fx-font-size: 17px;
@@ -208,7 +209,8 @@
     -fx-font-weight: bold;
 }
 
-.home-plan-side-entry {
+.home-plan-side-entry,
+.home-plan-dessert-entry {
     -fx-text-fill: -md-text-muted;
 }
 
@@ -235,7 +237,8 @@
 }
 
 .home-week-day .home-plan-main-entry,
-.home-week-day .home-plan-side-entry {
+.home-week-day .home-plan-side-entry,
+.home-week-day .home-plan-dessert-entry {
     -fx-background-color: transparent;
     -fx-padding: 1px 0;
 }
@@ -413,7 +416,8 @@
     -fx-padding: 18px 20px;
 }
 
-.meal-plan-side-row {
+.meal-plan-side-row,
+.meal-plan-dessert-row {
     -fx-background-color: -md-surface;
     -fx-background-radius: 10px;
     -fx-border-color: -md-border;

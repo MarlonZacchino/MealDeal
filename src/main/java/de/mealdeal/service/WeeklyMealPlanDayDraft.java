@@ -19,21 +19,26 @@ public final class WeeklyMealPlanDayDraft {
     private final LocalDate date;
     private final Optional<MealPlanEntry> originalMain;
     private final List<MealPlanEntry> originalSides;
+    private final List<MealPlanEntry> originalDesserts;
     private MealPlanEntry main;
     private List<MealPlanEntry> sides;
+    private List<MealPlanEntry> desserts;
 
     public WeeklyMealPlanDayDraft(MealPlanDay day) {
         Objects.requireNonNull(day, "Meal plan day must not be null.");
         date = day.date();
         originalMain = day.mainEntry();
         originalSides = List.copyOf(day.sideEntries());
+        originalDesserts = List.copyOf(day.dessertEntries());
         main = originalMain.orElse(null);
         sides = new ArrayList<>(originalSides);
+        desserts = new ArrayList<>(originalDesserts);
     }
 
     public LocalDate getDate() { return date; }
     public Optional<MealPlanEntry> getMainEntry() { return Optional.ofNullable(main); }
     public List<MealPlanEntry> getSideEntries() { return List.copyOf(sides); }
+    public List<MealPlanEntry> getDessertEntries() { return List.copyOf(desserts); }
 
     /** Selects or clears the optional main dish. */
     public void setMainRecipe(Recipe recipe) {
@@ -111,12 +116,61 @@ public final class WeeklyMealPlanDayDraft {
         }
     }
 
+    /** Adds a dessert with an independent serving count and role-local position. */
+    public void addDessert(Recipe recipe) {
+        requireRole(Objects.requireNonNull(recipe, "Dessert recipe must not be null."),
+                MealRole.DESSERT);
+        int servings = main == null ? Recipe.DEFAULT_SERVING_COUNT : main.getServingCount();
+        desserts.add(entry(null, recipe, servings, MealRole.DESSERT, desserts.size(), Map.of()));
+    }
+
+    public void setDessertRecipe(int index, Recipe recipe) {
+        MealPlanEntry current = dessertAt(index);
+        requireRole(Objects.requireNonNull(recipe, "Dessert recipe must not be null."),
+                MealRole.DESSERT);
+        Map<UUID, UUID> selections = current.getRecipe().getId().equals(recipe.getId())
+                ? current.getIngredientOptionSelections() : Map.of();
+        desserts.set(index, entry(current.getId(), recipe, current.getServingCount(),
+                MealRole.DESSERT, index, selections));
+    }
+
+    public void setDessertServingCount(int index, int servingCount) {
+        MealPlanEntry current = dessertAt(index);
+        desserts.set(index, entry(current.getId(), current.getRecipe(), servingCount,
+                MealRole.DESSERT, index, current.getIngredientOptionSelections()));
+    }
+
+    /** Selects one concrete ingredient option for a dessert entry. */
+    public void setDessertIngredientOption(int index, UUID groupId, UUID optionId) {
+        MealPlanEntry current = dessertAt(index);
+        desserts.set(index, withIngredientOption(current, groupId, optionId));
+    }
+
+    public void removeDessert(int index) {
+        desserts.remove(index);
+        normalizeDessertPositions();
+    }
+
+    public void moveDessertUp(int index) {
+        if (index > 0 && index < desserts.size()) {
+            swapDesserts(index, index - 1);
+        }
+    }
+
+    public void moveDessertDown(int index) {
+        if (index >= 0 && index < desserts.size() - 1) {
+            swapDesserts(index, index + 1);
+        }
+    }
+
     public boolean isChanged() {
-        return !sameEntry(originalMain.orElse(null), main) || !sameEntries(originalSides, sides);
+        return !sameEntry(originalMain.orElse(null), main)
+                || !sameEntries(originalSides, sides)
+                || !sameEntries(originalDesserts, desserts);
     }
 
     public MealPlanDraft toSaveSnapshot() {
-        return new MealPlanDraft(date, Optional.ofNullable(main), sides);
+        return new MealPlanDraft(date, Optional.ofNullable(main), sides, desserts);
     }
 
     private void swapSides(int first, int second) {
@@ -136,11 +190,36 @@ public final class WeeklyMealPlanDayDraft {
         sides = normalized;
     }
 
+    private void swapDesserts(int first, int second) {
+        MealPlanEntry value = desserts.get(first);
+        desserts.set(first, desserts.get(second));
+        desserts.set(second, value);
+        normalizeDessertPositions();
+    }
+
+    private void normalizeDessertPositions() {
+        List<MealPlanEntry> normalized = new ArrayList<>();
+        for (int index = 0; index < desserts.size(); index++) {
+            MealPlanEntry dessert = desserts.get(index);
+            normalized.add(entry(dessert.getId(), dessert.getRecipe(),
+                    dessert.getServingCount(), MealRole.DESSERT, index,
+                    dessert.getIngredientOptionSelections()));
+        }
+        desserts = normalized;
+    }
+
     private MealPlanEntry sideAt(int index) {
         if (index < 0 || index >= sides.size()) {
             throw new IndexOutOfBoundsException("Side index is outside the current draft.");
         }
         return sides.get(index);
+    }
+
+    private MealPlanEntry dessertAt(int index) {
+        if (index < 0 || index >= desserts.size()) {
+            throw new IndexOutOfBoundsException("Dessert index is outside the current draft.");
+        }
+        return desserts.get(index);
     }
 
     private MealPlanEntry entry(UUID id, Recipe recipe, int servingCount, MealRole role,

@@ -1,5 +1,6 @@
 package de.mealdeal.ui.controller;
 
+import de.mealdeal.domain.MealRole;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.service.MealPlanDay;
 import de.mealdeal.service.WeeklyMealPlanService;
@@ -134,11 +135,16 @@ public final class HomeController implements NavigationAware {
 
         day.mainEntry().ifPresent(entry -> {
             todayPlanContent.getChildren().add(roleTitle("Hauptgericht"));
-            todayPlanContent.getChildren().add(recipeEntry(entry, false));
+            todayPlanContent.getChildren().add(recipeEntry(entry, MealRole.MAIN));
         });
         if (!day.sideEntries().isEmpty()) {
             todayPlanContent.getChildren().add(roleTitle("Beilagen"));
-            day.sideEntries().stream().map(entry -> recipeEntry(entry, true))
+            day.sideEntries().stream().map(entry -> recipeEntry(entry, MealRole.SIDE))
+                    .forEach(todayPlanContent.getChildren()::add);
+        }
+        if (!day.dessertEntries().isEmpty()) {
+            todayPlanContent.getChildren().add(roleTitle("Nachtische"));
+            day.dessertEntries().stream().map(entry -> recipeEntry(entry, MealRole.DESSERT))
                     .forEach(todayPlanContent.getChildren()::add);
         }
         todayPlanContent.setManaged(true);
@@ -158,9 +164,11 @@ public final class HomeController implements NavigationAware {
         if (day.today()) {
             dayBox.getStyleClass().add("home-week-day-today");
         }
-        display.mainEntry().map(entry -> recipeEntry(entry, false))
+        display.mainEntry().map(entry -> recipeEntry(entry, MealRole.MAIN))
                 .ifPresent(dayBox.getChildren()::add);
-        display.sideEntries().stream().map(entry -> recipeEntry(entry, true))
+        display.sideEntries().stream().map(entry -> recipeEntry(entry, MealRole.SIDE))
+                .forEach(dayBox.getChildren()::add);
+        display.dessertEntries().stream().map(entry -> recipeEntry(entry, MealRole.DESSERT))
                 .forEach(dayBox.getChildren()::add);
         if (display.isEmpty()) {
             Label empty = new Label("Noch nichts geplant");
@@ -176,12 +184,22 @@ public final class HomeController implements NavigationAware {
         return title;
     }
 
-    private static Label recipeEntry(HomeMealPlanViewModel.RecipeEntry entry, boolean side) {
-        Label recipe = new Label((side ? "+ " : "") + entry.recipeName() + " · "
+    private static Label recipeEntry(HomeMealPlanViewModel.RecipeEntry entry, MealRole role) {
+        String prefix = switch (role) {
+            case MAIN -> "";
+            case SIDE -> "+ ";
+            case DESSERT -> "• ";
+        };
+        String styleClass = switch (role) {
+            case MAIN -> "home-plan-main-entry";
+            case SIDE -> "home-plan-side-entry";
+            case DESSERT -> "home-plan-dessert-entry";
+        };
+        Label recipe = new Label(prefix + entry.recipeName() + " · "
                 + servingText(entry.servingCount()));
         recipe.setMaxWidth(Double.MAX_VALUE);
         recipe.setWrapText(true);
-        recipe.getStyleClass().add(side ? "home-plan-side-entry" : "home-plan-main-entry");
+        recipe.getStyleClass().add(styleClass);
         return recipe;
     }
 

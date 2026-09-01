@@ -28,6 +28,7 @@ class HomeMealPlanViewModelTest {
         assertTrue(display.isEmpty());
         assertTrue(display.mainEntry().isEmpty());
         assertTrue(display.sideEntries().isEmpty());
+        assertTrue(display.dessertEntries().isEmpty());
     }
 
     @Test
@@ -74,6 +75,23 @@ class HomeMealPlanViewModelTest {
     }
 
     @Test
+    void dessertOnlyTodayIsVisibleAndKeepsOrderAndIndependentServings() {
+        MealPlanEntry first = dessert("Pudding", 2, 0);
+        MealPlanEntry second = dessert("Eis", 5, 1);
+
+        HomeMealPlanViewModel display = HomeMealPlanViewModel.from(new MealPlanDay(
+                TODAY, true, Optional.empty(), List.of(), List.of(first, second)));
+
+        assertFalse(display.isEmpty());
+        assertTrue(display.mainEntry().isEmpty());
+        assertTrue(display.sideEntries().isEmpty());
+        assertEquals(List.of("Pudding", "Eis"), display.dessertEntries().stream()
+                .map(HomeMealPlanViewModel.RecipeEntry::recipeName).toList());
+        assertEquals(List.of(2, 5), display.dessertEntries().stream()
+                .map(HomeMealPlanViewModel.RecipeEntry::servingCount).toList());
+    }
+
+    @Test
     void weeklyOverviewDataKeepsMixedSideOnlyAndEmptyDaysDistinct() {
         MealPlanEntry main = new MealPlanEntry(TODAY, recipe("Schnitzel", DishType.MAIN), 2);
         MealPlanEntry side = side("Kartoffelpüree", 2, 0);
@@ -99,6 +117,11 @@ class HomeMealPlanViewModelTest {
     private static MealPlanEntry side(String name, int servings, int position) {
         return new MealPlanEntry(TODAY, recipe(name, DishType.SIDE), servings,
                 MealRole.SIDE, position);
+    }
+
+    private static MealPlanEntry dessert(String name, int servings, int position) {
+        return new MealPlanEntry(TODAY, recipe(name, DishType.DESSERT), servings,
+                MealRole.DESSERT, position);
     }
 
     private static Recipe recipe(String name, DishType dishType) {

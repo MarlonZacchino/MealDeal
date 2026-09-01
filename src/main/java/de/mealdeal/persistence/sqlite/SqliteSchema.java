@@ -8,7 +8,7 @@ import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 10;
+    static final int CURRENT_VERSION = 11;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -125,6 +125,10 @@ final class SqliteSchema {
         }
         if (version == 9) {
             createVersion10(connection);
+            version = 10;
+        }
+        if (version == 10) {
+            createVersion11(connection);
         }
     }
 
@@ -411,6 +415,144 @@ final class SqliteSchema {
                     )
                     """);
             statement.execute("PRAGMA user_version = 10");
+        }
+    }
+
+    /** Adds DESSERT recipe and meal-plan roles while preserving all existing data. */
+    static void createVersion11(Connection connection) throws SQLException {
+        String[] statements = {
+            "CREATE TEMP TABLE recipes_migration_v11 AS SELECT * FROM recipes",
+            """
+            CREATE TEMP TABLE groups_migration_v11 AS
+            SELECT id, recipe_id, position, default_option_id
+            FROM recipe_ingredient_groups
+            """,
+            """
+            CREATE TEMP TABLE options_migration_v11 AS
+            SELECT id, group_id, ingredient_id, quantity, unit, position
+            FROM recipe_ingredient_options
+            """,
+            """
+            CREATE TEMP TABLE steps_migration_v11 AS
+            SELECT recipe_id, position, description FROM recipe_steps
+            """,
+            """
+            CREATE TEMP TABLE tastes_migration_v11 AS
+            SELECT recipe_id, taste_id FROM recipe_tastes
+            """,
+            """
+            CREATE TEMP TABLE meal_entries_migration_v11 AS
+            SELECT id, planned_date, recipe_id, serving_count, meal_role, position
+            FROM meal_plan_entries
+            """,
+            """
+            CREATE TEMP TABLE meal_selections_migration_v11 AS
+            SELECT meal_plan_entry_id, ingredient_group_id, ingredient_option_id
+            FROM meal_plan_ingredient_selections
+            """,
+            "DELETE FROM meal_plan_ingredient_selections",
+            "DELETE FROM meal_plan_entries",
+            "DELETE FROM recipe_ingredient_groups",
+            "DELETE FROM recipe_steps",
+            "DELETE FROM recipe_tastes",
+            "DROP TABLE recipes",
+            """
+            CREATE TABLE recipes (
+                id TEXT PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+                standard_serving_count INTEGER NOT NULL CHECK (standard_serving_count > 0),
+                preparation_time_minutes INTEGER CHECK (preparation_time_minutes > 0),
+                cooking_time_minutes INTEGER CHECK (cooking_time_minutes > 0),
+                calories_kcal INTEGER CHECK (calories_kcal >= 0),
+                protein_grams TEXT,
+                carbohydrate_grams TEXT,
+                fat_grams TEXT,
+                dish_type TEXT NOT NULL DEFAULT 'MAIN'
+                    CHECK (dish_type IN ('MAIN', 'SIDE', 'DESSERT')),
+                baking_time_minutes INTEGER CHECK (baking_time_minutes > 0)
+            )
+            """,
+            """
+            INSERT INTO recipes
+                (id, name, standard_serving_count, preparation_time_minutes,
+                 cooking_time_minutes, calories_kcal, protein_grams,
+                 carbohydrate_grams, fat_grams, dish_type, baking_time_minutes)
+            SELECT id, name, standard_serving_count, preparation_time_minutes,
+                   cooking_time_minutes, calories_kcal, protein_grams,
+                   carbohydrate_grams, fat_grams, dish_type, baking_time_minutes
+            FROM recipes_migration_v11
+            """,
+            """
+            INSERT INTO recipe_ingredient_groups (id, recipe_id, position, default_option_id)
+            SELECT id, recipe_id, position, default_option_id FROM groups_migration_v11
+            """,
+            """
+            INSERT INTO recipe_ingredient_options
+                (id, group_id, ingredient_id, quantity, unit, position)
+            SELECT id, group_id, ingredient_id, quantity, unit, position
+            FROM options_migration_v11
+            """,
+            """
+            INSERT INTO recipe_steps (recipe_id, position, description)
+            SELECT recipe_id, position, description FROM steps_migration_v11
+            """,
+            """
+            INSERT INTO recipe_tastes (recipe_id, taste_id)
+            SELECT recipe_id, taste_id FROM tastes_migration_v11
+            """,
+            "DROP TABLE meal_plan_entries",
+            """
+            CREATE TABLE meal_plan_entries (
+                id TEXT PRIMARY KEY NOT NULL,
+                planned_date TEXT NOT NULL,
+                recipe_id TEXT NOT NULL,
+                serving_count INTEGER NOT NULL CHECK (serving_count > 0),
+                meal_role TEXT NOT NULL CHECK (meal_role IN ('MAIN', 'SIDE', 'DESSERT')),
+                position INTEGER NOT NULL CHECK (position >= 0),
+                CHECK (meal_role != 'MAIN' OR position = 0),
+                FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE RESTRICT
+            )
+            """,
+            """
+            INSERT INTO meal_plan_entries
+                (id, planned_date, recipe_id, serving_count, meal_role, position)
+            SELECT id, planned_date, recipe_id, serving_count, meal_role, position
+            FROM meal_entries_migration_v11
+            """,
+            """
+            CREATE UNIQUE INDEX meal_plan_one_main_per_date
+            ON meal_plan_entries (planned_date)
+            WHERE meal_role = 'MAIN'
+            """,
+            """
+            CREATE UNIQUE INDEX meal_plan_side_position_per_date
+            ON meal_plan_entries (planned_date, position)
+            WHERE meal_role = 'SIDE'
+            """,
+            """
+            CREATE UNIQUE INDEX meal_plan_dessert_position_per_date
+            ON meal_plan_entries (planned_date, position)
+            WHERE meal_role = 'DESSERT'
+            """,
+            """
+            INSERT INTO meal_plan_ingredient_selections
+                (meal_plan_entry_id, ingredient_group_id, ingredient_option_id)
+            SELECT meal_plan_entry_id, ingredient_group_id, ingredient_option_id
+            FROM meal_selections_migration_v11
+            """,
+            "DROP TABLE recipes_migration_v11",
+            "DROP TABLE groups_migration_v11",
+            "DROP TABLE options_migration_v11",
+            "DROP TABLE steps_migration_v11",
+            "DROP TABLE tastes_migration_v11",
+            "DROP TABLE meal_entries_migration_v11",
+            "DROP TABLE meal_selections_migration_v11"
+        };
+        try (Statement statement = connection.createStatement()) {
+            for (String sql : statements) {
+                statement.execute(sql);
+            }
+            statement.execute("PRAGMA user_version = 11");
         }
     }
 }

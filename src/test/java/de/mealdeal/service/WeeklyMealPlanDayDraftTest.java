@@ -26,6 +26,8 @@ class WeeklyMealPlanDayDraftTest {
     private final Recipe mainRecipe = recipe("Pasta", DishType.MAIN, 4);
     private final Recipe firstSide = recipe("Salat", DishType.SIDE, 2);
     private final Recipe secondSide = recipe("Brot", DishType.SIDE, 2);
+    private final Recipe firstDessert = recipe("Pudding", DishType.DESSERT, 2);
+    private final Recipe secondDessert = recipe("Eis", DishType.DESSERT, 1);
 
     @Test
     void supportsSideOnlyPlanningAndUsesTheStandardDefaultWithoutAMain() {
@@ -68,6 +70,27 @@ class WeeklyMealPlanDayDraftTest {
                 .map(MealPlanEntry::getId).toList());
         assertEquals(List.of(0, 1), draft.getSideEntries().stream()
                 .map(MealPlanEntry::getPosition).toList());
+        assertTrue(draft.isChanged());
+    }
+
+    @Test
+    void supportsDessertOnlyPlanningWithIndependentServingsAndStableOrdering() {
+        WeeklyMealPlanDayDraft draft = emptyDraft();
+
+        draft.addDessert(firstDessert);
+        draft.addDessert(secondDessert);
+        MealPlanEntry first = draft.getDessertEntries().get(0);
+        MealPlanEntry second = draft.getDessertEntries().get(1);
+        draft.setDessertServingCount(0, 5);
+        draft.moveDessertDown(0);
+
+        assertTrue(draft.getMainEntry().isEmpty());
+        assertTrue(draft.getSideEntries().isEmpty());
+        assertEquals(List.of(second.getId(), first.getId()), draft.getDessertEntries().stream()
+                .map(MealPlanEntry::getId).toList());
+        assertEquals(List.of(0, 1), draft.getDessertEntries().stream()
+                .map(MealPlanEntry::getPosition).toList());
+        assertEquals(5, draft.getDessertEntries().get(1).getServingCount());
         assertTrue(draft.isChanged());
     }
 
