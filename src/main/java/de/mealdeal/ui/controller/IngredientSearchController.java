@@ -362,7 +362,8 @@ public final class IngredientSearchController implements NavigationAware {
         Button entry = new Button();
         entry.setGraphic(content);
         entry.setMaxWidth(Double.MAX_VALUE);
-        entry.setMaxHeight(Region.USE_PREF_SIZE);
+        entry.prefHeightProperty().bind(content.heightProperty().add(44));
+        entry.maxHeightProperty().bind(entry.prefHeightProperty());
         entry.setAlignment(Pos.CENTER_LEFT);
         VBox.setVgrow(entry, Priority.NEVER);
         entry.setAccessibleText("Gericht " + recipe.getName() + " öffnen");

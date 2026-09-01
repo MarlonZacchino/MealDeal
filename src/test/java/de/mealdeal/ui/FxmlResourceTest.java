@@ -53,6 +53,7 @@ class FxmlResourceTest {
                 "/de/mealdeal/ui/search-view.fxml")) {
             assertNotNull(input);
             String fxml = new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            String css = readResource("/de/mealdeal/ui/styles.css");
 
             assertTrue(fxml.contains("fx:id=\"emptyState\""));
             assertTrue(fxml.contains("Keine passenden Gerichte gefunden"));
@@ -63,6 +64,8 @@ class FxmlResourceTest {
             assertTrue(fxml.contains("onAction=\"#search\""));
             assertTrue(fxml.contains("fx:id=\"resultsContainer\" alignment=\"TOP_LEFT\""));
             assertTrue(fxml.contains("VBox.vgrow=\"NEVER\""));
+            assertTrue(css.contains(".search-result-item {"));
+            assertTrue(css.contains("-fx-max-height: -1"));
         }
     }
 

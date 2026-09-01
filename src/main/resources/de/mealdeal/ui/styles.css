@@ -531,6 +531,12 @@
     -fx-padding: 22px 26px;
 }
 
+.search-result-item {
+    -fx-min-height: -1;
+    -fx-pref-height: -1;
+    -fx-max-height: -1;
+}
+
 .recipe-list-item:hover,
 .search-result-item:hover {
     -fx-background-color: -md-surface-hover;
