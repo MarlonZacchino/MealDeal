@@ -6,7 +6,7 @@ import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 7;
+    static final int CURRENT_VERSION = 8;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -111,6 +111,10 @@ final class SqliteSchema {
         }
         if (version == 6) {
             createVersion7(connection);
+            version = 7;
+        }
+        if (version == 7) {
+            createVersion8(connection);
         }
     }
 
@@ -301,6 +305,26 @@ final class SqliteSchema {
                 statement.execute(sql);
             }
             statement.execute("PRAGMA user_version = 7");
+        }
+    }
+
+    /** Stores optional per-entry choices for multi-option recipe ingredient groups. */
+    static void createVersion8(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("""
+                    CREATE TABLE meal_plan_ingredient_selections (
+                        meal_plan_entry_id TEXT NOT NULL,
+                        ingredient_group_id TEXT NOT NULL,
+                        ingredient_option_id TEXT NOT NULL,
+                        PRIMARY KEY (meal_plan_entry_id, ingredient_group_id),
+                        FOREIGN KEY (meal_plan_entry_id) REFERENCES meal_plan_entries(id)
+                            ON DELETE CASCADE,
+                        FOREIGN KEY (ingredient_group_id, ingredient_option_id)
+                            REFERENCES recipe_ingredient_options(group_id, id)
+                            DEFERRABLE INITIALLY DEFERRED
+                    )
+                    """);
+            statement.execute("PRAGMA user_version = 8");
         }
     }
 }

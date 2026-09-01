@@ -3,6 +3,7 @@ package de.mealdeal.ui.controller;
 import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.MealPlanEntry;
 import de.mealdeal.domain.Recipe;
+import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.service.MealPlanDay;
 import de.mealdeal.service.WeeklyMealPlanDayDraft;
@@ -32,7 +33,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 /** Renders editable MAIN and SIDE planning state for the current week. */
 public final class WeekPlanController implements NavigationAware {
@@ -50,6 +53,18 @@ public final class WeekPlanController implements NavigationAware {
             throw new UnsupportedOperationException("Recipe selection is not editable.");
         }
     };
+    private static final StringConverter<RecipeIngredientOption> OPTION_CONVERTER =
+            new StringConverter<>() {
+                @Override public String toString(RecipeIngredientOption option) {
+                    return option == null ? "" : GermanRecipeDisplay.quantity(
+                            option.getQuantity(), option.getUnit()) + " "
+                            + option.getIngredient().getName();
+                }
+                @Override public RecipeIngredientOption fromString(String value) {
+                    throw new UnsupportedOperationException(
+                            "Ingredient option selection is not editable.");
+                }
+            };
 
     private final WeeklyMealPlanService mealPlanService;
     private final Map<LocalDate, MealPlanDay> loadedDays = new LinkedHashMap<>();
@@ -218,6 +233,15 @@ public final class WeekPlanController implements NavigationAware {
             controls.getChildren().add(remove);
         }
         section.getChildren().add(controls);
+        if (entry != null) {
+            VBox alternatives = alternativeSelections(entry, (groupId, optionId) -> {
+                draft.setMainIngredientOption(groupId, optionId);
+                rerenderDay(date);
+            });
+            if (!alternatives.getChildren().isEmpty()) {
+                section.getChildren().add(alternatives);
+            }
+        }
         return section;
     }
 
@@ -285,8 +309,42 @@ public final class WeekPlanController implements NavigationAware {
         FlowPane controls = controls(labeledControl("Beilage", selection),
                 labeledControl("Personen", servings), up, down, remove);
         VBox row = new VBox(7, recipeLink(side), controls);
+        VBox alternatives = alternativeSelections(side, (groupId, optionId) -> {
+            draft.setSideIngredientOption(index, groupId, optionId);
+            rerenderDay(date);
+        });
+        if (!alternatives.getChildren().isEmpty()) {
+            row.getChildren().add(alternatives);
+        }
         row.getStyleClass().add("meal-plan-side-row");
         return row;
+    }
+
+    private static VBox alternativeSelections(
+            MealPlanEntry entry, BiConsumer<UUID, UUID> selectionHandler) {
+        VBox container = new VBox(8);
+        container.getStyleClass().add("meal-plan-ingredient-selections");
+        entry.getRecipe().getIngredientGroups().stream()
+                .filter(group -> group.getOptions().size() > 1)
+                .forEach(group -> {
+                    ComboBox<RecipeIngredientOption> selection = new ComboBox<>(
+                            FXCollections.observableArrayList(group.getOptions()));
+                    selection.setConverter(OPTION_CONVERTER);
+                    selection.setValue(entry.getSelectedOption(group));
+                    selection.setMaxWidth(Double.MAX_VALUE);
+                    selection.getStyleClass().add("meal-plan-ingredient-picker");
+                    selection.valueProperty().addListener((ignored, previous, selected) -> {
+                        if (selected != null) {
+                            selectionHandler.accept(group.getId(), selected.getId());
+                        }
+                    });
+                    String groupName = group.getOptions().stream()
+                            .map(option -> option.getIngredient().getName())
+                            .reduce((first, second) -> first + " oder " + second)
+                            .orElseThrow();
+                    container.getChildren().add(labeledControl(groupName, selection));
+                });
+        return container;
     }
 
     private void rerenderDay(LocalDate date) {

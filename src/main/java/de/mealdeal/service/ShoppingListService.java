@@ -78,8 +78,7 @@ public final class ShoppingListService {
 
         Map<AggregationKey, ShoppingListItem> aggregatedItems = new LinkedHashMap<>();
         for (MealPlanEntry entry : entries) {
-            List<RecipeIngredient> scaledIngredients = recipeScaler.scale(
-                    entry.getRecipe(), entry.getServingCount());
+            List<RecipeIngredient> scaledIngredients = recipeScaler.scale(entry);
             for (RecipeIngredient scaledIngredient : scaledIngredients) {
                 addIngredient(aggregatedItems, scaledIngredient);
             }

@@ -9,7 +9,9 @@ import de.mealdeal.persistence.repository.MealPlanRepository;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,9 +45,16 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
     @Override
     public void save(MealPlanEntry entry) {
         Objects.requireNonNull(entry, "Meal plan entry must not be null.");
-        try (var connection = database.openConnection();
-             var statement = connection.prepareStatement(SAVE_SQL)) {
-            save(entry, statement);
+        try (var connection = database.openConnection()) {
+            connection.setAutoCommit(false);
+            try (var statement = connection.prepareStatement(SAVE_SQL)) {
+                save(entry, statement);
+                replaceSelections(connection, entry);
+                connection.commit();
+            } catch (SQLException exception) {
+                rollback(connection, exception);
+                throw exception;
+            }
         } catch (SQLException exception) {
             throw new PersistenceException(
                     "Could not save meal plan entry. Its recipe must already exist.", exception);
@@ -80,6 +89,7 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
                 }
                 for (MealPlanEntry entry : entriesToSave) {
                     save(entry, saveStatement);
+                    replaceSelections(connection, entry);
                 }
                 connection.commit();
             } catch (SQLException exception) {
@@ -203,7 +213,54 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
                 .orElseThrow(() -> new PersistenceException(
                         "Meal plan entry references an unknown recipe."));
         return new MealPlanEntry(row.id(), row.date(), recipe, row.servingCount(),
-                row.mealRole(), row.position());
+                row.mealRole(), row.position(), loadSelections(row.id()));
+    }
+
+    private static void replaceSelections(java.sql.Connection connection,
+                                          MealPlanEntry entry) throws SQLException {
+        try (var delete = connection.prepareStatement(
+                "DELETE FROM meal_plan_ingredient_selections WHERE meal_plan_entry_id = ?")) {
+            delete.setString(1, entry.getId().toString());
+            delete.executeUpdate();
+        }
+        String sql = """
+                INSERT INTO meal_plan_ingredient_selections
+                    (meal_plan_entry_id, ingredient_group_id, ingredient_option_id)
+                VALUES (?, ?, ?)
+                """;
+        try (var insert = connection.prepareStatement(sql)) {
+            for (var selection : entry.getIngredientOptionSelections().entrySet()) {
+                insert.setString(1, entry.getId().toString());
+                insert.setString(2, selection.getKey().toString());
+                insert.setString(3, selection.getValue().toString());
+                insert.addBatch();
+            }
+            insert.executeBatch();
+        }
+    }
+
+    private Map<UUID, UUID> loadSelections(UUID entryId) {
+        Map<UUID, UUID> selections = new LinkedHashMap<>();
+        String sql = """
+                SELECT ingredient_group_id, ingredient_option_id
+                FROM meal_plan_ingredient_selections
+                WHERE meal_plan_entry_id = ?
+                ORDER BY ingredient_group_id
+                """;
+        try (var connection = database.openConnection();
+             var statement = connection.prepareStatement(sql)) {
+            statement.setString(1, entryId.toString());
+            try (var resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    selections.put(UUID.fromString(resultSet.getString("ingredient_group_id")),
+                            UUID.fromString(resultSet.getString("ingredient_option_id")));
+                }
+            }
+        } catch (SQLException exception) {
+            throw new PersistenceException("Could not load meal plan ingredient selections.",
+                    exception);
+        }
+        return Map.copyOf(selections);
     }
 
     private static EntryRow readRow(java.sql.ResultSet resultSet) throws SQLException {

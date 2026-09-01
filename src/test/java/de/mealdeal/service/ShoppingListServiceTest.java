@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -86,6 +87,27 @@ class ShoppingListServiceTest {
 
         ShoppingList shoppingList = service(new InMemoryMealPlanRepository(List.of()), today)
                 .buildFromEntries(List.of(new MealPlanEntry(today, recipe, 4)));
+
+        assertEquals(1, shoppingList.getItems().size());
+        assertItem(shoppingList.getItems().getFirst(), sauce, "600", Unit.MILLILITER);
+    }
+
+    @Test
+    void shoppingListUsesTheOptionSelectedForEachMealPlanEntry() {
+        RecipeIngredientOption pastaOption = new RecipeIngredientOption(
+                pasta, new BigDecimal("500"), Unit.GRAM, 0);
+        RecipeIngredientOption sauceOption = new RecipeIngredientOption(
+                sauce, new BigDecimal("300"), Unit.MILLILITER, 1);
+        RecipeIngredientGroup group = new RecipeIngredientGroup(
+                List.of(pastaOption, sauceOption), pastaOption);
+        Recipe recipe = Recipe.withIngredientGroups("Flexible", 2, List.of(group),
+                List.of(), List.of(new Taste("Savory")), DishType.MAIN);
+        LocalDate today = LocalDate.of(2026, 9, 1);
+        MealPlanEntry selected = new MealPlanEntry(UUID.randomUUID(), today, recipe, 4,
+                MealRole.MAIN, 0, Map.of(group.getId(), sauceOption.getId()));
+
+        ShoppingList shoppingList = service(new InMemoryMealPlanRepository(List.of()), today)
+                .buildFromEntries(List.of(selected));
 
         assertEquals(1, shoppingList.getItems().size());
         assertItem(shoppingList.getItems().getFirst(), sauce, "600", Unit.MILLILITER);

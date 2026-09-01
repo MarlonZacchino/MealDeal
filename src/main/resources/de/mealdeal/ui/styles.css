@@ -434,6 +434,16 @@
     -fx-pref-width: 130px;
 }
 
+.meal-plan-ingredient-selections {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 10px;
+    -fx-padding: 12px;
+}
+
+.meal-plan-ingredient-picker {
+    -fx-min-width: 280px;
+}
+
 .shopping-mode-card {
     -fx-background-color: -md-accent-soft;
 }

@@ -7,6 +7,8 @@ import de.mealdeal.domain.Recipe;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,34 +43,55 @@ public final class WeeklyMealPlanDayDraft {
         }
         requireRole(recipe, MealRole.MAIN);
         int servings = main == null ? recipe.getStandardServingCount() : main.getServingCount();
-        main = entry(main == null ? null : main.getId(), recipe, servings, MealRole.MAIN, 0);
+        Map<UUID, UUID> selections = main != null
+                && main.getRecipe().getId().equals(recipe.getId())
+                ? main.getIngredientOptionSelections() : Map.of();
+        main = entry(main == null ? null : main.getId(), recipe, servings, MealRole.MAIN, 0,
+                selections);
     }
 
     public void setMainServingCount(int servingCount) {
         if (main == null) {
             throw new IllegalStateException("A main dish must be selected first.");
         }
-        main = entry(main.getId(), main.getRecipe(), servingCount, MealRole.MAIN, 0);
+        main = entry(main.getId(), main.getRecipe(), servingCount, MealRole.MAIN, 0,
+                main.getIngredientOptionSelections());
+    }
+
+    /** Selects one concrete option for a multi-option group of the main entry. */
+    public void setMainIngredientOption(UUID groupId, UUID optionId) {
+        if (main == null) {
+            throw new IllegalStateException("A main dish must be selected first.");
+        }
+        main = withIngredientOption(main, groupId, optionId);
     }
 
     /** Adds a side using the main's current portions or the standard default. */
     public void addSide(Recipe recipe) {
         requireRole(Objects.requireNonNull(recipe, "Side recipe must not be null."), MealRole.SIDE);
         int servings = main == null ? Recipe.DEFAULT_SERVING_COUNT : main.getServingCount();
-        sides.add(entry(null, recipe, servings, MealRole.SIDE, sides.size()));
+        sides.add(entry(null, recipe, servings, MealRole.SIDE, sides.size(), Map.of()));
     }
 
     public void setSideRecipe(int index, Recipe recipe) {
         MealPlanEntry current = sideAt(index);
         requireRole(Objects.requireNonNull(recipe, "Side recipe must not be null."), MealRole.SIDE);
+        Map<UUID, UUID> selections = current.getRecipe().getId().equals(recipe.getId())
+                ? current.getIngredientOptionSelections() : Map.of();
         sides.set(index, entry(current.getId(), recipe, current.getServingCount(),
-                MealRole.SIDE, index));
+                MealRole.SIDE, index, selections));
     }
 
     public void setSideServingCount(int index, int servingCount) {
         MealPlanEntry current = sideAt(index);
         sides.set(index, entry(current.getId(), current.getRecipe(), servingCount,
-                MealRole.SIDE, index));
+                MealRole.SIDE, index, current.getIngredientOptionSelections()));
+    }
+
+    /** Selects one concrete option for a multi-option group of a side entry. */
+    public void setSideIngredientOption(int index, UUID groupId, UUID optionId) {
+        MealPlanEntry current = sideAt(index);
+        sides.set(index, withIngredientOption(current, groupId, optionId));
     }
 
     public void removeSide(int index) {
@@ -108,7 +131,7 @@ public final class WeeklyMealPlanDayDraft {
         for (int index = 0; index < sides.size(); index++) {
             MealPlanEntry side = sides.get(index);
             normalized.add(entry(side.getId(), side.getRecipe(), side.getServingCount(),
-                    MealRole.SIDE, index));
+                    MealRole.SIDE, index, side.getIngredientOptionSelections()));
         }
         sides = normalized;
     }
@@ -121,10 +144,30 @@ public final class WeeklyMealPlanDayDraft {
     }
 
     private MealPlanEntry entry(UUID id, Recipe recipe, int servingCount, MealRole role,
-                                int position) {
+                                int position, Map<UUID, UUID> selections) {
         return id == null
-                ? new MealPlanEntry(date, recipe, servingCount, role, position)
-                : new MealPlanEntry(id, date, recipe, servingCount, role, position);
+                ? new MealPlanEntry(date, recipe, servingCount, role, position, selections)
+                : new MealPlanEntry(id, date, recipe, servingCount, role, position, selections);
+    }
+
+    private static MealPlanEntry withIngredientOption(MealPlanEntry entry,
+                                                       UUID groupId, UUID optionId) {
+        Objects.requireNonNull(groupId, "Ingredient group ID must not be null.");
+        Objects.requireNonNull(optionId, "Ingredient option ID must not be null.");
+        var group = entry.getRecipe().getIngredientGroups().stream()
+                .filter(candidate -> candidate.getId().equals(groupId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Ingredient group must belong to the planned recipe."));
+        Map<UUID, UUID> selections = new LinkedHashMap<>(
+                entry.getIngredientOptionSelections());
+        if (group.getStandardOptionId().equals(optionId)) {
+            selections.remove(groupId);
+        } else {
+            selections.put(groupId, optionId);
+        }
+        return new MealPlanEntry(entry.getId(), entry.getDate(), entry.getRecipe(),
+                entry.getServingCount(), entry.getMealRole(), entry.getPosition(), selections);
     }
 
     private static void requireRole(Recipe recipe, MealRole role) {
@@ -154,6 +197,8 @@ public final class WeeklyMealPlanDayDraft {
                 && first.getRecipe().getId().equals(second.getRecipe().getId())
                 && first.getServingCount() == second.getServingCount()
                 && first.getMealRole() == second.getMealRole()
-                && first.getPosition() == second.getPosition();
+                && first.getPosition() == second.getPosition()
+                && first.getIngredientOptionSelections().equals(
+                        second.getIngredientOptionSelections());
     }
 }

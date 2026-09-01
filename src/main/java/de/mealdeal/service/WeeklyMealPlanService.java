@@ -129,7 +129,9 @@ public final class WeeklyMealPlanService {
         }
         MealPlanEntry entry = mealPlanRepository.findByDate(date)
                 .map(existing -> new MealPlanEntry(existing.getId(), date, recipe, servingCount,
-                        MealRole.MAIN, 0))
+                        MealRole.MAIN, 0,
+                        existing.getRecipe().getId().equals(recipe.getId())
+                                ? existing.getIngredientOptionSelections() : Map.of()))
                 .orElseGet(() -> new MealPlanEntry(date, recipe, servingCount));
         mealPlanRepository.save(entry);
         return entry;
@@ -174,7 +176,9 @@ public final class WeeklyMealPlanService {
                 && first.getRecipe().getId().equals(second.getRecipe().getId())
                 && first.getServingCount() == second.getServingCount()
                 && first.getMealRole() == second.getMealRole()
-                && first.getPosition() == second.getPosition();
+                && first.getPosition() == second.getPosition()
+                && first.getIngredientOptionSelections().equals(
+                        second.getIngredientOptionSelections());
     }
 
     private void requireCurrentWeekDate(LocalDate date) {

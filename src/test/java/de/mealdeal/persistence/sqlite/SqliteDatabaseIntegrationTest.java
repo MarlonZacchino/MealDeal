@@ -23,7 +23,7 @@ class SqliteDatabaseIntegrationTest {
     Path temporaryDirectory;
 
     @Test
-    void createsSchemaVersionSevenWithExpectedTables() throws Exception {
+    void createsSchemaVersionEightWithExpectedTables() throws Exception {
         SqliteDatabase database = new SqliteDatabase(temporaryDirectory.resolve("schema.db"));
 
         Set<String> tables = new HashSet<>();
@@ -36,10 +36,10 @@ class SqliteDatabaseIntegrationTest {
             }
         }
 
-        assertEquals(7, database.getSchemaVersion());
+        assertEquals(8, database.getSchemaVersion());
         assertEquals(Set.of("ingredients", "tastes", "recipes", "recipe_ingredient_groups",
                 "recipe_ingredient_options", "recipe_steps", "recipe_tastes",
-                "meal_plan_entries"), tables);
+                "meal_plan_entries", "meal_plan_ingredient_selections"), tables);
         assertFalse(tables.contains("recipe_ingredients"));
 
         Set<String> recipeColumns = new HashSet<>();
@@ -97,7 +97,7 @@ class SqliteDatabaseIntegrationTest {
         var loadedRecipe = new SqliteRecipeRepository(migratedDatabase)
                 .findById(recipeId).orElseThrow();
 
-        assertEquals(7, migratedDatabase.getSchemaVersion());
+        assertEquals(8, migratedDatabase.getSchemaVersion());
         assertEquals("Pasta recipe", loadedRecipe.getName());
         assertEquals(new java.math.BigDecimal("500.00"),
                 loadedRecipe.getIngredients().getFirst().getQuantity());
@@ -122,6 +122,7 @@ class SqliteDatabaseIntegrationTest {
         assertEquals(MealRole.MAIN, loadedEntry.getMealRole());
         assertEquals(0, loadedEntry.getPosition());
         assertEquals(4, loadedEntry.getServingCount());
+        assertTrue(loadedEntry.getIngredientOptionSelections().isEmpty());
     }
 
     @Test
@@ -165,6 +166,60 @@ class SqliteDatabaseIntegrationTest {
         assertTrue(loaded.getIngredientGroups().stream()
                 .allMatch(group -> group.getOptions().size() == 1
                         && group.getStandardOption().equals(group.getOptions().getFirst())));
+    }
+
+    @Test
+    void versionSevenMealPlanWithoutSelectionUsesRecipeDefaultAfterMigration() throws Exception {
+        Path databasePath = temporaryDirectory.resolve("version-seven-selection-migration.db");
+        java.util.UUID firstIngredientId = java.util.UUID.randomUUID();
+        java.util.UUID secondIngredientId = java.util.UUID.randomUUID();
+        java.util.UUID tasteId = java.util.UUID.randomUUID();
+        java.util.UUID recipeId = java.util.UUID.randomUUID();
+        java.util.UUID entryId = java.util.UUID.randomUUID();
+        java.util.UUID groupId;
+        java.util.UUID defaultOptionId;
+
+        try (var connection = java.sql.DriverManager.getConnection(
+                "jdbc:sqlite:" + databasePath.toAbsolutePath())) {
+            connection.setAutoCommit(false);
+            SqliteSchema.createVersion1(connection);
+            SqliteSchema.createVersion2(connection);
+            SqliteSchema.createVersion3(connection);
+            SqliteSchema.createVersion4(connection);
+            SqliteSchema.createVersion5(connection);
+            SqliteSchema.createVersion6(connection);
+            insertVersionOneData(connection, firstIngredientId, tasteId, recipeId);
+            SqliteSchema.createVersion7(connection);
+
+            try (var statement = connection.prepareStatement(
+                    "SELECT id, default_option_id FROM recipe_ingredient_groups "
+                            + "WHERE recipe_id = ?")) {
+                statement.setString(1, recipeId.toString());
+                try (var resultSet = statement.executeQuery()) {
+                    assertTrue(resultSet.next());
+                    groupId = java.util.UUID.fromString(resultSet.getString("id"));
+                    defaultOptionId = java.util.UUID.fromString(
+                            resultSet.getString("default_option_id"));
+                }
+            }
+            insert(connection, "INSERT INTO ingredients VALUES (?, ?)",
+                    secondIngredientId.toString(), "Rice");
+            insert(connection, "INSERT INTO recipe_ingredient_options VALUES (?, ?, ?, ?, ?, ?)",
+                    java.util.UUID.randomUUID().toString(), groupId.toString(),
+                    secondIngredientId.toString(), "350", "GRAM", 1);
+            insert(connection, "INSERT INTO meal_plan_entries VALUES (?, ?, ?, ?, ?, ?)",
+                    entryId.toString(), "2026-09-01", recipeId.toString(), 2, "MAIN", 0);
+            connection.commit();
+        }
+
+        SqliteDatabase migratedDatabase = new SqliteDatabase(databasePath);
+        var loaded = new SqliteMealPlanRepository(migratedDatabase)
+                .findById(entryId).orElseThrow();
+        var loadedGroup = loaded.getRecipe().getIngredientGroups().getFirst();
+
+        assertEquals(8, migratedDatabase.getSchemaVersion());
+        assertTrue(loaded.getIngredientOptionSelections().isEmpty());
+        assertEquals(defaultOptionId, loaded.getSelectedOption(loadedGroup).getId());
     }
 
     @Test

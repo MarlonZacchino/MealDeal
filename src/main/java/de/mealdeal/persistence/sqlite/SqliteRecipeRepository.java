@@ -17,9 +17,11 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -45,6 +47,7 @@ public final class SqliteRecipeRepository implements RecipeRepository {
             connection.setAutoCommit(false);
             try {
                 saveRecipeRow(connection, recipe);
+                deleteObsoleteMealPlanSelections(connection, recipe);
                 deleteRelationships(connection, recipe.getId());
                 saveIngredientGroups(connection, recipe);
                 saveSteps(connection, recipe);
@@ -155,6 +158,46 @@ public final class SqliteRecipeRepository implements RecipeRepository {
         }
     }
 
+    private static void deleteObsoleteMealPlanSelections(Connection connection, Recipe recipe)
+            throws SQLException {
+        Set<IngredientSelection> validSelections = new HashSet<>();
+        for (RecipeIngredientGroup group : recipe.getIngredientGroups()) {
+            if (group.getOptions().size() > 1) {
+                group.getOptions().forEach(option -> validSelections.add(
+                        new IngredientSelection(group.getId(), option.getId())));
+            }
+        }
+        String selectSql = """
+                SELECT selection.meal_plan_entry_id, selection.ingredient_group_id,
+                       selection.ingredient_option_id
+                FROM meal_plan_ingredient_selections selection
+                JOIN recipe_ingredient_groups ingredient_group
+                  ON ingredient_group.id = selection.ingredient_group_id
+                WHERE ingredient_group.recipe_id = ?
+                """;
+        String deleteSql = """
+                DELETE FROM meal_plan_ingredient_selections
+                WHERE meal_plan_entry_id = ? AND ingredient_group_id = ?
+                """;
+        try (var select = connection.prepareStatement(selectSql);
+             var delete = connection.prepareStatement(deleteSql)) {
+            select.setString(1, recipe.getId().toString());
+            try (var resultSet = select.executeQuery()) {
+                while (resultSet.next()) {
+                    UUID entryId = UUID.fromString(resultSet.getString("meal_plan_entry_id"));
+                    UUID groupId = UUID.fromString(resultSet.getString("ingredient_group_id"));
+                    UUID optionId = UUID.fromString(resultSet.getString("ingredient_option_id"));
+                    if (!validSelections.contains(new IngredientSelection(groupId, optionId))) {
+                        delete.setString(1, entryId.toString());
+                        delete.setString(2, groupId.toString());
+                        delete.addBatch();
+                    }
+                }
+            }
+            delete.executeBatch();
+        }
+    }
+
     private static void saveIngredientGroups(Connection connection, Recipe recipe)
             throws SQLException {
         String groupSql = """
@@ -247,6 +290,9 @@ public final class SqliteRecipeRepository implements RecipeRepository {
                         DishType.valueOf(resultSet.getString("dish_type"))));
             }
         }
+    }
+
+    private record IngredientSelection(UUID groupId, UUID optionId) {
     }
 
     private static void setOptionalTime(java.sql.PreparedStatement statement, int index,

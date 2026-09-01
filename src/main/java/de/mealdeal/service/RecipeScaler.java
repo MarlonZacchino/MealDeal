@@ -1,5 +1,6 @@
 package de.mealdeal.service;
 
+import de.mealdeal.domain.MealPlanEntry;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
 import de.mealdeal.domain.RecipeIngredientGroup;
@@ -31,6 +32,19 @@ public final class RecipeScaler {
     public List<RecipeIngredient> scale(Recipe recipe, int requestedServingCount) {
         return scaleIngredientGroups(recipe, requestedServingCount).stream()
                 .map(group -> group.getStandardOption())
+                .map(option -> new RecipeIngredient(option.getIngredient(), option.getQuantity(),
+                        option.getUnit()))
+                .toList();
+    }
+
+    /** Scales the concrete per-group options resolved by one meal-plan entry. */
+    public List<RecipeIngredient> scale(MealPlanEntry entry) {
+        Objects.requireNonNull(entry, "Meal plan entry must not be null.");
+        BigDecimal requested = BigDecimal.valueOf(entry.getServingCount());
+        BigDecimal standard = BigDecimal.valueOf(
+                entry.getRecipe().getStandardServingCount());
+        return entry.getSelectedIngredientOptions().stream()
+                .map(option -> scaleOption(option, requested, standard))
                 .map(option -> new RecipeIngredient(option.getIngredient(), option.getQuantity(),
                         option.getUnit()))
                 .toList();

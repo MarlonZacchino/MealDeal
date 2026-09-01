@@ -6,6 +6,8 @@ import de.mealdeal.domain.MealPlanEntry;
 import de.mealdeal.domain.MealRole;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
+import de.mealdeal.domain.RecipeIngredientGroup;
+import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.domain.RecipeStep;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.domain.Unit;
@@ -19,6 +21,7 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,30 +36,34 @@ class SqliteMealPlanRepositoryIntegrationTest {
 
     private SqliteMealPlanRepository mealPlanRepository;
     private SqliteRecipeRepository recipeRepository;
+    private SqliteDatabase database;
     private Recipe pastaRecipe;
     private Recipe soupRecipe;
     private Recipe breadRecipe;
     private Recipe saladRecipe;
+    private Ingredient pastaIngredient;
+    private Ingredient vegetablesIngredient;
+    private Taste savoryTaste;
 
     @BeforeEach
     void setUp() {
-        SqliteDatabase database = new SqliteDatabase(temporaryDirectory.resolve("meal-plan.db"));
+        database = new SqliteDatabase(temporaryDirectory.resolve("meal-plan.db"));
         var ingredientRepository = new SqliteIngredientRepository(database);
         var tasteRepository = new SqliteTasteRepository(database);
         recipeRepository = new SqliteRecipeRepository(database);
         mealPlanRepository = new SqliteMealPlanRepository(database);
 
-        Ingredient pasta = new Ingredient("Pasta");
-        Ingredient vegetables = new Ingredient("Vegetables");
-        Taste savory = new Taste("Savory");
-        ingredientRepository.save(pasta);
-        ingredientRepository.save(vegetables);
-        tasteRepository.save(savory);
+        pastaIngredient = new Ingredient("Pasta");
+        vegetablesIngredient = new Ingredient("Vegetables");
+        savoryTaste = new Taste("Savory");
+        ingredientRepository.save(pastaIngredient);
+        ingredientRepository.save(vegetablesIngredient);
+        tasteRepository.save(savoryTaste);
 
-        pastaRecipe = recipe("Pasta recipe", pasta, savory);
-        soupRecipe = recipe("Soup recipe", vegetables, savory);
-        breadRecipe = recipe("Bread recipe", pasta, savory, DishType.SIDE);
-        saladRecipe = recipe("Salad recipe", vegetables, savory, DishType.SIDE);
+        pastaRecipe = recipe("Pasta recipe", pastaIngredient, savoryTaste);
+        soupRecipe = recipe("Soup recipe", vegetablesIngredient, savoryTaste);
+        breadRecipe = recipe("Bread recipe", pastaIngredient, savoryTaste, DishType.SIDE);
+        saladRecipe = recipe("Salad recipe", vegetablesIngredient, savoryTaste, DishType.SIDE);
         recipeRepository.save(pastaRecipe);
         recipeRepository.save(soupRecipe);
         recipeRepository.save(breadRecipe);
@@ -78,6 +85,106 @@ class SqliteMealPlanRepositoryIntegrationTest {
         assertEquals(pastaRecipe.getId(), byId.getRecipe().getId());
         assertEquals(entry, byDate);
         assertTrue(mealPlanRepository.findByDate(LocalDate.of(2026, 9, 2)).isEmpty());
+    }
+
+    @Test
+    void savesDifferentAlternativeSelectionsForSameRecipeOnDifferentDays() {
+        RecipeIngredientOption pasta = new RecipeIngredientOption(
+                pastaIngredient, new BigDecimal("500"), Unit.GRAM, 0);
+        RecipeIngredientOption vegetables = new RecipeIngredientOption(
+                vegetablesIngredient, new BigDecimal("750"), Unit.GRAM, 1);
+        RecipeIngredientGroup group = new RecipeIngredientGroup(
+                List.of(pasta, vegetables), pasta);
+        Recipe flexible = Recipe.withIngredientGroups("Flexible", 2, List.of(group),
+                List.of(), List.of(savoryTaste), DishType.MAIN);
+        recipeRepository.save(flexible);
+        MealPlanEntry monday = new MealPlanEntry(
+                LocalDate.of(2026, 9, 1), flexible, 2);
+        MealPlanEntry tuesday = new MealPlanEntry(UUID.randomUUID(),
+                LocalDate.of(2026, 9, 2), flexible, 4, MealRole.MAIN, 0,
+                Map.of(group.getId(), vegetables.getId()));
+
+        mealPlanRepository.applyChanges(List.of(monday, tuesday), List.of());
+
+        List<MealPlanEntry> loaded = mealPlanRepository.findBetween(
+                monday.getDate(), tuesday.getDate());
+        assertEquals(pasta, loaded.get(0).getSelectedOption(
+                loaded.get(0).getRecipe().getIngredientGroups().getFirst()));
+        assertEquals(vegetables.getId(), loaded.get(1).getSelectedOption(
+                loaded.get(1).getRecipe().getIngredientGroups().getFirst()).getId());
+        assertTrue(loaded.get(0).getIngredientOptionSelections().isEmpty());
+        assertEquals(Map.of(group.getId(), vegetables.getId()),
+                loaded.get(1).getIngredientOptionSelections());
+    }
+
+    @Test
+    void recipeUpdateKeepsStillValidMealPlanSelection() {
+        RecipeIngredientOption pasta = new RecipeIngredientOption(
+                pastaIngredient, new BigDecimal("500"), Unit.GRAM, 0);
+        RecipeIngredientOption vegetables = new RecipeIngredientOption(
+                vegetablesIngredient, new BigDecimal("750"), Unit.GRAM, 1);
+        RecipeIngredientGroup group = new RecipeIngredientGroup(
+                List.of(pasta, vegetables), pasta);
+        Recipe flexible = Recipe.withIngredientGroups("Flexible", 2, List.of(group),
+                List.of(), List.of(savoryTaste), DishType.MAIN);
+        recipeRepository.save(flexible);
+        MealPlanEntry planned = new MealPlanEntry(UUID.randomUUID(),
+                LocalDate.of(2026, 9, 1), flexible, 2, MealRole.MAIN, 0,
+                Map.of(group.getId(), vegetables.getId()));
+        mealPlanRepository.save(planned);
+
+        RecipeIngredientOption updatedPasta = new RecipeIngredientOption(pasta.getId(),
+                pastaIngredient, new BigDecimal("600"), Unit.GRAM, 0);
+        RecipeIngredientOption updatedVegetables = new RecipeIngredientOption(vegetables.getId(),
+                vegetablesIngredient, new BigDecimal("800"), Unit.GRAM, 1);
+        RecipeIngredientGroup updatedGroup = new RecipeIngredientGroup(group.getId(),
+                List.of(updatedPasta, updatedVegetables), updatedPasta);
+        Recipe updatedRecipe = Recipe.withIngredientGroups(flexible.getId(), "Flexible updated", 2,
+                List.of(updatedGroup), List.of(), List.of(savoryTaste),
+                null, null, null, DishType.MAIN);
+
+        recipeRepository.save(updatedRecipe);
+
+        MealPlanEntry loaded = mealPlanRepository.findById(planned.getId()).orElseThrow();
+        RecipeIngredientGroup loadedGroup = loaded.getRecipe().getIngredientGroups().getFirst();
+        assertEquals(Map.of(group.getId(), vegetables.getId()),
+                loaded.getIngredientOptionSelections());
+        assertEquals(vegetables.getId(), loaded.getSelectedOption(loadedGroup).getId());
+        assertEquals(new BigDecimal("800"), loaded.getSelectedOption(loadedGroup).getQuantity());
+        assertEquals(1, selectionCount(planned.getId()));
+    }
+
+    @Test
+    void removedSelectedOptionFallsBackToCurrentDefaultWithoutStaleSelection() {
+        RecipeIngredientOption pasta = new RecipeIngredientOption(
+                pastaIngredient, new BigDecimal("500"), Unit.GRAM, 0);
+        RecipeIngredientOption vegetables = new RecipeIngredientOption(
+                vegetablesIngredient, new BigDecimal("750"), Unit.GRAM, 1);
+        RecipeIngredientGroup group = new RecipeIngredientGroup(
+                List.of(pasta, vegetables), pasta);
+        Recipe flexible = Recipe.withIngredientGroups("Flexible", 2, List.of(group),
+                List.of(), List.of(savoryTaste), DishType.MAIN);
+        recipeRepository.save(flexible);
+        MealPlanEntry planned = new MealPlanEntry(UUID.randomUUID(),
+                LocalDate.of(2026, 9, 1), flexible, 2, MealRole.MAIN, 0,
+                Map.of(group.getId(), vegetables.getId()));
+        mealPlanRepository.save(planned);
+
+        RecipeIngredientOption retainedPasta = new RecipeIngredientOption(pasta.getId(),
+                pastaIngredient, new BigDecimal("550"), Unit.GRAM, 0);
+        RecipeIngredientGroup updatedGroup = new RecipeIngredientGroup(group.getId(),
+                List.of(retainedPasta), retainedPasta);
+        Recipe updatedRecipe = Recipe.withIngredientGroups(flexible.getId(), "Flexible updated", 2,
+                List.of(updatedGroup), List.of(), List.of(savoryTaste),
+                null, null, null, DishType.MAIN);
+
+        recipeRepository.save(updatedRecipe);
+
+        MealPlanEntry loaded = mealPlanRepository.findById(planned.getId()).orElseThrow();
+        RecipeIngredientGroup loadedGroup = loaded.getRecipe().getIngredientGroups().getFirst();
+        assertTrue(loaded.getIngredientOptionSelections().isEmpty());
+        assertEquals(retainedPasta.getId(), loaded.getSelectedOption(loadedGroup).getId());
+        assertEquals(0, selectionCount(planned.getId()));
     }
 
     @Test
@@ -213,6 +320,40 @@ class SqliteMealPlanRepositoryIntegrationTest {
     }
 
     @Test
+    void rollbackRestoresPreviousAlternativeSelection() {
+        RecipeIngredientOption pasta = new RecipeIngredientOption(
+                pastaIngredient, new BigDecimal("500"), Unit.GRAM, 0);
+        RecipeIngredientOption vegetables = new RecipeIngredientOption(
+                vegetablesIngredient, new BigDecimal("750"), Unit.GRAM, 1);
+        RecipeIngredientGroup group = new RecipeIngredientGroup(
+                List.of(pasta, vegetables), pasta);
+        Recipe flexible = Recipe.withIngredientGroups("Flexible", 2, List.of(group),
+                List.of(), List.of(savoryTaste), DishType.MAIN);
+        recipeRepository.save(flexible);
+        LocalDate date = LocalDate.of(2026, 9, 1);
+        MealPlanEntry original = new MealPlanEntry(UUID.randomUUID(), date, flexible, 2,
+                MealRole.MAIN, 0, Map.of(group.getId(), vegetables.getId()));
+        mealPlanRepository.save(original);
+
+        MealPlanEntry changedToDefault = new MealPlanEntry(original.getId(), date, flexible, 2,
+                MealRole.MAIN, 0, Map.of());
+        Recipe missingRecipe = new Recipe("Missing", List.of(), List.of(),
+                List.of(new Taste("Missing taste")));
+        MealPlanEntry invalidAddition = new MealPlanEntry(
+                LocalDate.of(2026, 9, 2), missingRecipe, 2);
+
+        assertThrows(PersistenceException.class, () -> mealPlanRepository.applyChanges(
+                List.of(changedToDefault, invalidAddition), List.of()));
+
+        MealPlanEntry loaded = mealPlanRepository.findById(original.getId()).orElseThrow();
+        RecipeIngredientGroup loadedGroup = loaded.getRecipe().getIngredientGroups().getFirst();
+        assertEquals(Map.of(group.getId(), vegetables.getId()),
+                loaded.getIngredientOptionSelections());
+        assertEquals(vegetables.getId(), loaded.getSelectedOption(loadedGroup).getId());
+        assertEquals(1, selectionCount(original.getId()));
+    }
+
+    @Test
     void preventsDeletingRecipeReferencedByMealPlan() {
         MealPlanEntry entry = new MealPlanEntry(LocalDate.of(2026, 9, 1), pastaRecipe, 2);
         mealPlanRepository.save(entry);
@@ -232,5 +373,19 @@ class SqliteMealPlanRepositoryIntegrationTest {
         return new Recipe(name,
                 List.of(new RecipeIngredient(ingredient, BigDecimal.ONE, Unit.PIECE)),
                 List.of(new RecipeStep(1, "Cook.")), List.of(taste), dishType);
+    }
+
+    private int selectionCount(UUID entryId) {
+        try (var connection = database.openConnection();
+             var statement = connection.prepareStatement(
+                     "SELECT count(*) FROM meal_plan_ingredient_selections "
+                             + "WHERE meal_plan_entry_id = ?")) {
+            statement.setString(1, entryId.toString());
+            try (var resultSet = statement.executeQuery()) {
+                return resultSet.getInt(1);
+            }
+        } catch (java.sql.SQLException exception) {
+            throw new AssertionError("Could not inspect meal-plan selections.", exception);
+        }
     }
 }

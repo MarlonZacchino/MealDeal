@@ -4,8 +4,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -80,5 +82,45 @@ class MealPlanEntryTest {
                 LocalDate.now(), recipe, 2, MealRole.SIDE, 0));
         assertThrows(IllegalArgumentException.class, () -> new MealPlanEntry(
                 LocalDate.now(), sideRecipe, 2, MealRole.MAIN, 0));
+    }
+
+    @Test
+    void resolvesDefaultWithoutSelectionAndExplicitAlternativePerEntry() {
+        RecipeIngredientOption pasta = new RecipeIngredientOption(
+                new Ingredient("Pasta"), new BigDecimal("500"), Unit.GRAM, 0);
+        RecipeIngredientOption rice = new RecipeIngredientOption(
+                new Ingredient("Rice"), new BigDecimal("350"), Unit.GRAM, 1);
+        RecipeIngredientGroup group = new RecipeIngredientGroup(
+                List.of(pasta, rice), pasta);
+        Recipe flexible = Recipe.withIngredientGroups("Flexible", 2, List.of(group),
+                List.of(), List.of(new Taste("Savory")), DishType.MAIN);
+
+        MealPlanEntry defaultEntry = new MealPlanEntry(
+                LocalDate.of(2026, 9, 1), flexible, 2);
+        MealPlanEntry alternativeEntry = new MealPlanEntry(UUID.randomUUID(),
+                LocalDate.of(2026, 9, 2), flexible, 2, MealRole.MAIN, 0,
+                Map.of(group.getId(), rice.getId()));
+
+        assertEquals(pasta, defaultEntry.getSelectedOption(group));
+        assertEquals(rice, alternativeEntry.getSelectedOption(group));
+        assertEquals(Map.of(), defaultEntry.getIngredientOptionSelections());
+        assertEquals(Map.of(group.getId(), rice.getId()),
+                alternativeEntry.getIngredientOptionSelections());
+    }
+
+    @Test
+    void rejectsSelectionFromAnotherGroupAndSelectionForSingleOptionGroup() {
+        RecipeIngredientOption only = new RecipeIngredientOption(
+                new Ingredient("Pasta"), BigDecimal.ONE, Unit.PIECE, 0);
+        RecipeIngredientGroup group = new RecipeIngredientGroup(List.of(only), only);
+        Recipe single = Recipe.withIngredientGroups("Single", 2, List.of(group),
+                List.of(), List.of(new Taste("Savory")), DishType.MAIN);
+
+        assertThrows(IllegalArgumentException.class, () -> new MealPlanEntry(
+                UUID.randomUUID(), LocalDate.now(), single, 2, MealRole.MAIN, 0,
+                Map.of(group.getId(), only.getId())));
+        assertThrows(IllegalArgumentException.class, () -> new MealPlanEntry(
+                UUID.randomUUID(), LocalDate.now(), single, 2, MealRole.MAIN, 0,
+                Map.of(UUID.randomUUID(), only.getId())));
     }
 }
