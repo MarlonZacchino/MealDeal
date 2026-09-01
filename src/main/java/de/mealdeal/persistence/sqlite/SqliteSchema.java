@@ -6,7 +6,7 @@ import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 5;
+    static final int CURRENT_VERSION = 6;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -103,6 +103,10 @@ final class SqliteSchema {
         }
         if (version == 4) {
             createVersion5(connection);
+            version = 5;
+        }
+        if (version == 5) {
+            createVersion6(connection);
         }
     }
 
@@ -202,6 +206,15 @@ final class SqliteSchema {
                 statement.execute(sql);
             }
             statement.execute("PRAGMA user_version = 5");
+        }
+    }
+
+    /** Adds the nullable, independently entered baking time to recipes. */
+    static void createVersion6(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("ALTER TABLE recipes ADD COLUMN baking_time_minutes INTEGER "
+                    + "CHECK (baking_time_minutes > 0)");
+            statement.execute("PRAGMA user_version = 6");
         }
     }
 }

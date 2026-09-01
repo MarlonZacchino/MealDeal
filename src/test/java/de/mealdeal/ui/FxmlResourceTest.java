@@ -114,6 +114,7 @@ class FxmlResourceTest {
 
         assertTrue(fxml.contains("fx:id=\"preparationTimeField\""));
         assertTrue(fxml.contains("fx:id=\"cookingTimeField\""));
+        assertTrue(fxml.contains("fx:id=\"bakingTimeField\""));
         assertFalse(fxml.contains("totalTimeField"));
         assertTrue(fxml.contains("Zeitangaben (optional, in Minuten)"));
         assertTrue(fxml.contains("fx:id=\"caloriesField\""));

@@ -153,6 +153,23 @@ class RecipeFormServiceTest {
     }
 
     @Test
+    void createsRecipeWithOnlyBakingTime() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+
+        Recipe recipe = service.createAndSave(new RecipeFormInput("Brotzeit", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.PIECE)),
+                List.of("Herzhaft"), List.of(), "", "", "30",
+                "", "", "", "", DishType.MAIN));
+
+        assertTrue(recipe.getPreparationTimeMinutes().isEmpty());
+        assertTrue(recipe.getCookingTimeMinutes().isEmpty());
+        assertEquals(30, recipe.getBakingTimeMinutes().orElseThrow());
+        assertEquals(30, recipe.getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
     void updatesAllRecipeValuesAndKeepsUuid() {
         MemoryIngredientRepository ingredients = new MemoryIngredientRepository();
         MemoryTasteRepository tastes = new MemoryTasteRepository();
@@ -193,11 +210,13 @@ class RecipeFormServiceTest {
 
         Recipe updated = service.updateAndSave(recipeId, new RecipeFormInput(
                 "Toast", "2", List.of(new IngredientFormInput("Brot", "2", Unit.SLICE)),
-                List.of("Herzhaft"), List.of(), "10", "20"));
+                List.of("Herzhaft"), List.of(), "10", "20", "30",
+                "", "", "", "", DishType.MAIN));
 
         assertEquals(10, updated.getPreparationTimeMinutes().orElseThrow());
         assertEquals(20, updated.getCookingTimeMinutes().orElseThrow());
-        assertEquals(30, updated.getTotalTimeMinutes().orElseThrow());
+        assertEquals(30, updated.getBakingTimeMinutes().orElseThrow());
+        assertEquals(60, updated.getTotalTimeMinutes().orElseThrow());
     }
 
     @Test
@@ -245,12 +264,13 @@ class RecipeFormServiceTest {
                 new MemoryTasteRepository());
         RecipeFormInput input = new RecipeFormInput("Toast", "2",
                 List.of(new IngredientFormInput("Brot", "2", Unit.SLICE)),
-                List.of("Herzhaft"), List.of(), "0", "-2");
+                List.of("Herzhaft"), List.of(), "0", "-2", "abc",
+                "", "", "", "", DishType.MAIN);
 
         RecipeFormValidationException exception = assertThrows(
                 RecipeFormValidationException.class, () -> service.createAndSave(input));
 
-        assertEquals(2, exception.getErrors().stream()
+        assertEquals(3, exception.getErrors().stream()
                 .filter(error -> error.contains("zeit")).count());
     }
 

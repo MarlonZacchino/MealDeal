@@ -42,6 +42,7 @@ class RecipeTest {
 
         assertTrue(recipe.getPreparationTimeMinutes().isEmpty());
         assertTrue(recipe.getCookingTimeMinutes().isEmpty());
+        assertTrue(recipe.getBakingTimeMinutes().isEmpty());
         assertTrue(recipe.getTotalTimeMinutes().isEmpty());
     }
 
@@ -67,6 +68,38 @@ class RecipeTest {
     }
 
     @Test
+    void derivesTotalTimeFromOnlyBakingTime() {
+        Recipe recipe = recipeWithTimes(null, null, 30);
+
+        assertTrue(recipe.getPreparationTimeMinutes().isEmpty());
+        assertTrue(recipe.getCookingTimeMinutes().isEmpty());
+        assertEquals(30, recipe.getBakingTimeMinutes().orElseThrow());
+        assertEquals(30, recipe.getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
+    void derivesTotalTimeFromPreparationAndBakingTime() {
+        assertEquals(50, recipeWithTimes(20, null, 30)
+                .getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
+    void derivesTotalTimeFromCookingAndBakingTime() {
+        assertEquals(55, recipeWithTimes(null, 25, 30)
+                .getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
+    void derivesTotalTimeFromAllThreeTimeValues() {
+        Recipe recipe = recipeWithTimes(10, 20, 30);
+
+        assertEquals(10, recipe.getPreparationTimeMinutes().orElseThrow());
+        assertEquals(20, recipe.getCookingTimeMinutes().orElseThrow());
+        assertEquals(30, recipe.getBakingTimeMinutes().orElseThrow());
+        assertEquals(60, recipe.getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
     void keepsNutritionInfoOptionalAndPerServing() {
         Recipe withoutNutrition = createRecipe("Pasta", 2);
         NutritionInfo nutrition = new NutritionInfo(650, new BigDecimal("42"),
@@ -89,6 +122,8 @@ class RecipeTest {
         assertThrows(IllegalArgumentException.class,
                 () -> new Recipe("Pasta", 2, List.of(recipeIngredient), List.of(recipeStep),
                         List.of(savory), null, -1));
+        assertThrows(IllegalArgumentException.class,
+                () -> recipeWithTimes(null, null, 0));
     }
 
     @Test
@@ -186,5 +221,10 @@ class RecipeTest {
     private Recipe createRecipe(String name, int servingCount) {
         return new Recipe(name, servingCount, List.of(recipeIngredient),
                 List.of(recipeStep), List.of(savory));
+    }
+
+    private Recipe recipeWithTimes(Integer preparation, Integer cooking, Integer baking) {
+        return new Recipe("Pasta", 2, List.of(recipeIngredient), List.of(recipeStep),
+                List.of(savory), preparation, cooking, baking, null, DishType.MAIN);
     }
 }

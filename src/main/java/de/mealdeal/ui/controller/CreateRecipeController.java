@@ -65,6 +65,8 @@ public final class CreateRecipeController implements NavigationAware {
     @FXML
     private TextField cookingTimeField;
     @FXML
+    private TextField bakingTimeField;
+    @FXML
     private TextField caloriesField;
     @FXML
     private TextField proteinField;
@@ -119,6 +121,7 @@ public final class CreateRecipeController implements NavigationAware {
         dishTypeBox.getSelectionModel().select(recipe.getDishType());
         preparationTimeField.setText(timeText(recipe.getPreparationTimeMinutes()));
         cookingTimeField.setText(timeText(recipe.getCookingTimeMinutes()));
+        bakingTimeField.setText(timeText(recipe.getBakingTimeMinutes()));
         NutritionInfo nutrition = recipe.getNutritionInfo().orElse(null);
         caloriesField.setText(nutrition == null ? "" : timeText(nutrition.getCaloriesKcal()));
         proteinField.setText(nutrition == null ? "" : decimalText(nutrition.getProteinGrams()));
@@ -266,7 +269,8 @@ public final class CreateRecipeController implements NavigationAware {
         List<String> steps = stepRows.stream().map(RecipeStepFormRow::description).toList();
         return new RecipeFormInput(nameField.getText(), servingCountField.getText(),
                 ingredients, tastes, steps, preparationTimeField.getText(),
-                cookingTimeField.getText(), caloriesField.getText(), proteinField.getText(),
+                cookingTimeField.getText(), bakingTimeField.getText(), caloriesField.getText(),
+                proteinField.getText(),
                 carbohydratesField.getText(), fatField.getText(), dishTypeBox.getValue());
     }
 

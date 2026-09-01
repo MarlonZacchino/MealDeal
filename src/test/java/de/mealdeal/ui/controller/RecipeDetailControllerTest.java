@@ -1,5 +1,6 @@
 package de.mealdeal.ui.controller;
 
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.persistence.repository.RecipeRepository;
@@ -41,6 +42,18 @@ class RecipeDetailControllerTest {
         assertEquals(RecipeDetailController.DeletionOutcome.DELETED, outcome);
         assertEquals(1, repository.deleteCalls);
         assertEquals(recipe.getId(), repository.deletedId);
+    }
+
+    @Test
+    void displaysOnlyPresentIndividualTimesAndTheirDerivedTotal() {
+        Recipe recipe = new Recipe("Baked pasta", 2, List.of(), List.of(),
+                List.of(new Taste("Herzhaft")), 10, null, 70, null, DishType.MAIN);
+
+        assertEquals(List.of(
+                new RecipeDetailController.TimeDisplay("Vorbereitungszeit", "10 Min."),
+                new RecipeDetailController.TimeDisplay("Backzeit", "1 Std. 10 Min."),
+                new RecipeDetailController.TimeDisplay("Gesamtzeit", "1 Std. 20 Min.")),
+                RecipeDetailController.timeDisplays(recipe));
     }
 
     private static Recipe recipe() {

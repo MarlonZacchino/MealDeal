@@ -20,9 +20,11 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
-import java.math.BigDecimal;
 import java.util.function.BooleanSupplier;
 
 /** Renders one recipe and updates its displayed quantities for a serving count. */
@@ -198,12 +200,28 @@ public final class RecipeDetailController implements NavigationAware {
 
     private void renderTimes() {
         timesContainer.getChildren().clear();
-        addTimeRow("Vorbereitungszeit", recipe.getPreparationTimeMinutes());
-        addTimeRow("Garzeit", recipe.getCookingTimeMinutes());
-        addTimeRow("Gesamtzeit", recipe.getTotalTimeMinutes());
+        timeDisplays(recipe).forEach(time -> addTimeRow(time.label(), time.minutes()));
         boolean hasTimes = !timesContainer.getChildren().isEmpty();
         timeSection.setManaged(hasTimes);
         timeSection.setVisible(hasTimes);
+    }
+
+    static List<TimeDisplay> timeDisplays(Recipe recipe) {
+        Objects.requireNonNull(recipe, "Recipe must not be null.");
+        List<TimeDisplay> result = new ArrayList<>();
+        addTimeDisplay(result, "Vorbereitungszeit", recipe.getPreparationTimeMinutes());
+        addTimeDisplay(result, "Kochzeit", recipe.getCookingTimeMinutes());
+        addTimeDisplay(result, "Backzeit", recipe.getBakingTimeMinutes());
+        addTimeDisplay(result, "Gesamtzeit", recipe.getTotalTimeMinutes());
+        return List.copyOf(result);
+    }
+
+    private static void addTimeDisplay(List<TimeDisplay> target, String label,
+                                       OptionalInt minutes) {
+        if (minutes.isPresent()) {
+            target.add(new TimeDisplay(label,
+                    GermanRecipeDisplay.duration(minutes.getAsInt())));
+        }
     }
 
     private void renderNutrition() {
@@ -239,13 +257,10 @@ public final class RecipeDetailController implements NavigationAware {
         return row;
     }
 
-    private void addTimeRow(String label, OptionalInt minutes) {
-        if (minutes.isEmpty()) {
-            return;
-        }
+    private void addTimeRow(String label, String minutes) {
         Label name = new Label(label);
         name.getStyleClass().add("detail-time-name");
-        Label value = new Label(GermanRecipeDisplay.duration(minutes.getAsInt()));
+        Label value = new Label(minutes);
         value.getStyleClass().add("detail-time-value");
         HBox row = new HBox(16, name, value);
         row.getStyleClass().add("detail-row");
@@ -277,5 +292,8 @@ public final class RecipeDetailController implements NavigationAware {
         CANCELLED,
         DELETED,
         NOT_FOUND
+    }
+
+    record TimeDisplay(String label, String minutes) {
     }
 }

@@ -53,8 +53,13 @@
                                            maxWidth="1.7976931348623157E308"/>
                             </VBox>
                             <VBox spacing="6.0" HBox.hgrow="ALWAYS" styleClass="form-field">
-                                <Label text="Garzeit" styleClass="form-label"/>
+                                <Label text="Kochzeit" styleClass="form-label"/>
                                 <TextField fx:id="cookingTimeField" promptText="z. B. 25"
+                                           maxWidth="1.7976931348623157E308"/>
+                            </VBox>
+                            <VBox spacing="6.0" HBox.hgrow="ALWAYS" styleClass="form-field">
+                                <Label text="Backzeit" styleClass="form-label"/>
+                                <TextField fx:id="bakingTimeField" promptText="z. B. 30"
                                            maxWidth="1.7976931348623157E308"/>
                             </VBox>
                         </HBox>

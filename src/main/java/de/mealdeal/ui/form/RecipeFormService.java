@@ -91,10 +91,12 @@ public final class RecipeFormService {
                 ? new Recipe(validated.name(), validated.servingCount(),
                         recipeIngredients, steps, recipeTastes,
                         validated.preparationTimeMinutes(), validated.cookingTimeMinutes(),
+                        validated.bakingTimeMinutes(),
                         validated.nutritionInfo(), validated.dishType())
                 : new Recipe(recipeId, validated.name(), validated.servingCount(),
                         recipeIngredients, steps, recipeTastes,
                         validated.preparationTimeMinutes(), validated.cookingTimeMinutes(),
+                        validated.bakingTimeMinutes(),
                         validated.nutritionInfo(), validated.dishType());
         recipeRepository.save(recipe);
         return recipe;
@@ -114,7 +116,9 @@ public final class RecipeFormService {
         Integer preparationTime = parseOptionalMinutes(
                 input.preparationTimeMinutes(), "Die Vorbereitungszeit", errors);
         Integer cookingTime = parseOptionalMinutes(
-                input.cookingTimeMinutes(), "Die Garzeit", errors);
+                input.cookingTimeMinutes(), "Die Kochzeit", errors);
+        Integer bakingTime = parseOptionalMinutes(
+                input.bakingTimeMinutes(), "Die Backzeit", errors);
         Integer calories = parseOptionalNonNegativeInteger(
                 input.caloriesKcal(), "Die Kalorien", errors);
         BigDecimal protein = parseOptionalNonNegativeDecimal(
@@ -131,7 +135,7 @@ public final class RecipeFormService {
             throw new RecipeFormValidationException(errors);
         }
         return new ValidatedForm(name, servingCount, ingredients, tasteNames, steps,
-                preparationTime, cookingTime,
+                preparationTime, cookingTime, bakingTime,
                 new NutritionInfo(calories, protein, carbohydrates, fat), dishType);
     }
 
@@ -294,6 +298,7 @@ public final class RecipeFormService {
                                  List<String> stepDescriptions,
                                  Integer preparationTimeMinutes,
                                  Integer cookingTimeMinutes,
+                                 Integer bakingTimeMinutes,
                                  NutritionInfo nutritionInfo,
                                  DishType dishType) {
     }

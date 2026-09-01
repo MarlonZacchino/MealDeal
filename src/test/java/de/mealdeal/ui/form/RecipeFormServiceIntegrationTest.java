@@ -31,7 +31,8 @@ class RecipeFormServiceIntegrationTest {
 
         service.createAndSave(new RecipeFormInput("Kartoffelpfanne", "3",
                 List.of(new IngredientFormInput("Kartoffel", "750", Unit.GRAM)),
-                List.of("Herzhaft"), List.of("Schneiden.", "Braten."), "15", "20"));
+                List.of("Herzhaft"), List.of("Schneiden.", "Braten."), "15", "20", "25",
+                "", "", "", "", DishType.MAIN));
 
         assertEquals(List.of("Kartoffel"), ingredients.findAll().stream()
                 .map(value -> value.getName()).toList());
@@ -41,7 +42,8 @@ class RecipeFormServiceIntegrationTest {
         assertEquals(2, recipes.findAll().getFirst().getSteps().size());
         assertEquals(15, recipes.findAll().getFirst().getPreparationTimeMinutes().orElseThrow());
         assertEquals(20, recipes.findAll().getFirst().getCookingTimeMinutes().orElseThrow());
-        assertEquals(35, recipes.findAll().getFirst().getTotalTimeMinutes().orElseThrow());
+        assertEquals(25, recipes.findAll().getFirst().getBakingTimeMinutes().orElseThrow());
+        assertEquals(60, recipes.findAll().getFirst().getTotalTimeMinutes().orElseThrow());
     }
 
     @Test
@@ -58,7 +60,8 @@ class RecipeFormServiceIntegrationTest {
         Recipe updated = service.updateAndSave(original.getId(), new RecipeFormInput(
                 "Kartoffelauflauf", "4",
                 List.of(new IngredientFormInput("Kartoffel", "1,25", Unit.KILOGRAM)),
-                List.of("Cremig"), List.of("Schneiden.", "Backen."), "10", "30"));
+                List.of("Cremig"), List.of("Schneiden.", "Backen."), "10", "30", "20",
+                "", "", "", "", DishType.MAIN));
 
         Recipe loaded = recipes.findById(original.getId()).orElseThrow();
         assertEquals(original.getId(), updated.getId());
@@ -75,7 +78,8 @@ class RecipeFormServiceIntegrationTest {
         assertEquals(1, recipes.findAll().size());
         assertEquals(10, loaded.getPreparationTimeMinutes().orElseThrow());
         assertEquals(30, loaded.getCookingTimeMinutes().orElseThrow());
-        assertEquals(40, loaded.getTotalTimeMinutes().orElseThrow());
+        assertEquals(20, loaded.getBakingTimeMinutes().orElseThrow());
+        assertEquals(60, loaded.getTotalTimeMinutes().orElseThrow());
     }
 
     @Test

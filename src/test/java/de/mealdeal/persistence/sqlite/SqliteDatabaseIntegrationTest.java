@@ -19,7 +19,7 @@ class SqliteDatabaseIntegrationTest {
     Path temporaryDirectory;
 
     @Test
-    void createsSchemaVersionFiveWithExpectedTables() throws Exception {
+    void createsSchemaVersionSixWithExpectedTables() throws Exception {
         SqliteDatabase database = new SqliteDatabase(temporaryDirectory.resolve("schema.db"));
 
         Set<String> tables = new HashSet<>();
@@ -32,7 +32,7 @@ class SqliteDatabaseIntegrationTest {
             }
         }
 
-        assertEquals(5, database.getSchemaVersion());
+        assertEquals(6, database.getSchemaVersion());
         assertEquals(Set.of("ingredients", "tastes", "recipes", "recipe_ingredients",
                 "recipe_steps", "recipe_tastes", "meal_plan_entries"), tables);
 
@@ -46,7 +46,8 @@ class SqliteDatabaseIntegrationTest {
         }
         assertEquals(Set.of("id", "name", "standard_serving_count",
                 "preparation_time_minutes", "cooking_time_minutes", "calories_kcal",
-                "protein_grams", "carbohydrate_grams", "fat_grams", "dish_type"), recipeColumns);
+                "protein_grams", "carbohydrate_grams", "fat_grams", "dish_type",
+                "baking_time_minutes"), recipeColumns);
     }
 
     @Test
@@ -61,7 +62,7 @@ class SqliteDatabaseIntegrationTest {
     }
 
     @Test
-    void migratesVersionFourDataToVersionFiveWithoutLoss() throws Exception {
+    void migratesVersionFiveDataToVersionSixWithoutLoss() throws Exception {
         Path databasePath = temporaryDirectory.resolve("migration.db");
         java.util.UUID ingredientId = java.util.UUID.randomUUID();
         java.util.UUID tasteId = java.util.UUID.randomUUID();
@@ -78,6 +79,10 @@ class SqliteDatabaseIntegrationTest {
             insertVersionOneData(connection, ingredientId, tasteId, recipeId);
             insert(connection, "INSERT INTO meal_plan_entries VALUES (?, ?, ?, ?)",
                     entryId.toString(), "2026-09-01", recipeId.toString(), 4);
+            SqliteSchema.createVersion5(connection);
+            insert(connection, "UPDATE recipes SET preparation_time_minutes = ?, "
+                            + "cooking_time_minutes = ? WHERE id = ?",
+                    12, 34, recipeId.toString());
             connection.commit();
         }
 
@@ -85,14 +90,15 @@ class SqliteDatabaseIntegrationTest {
         var loadedRecipe = new SqliteRecipeRepository(migratedDatabase)
                 .findById(recipeId).orElseThrow();
 
-        assertEquals(5, migratedDatabase.getSchemaVersion());
+        assertEquals(6, migratedDatabase.getSchemaVersion());
         assertEquals("Pasta recipe", loadedRecipe.getName());
         assertEquals(new java.math.BigDecimal("500.00"),
                 loadedRecipe.getIngredients().getFirst().getQuantity());
         assertEquals("Savory", loadedRecipe.getTastes().getFirst().getName());
-        assertTrue(loadedRecipe.getPreparationTimeMinutes().isEmpty());
-        assertTrue(loadedRecipe.getCookingTimeMinutes().isEmpty());
-        assertTrue(loadedRecipe.getTotalTimeMinutes().isEmpty());
+        assertEquals(12, loadedRecipe.getPreparationTimeMinutes().orElseThrow());
+        assertEquals(34, loadedRecipe.getCookingTimeMinutes().orElseThrow());
+        assertTrue(loadedRecipe.getBakingTimeMinutes().isEmpty());
+        assertEquals(46, loadedRecipe.getTotalTimeMinutes().orElseThrow());
         assertTrue(loadedRecipe.getNutritionInfo().isEmpty());
         assertEquals(DishType.MAIN, loadedRecipe.getDishType());
 

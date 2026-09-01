@@ -13,6 +13,7 @@ public record RecipeFormInput(
         List<String> stepDescriptions,
         String preparationTimeMinutes,
         String cookingTimeMinutes,
+        String bakingTimeMinutes,
         String caloriesKcal,
         String proteinGrams,
         String carbohydrateGrams,
@@ -30,7 +31,7 @@ public record RecipeFormInput(
                            List<IngredientFormInput> ingredients, List<String> tasteNames,
                            List<String> stepDescriptions) {
         this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
-                null, null, null, null, null, null, DishType.MAIN);
+                null, null, null, null, null, null, null, DishType.MAIN);
     }
 
     /** Creates an input with optional time values but without nutrition values. */
@@ -39,7 +40,7 @@ public record RecipeFormInput(
                            List<String> stepDescriptions, String preparationTimeMinutes,
                            String cookingTimeMinutes) {
         this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
-                preparationTimeMinutes, cookingTimeMinutes, null, null, null, null,
+                preparationTimeMinutes, cookingTimeMinutes, null, null, null, null, null,
                 DishType.MAIN);
     }
 
@@ -50,7 +51,18 @@ public record RecipeFormInput(
                            String cookingTimeMinutes, String caloriesKcal, String proteinGrams,
                            String carbohydrateGrams, String fatGrams) {
         this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
-                preparationTimeMinutes, cookingTimeMinutes, caloriesKcal, proteinGrams,
+                preparationTimeMinutes, cookingTimeMinutes, null, caloriesKcal, proteinGrams,
                 carbohydrateGrams, fatGrams, DishType.MAIN);
+    }
+
+    /** Keeps the pre-baking-time complete form call source-compatible. */
+    public RecipeFormInput(String name, String standardServingCount,
+                           List<IngredientFormInput> ingredients, List<String> tasteNames,
+                           List<String> stepDescriptions, String preparationTimeMinutes,
+                           String cookingTimeMinutes, String caloriesKcal, String proteinGrams,
+                           String carbohydrateGrams, String fatGrams, DishType dishType) {
+        this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
+                preparationTimeMinutes, cookingTimeMinutes, null, caloriesKcal, proteinGrams,
+                carbohydrateGrams, fatGrams, dishType);
     }
 }

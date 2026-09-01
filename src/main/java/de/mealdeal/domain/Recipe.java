@@ -28,6 +28,7 @@ public final class Recipe {
     private final List<Taste> tastes;
     private final OptionalInt preparationTimeMinutes;
     private final OptionalInt cookingTimeMinutes;
+    private final OptionalInt bakingTimeMinutes;
     private final OptionalInt totalTimeMinutes;
     private final Optional<NutritionInfo> nutritionInfo;
     private final DishType dishType;
@@ -97,8 +98,19 @@ public final class Recipe {
                   List<RecipeIngredient> ingredients, List<RecipeStep> steps,
                   List<Taste> tastes, Integer preparationTimeMinutes,
                   Integer cookingTimeMinutes, NutritionInfo nutritionInfo, DishType dishType) {
+        this(name, standardServingCount, ingredients, steps, tastes,
+                preparationTimeMinutes, cookingTimeMinutes, null, nutritionInfo, dishType);
+    }
+
+    /** Creates a recipe with all optional times, nutrition and its mandatory dish type. */
+    public Recipe(String name, int standardServingCount,
+                  List<RecipeIngredient> ingredients, List<RecipeStep> steps,
+                  List<Taste> tastes, Integer preparationTimeMinutes,
+                  Integer cookingTimeMinutes, Integer bakingTimeMinutes,
+                  NutritionInfo nutritionInfo, DishType dishType) {
         this(UUID.randomUUID(), name, standardServingCount, ingredients, steps, tastes,
-                preparationTimeMinutes, cookingTimeMinutes, nutritionInfo, dishType);
+                preparationTimeMinutes, cookingTimeMinutes, bakingTimeMinutes,
+                nutritionInfo, dishType);
     }
 
     /** Creates a recipe with its mandatory dish type. */
@@ -153,9 +165,19 @@ public final class Recipe {
                   List<RecipeIngredient> ingredients, List<RecipeStep> steps,
                   List<Taste> tastes, Integer preparationTimeMinutes,
                   Integer cookingTimeMinutes, NutritionInfo nutritionInfo, DishType dishType) {
+        this(id, name, standardServingCount, ingredients, steps, tastes,
+                preparationTimeMinutes, cookingTimeMinutes, null, nutritionInfo, dishType);
+    }
+
+    /** Recreates a recipe with all optional times, nutrition and its mandatory dish type. */
+    public Recipe(UUID id, String name, int standardServingCount,
+                  List<RecipeIngredient> ingredients, List<RecipeStep> steps,
+                  List<Taste> tastes, Integer preparationTimeMinutes,
+                  Integer cookingTimeMinutes, Integer bakingTimeMinutes,
+                  NutritionInfo nutritionInfo, DishType dishType) {
         this(id, name, standardServingCount, singleOptionGroups(ingredients), steps, tastes,
-                preparationTimeMinutes, cookingTimeMinutes, nutritionInfo, dishType,
-                IngredientGroupInput.INSTANCE);
+                preparationTimeMinutes, cookingTimeMinutes, bakingTimeMinutes,
+                nutritionInfo, dishType, IngredientGroupInput.INSTANCE);
     }
 
     /**
@@ -187,15 +209,28 @@ public final class Recipe {
                                               Integer preparationTimeMinutes,
                                               Integer cookingTimeMinutes,
                                               NutritionInfo nutritionInfo, DishType dishType) {
+        return withIngredientGroups(id, name, standardServingCount, ingredientGroups, steps, tastes,
+                preparationTimeMinutes, cookingTimeMinutes, null, nutritionInfo, dishType);
+    }
+
+    /** Recreates a recipe with complete ingredient-group, time and nutrition state. */
+    public static Recipe withIngredientGroups(UUID id, String name, int standardServingCount,
+                                              List<RecipeIngredientGroup> ingredientGroups,
+                                              List<RecipeStep> steps, List<Taste> tastes,
+                                              Integer preparationTimeMinutes,
+                                              Integer cookingTimeMinutes,
+                                              Integer bakingTimeMinutes,
+                                              NutritionInfo nutritionInfo, DishType dishType) {
         return new Recipe(id, name, standardServingCount, ingredientGroups, steps, tastes,
-                preparationTimeMinutes, cookingTimeMinutes, nutritionInfo, dishType,
-                IngredientGroupInput.INSTANCE);
+                preparationTimeMinutes, cookingTimeMinutes, bakingTimeMinutes,
+                nutritionInfo, dishType, IngredientGroupInput.INSTANCE);
     }
 
     private Recipe(UUID id, String name, int standardServingCount,
                    List<RecipeIngredientGroup> ingredientGroups, List<RecipeStep> steps,
                    List<Taste> tastes, Integer preparationTimeMinutes,
-                   Integer cookingTimeMinutes, NutritionInfo nutritionInfo, DishType dishType,
+                   Integer cookingTimeMinutes, Integer bakingTimeMinutes,
+                   NutritionInfo nutritionInfo, DishType dishType,
                    IngredientGroupInput ignored) {
         this.id = java.util.Objects.requireNonNull(id, "Recipe ID must not be null.");
         if (name == null || name.isBlank()) {
@@ -214,8 +249,9 @@ public final class Recipe {
         this.tastes = copyWithoutNulls(tastes, "Recipe tastes");
         this.preparationTimeMinutes = optionalTime(preparationTimeMinutes, "Preparation time");
         this.cookingTimeMinutes = optionalTime(cookingTimeMinutes, "Cooking time");
+        this.bakingTimeMinutes = optionalTime(bakingTimeMinutes, "Baking time");
         this.totalTimeMinutes = deriveTotalTime(
-                this.preparationTimeMinutes, this.cookingTimeMinutes);
+                this.preparationTimeMinutes, this.cookingTimeMinutes, this.bakingTimeMinutes);
         this.nutritionInfo = Optional.ofNullable(nutritionInfo)
                 .filter(NutritionInfo::hasAnyValue);
         this.dishType = java.util.Objects.requireNonNull(dishType, "Dish type must not be null.");
@@ -278,7 +314,12 @@ public final class Recipe {
         return cookingTimeMinutes;
     }
 
-    /** Returns the optional total time derived from preparation and cooking time. */
+    /** Returns the optional baking time in minutes. */
+    public OptionalInt getBakingTimeMinutes() {
+        return bakingTimeMinutes;
+    }
+
+    /** Returns the optional total time derived from all available individual times. */
     public OptionalInt getTotalTimeMinutes() {
         return totalTimeMinutes;
     }
@@ -329,20 +370,20 @@ public final class Recipe {
         return OptionalInt.of(minutes);
     }
 
-    private static OptionalInt deriveTotalTime(OptionalInt preparationTime,
-                                               OptionalInt cookingTime) {
-        if (preparationTime.isEmpty()) {
-            return cookingTime;
-        }
-        if (cookingTime.isEmpty()) {
-            return preparationTime;
-        }
+    private static OptionalInt deriveTotalTime(OptionalInt... individualTimes) {
+        int total = 0;
+        boolean hasTime = false;
         try {
-            return OptionalInt.of(Math.addExact(
-                    preparationTime.getAsInt(), cookingTime.getAsInt()));
+            for (OptionalInt time : individualTimes) {
+                if (time.isPresent()) {
+                    total = Math.addExact(total, time.getAsInt());
+                    hasTime = true;
+                }
+            }
+            return hasTime ? OptionalInt.of(total) : OptionalInt.empty();
         } catch (ArithmeticException exception) {
             throw new IllegalArgumentException(
-                    "Preparation and cooking time must fit into a positive minute value.",
+                    "Recipe times must fit into a positive total minute value.",
                     exception);
         }
     }
