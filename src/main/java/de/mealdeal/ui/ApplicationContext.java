@@ -3,11 +3,13 @@ package de.mealdeal.ui;
 import de.mealdeal.domain.MealPlanEntry;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.repository.IngredientRepository;
+import de.mealdeal.persistence.repository.IngredientCategoryRepository;
 import de.mealdeal.persistence.repository.MealPlanRepository;
 import de.mealdeal.persistence.repository.RecipeRepository;
 import de.mealdeal.persistence.repository.TasteRepository;
 import de.mealdeal.persistence.sqlite.SqliteDatabase;
 import de.mealdeal.persistence.sqlite.SqliteIngredientRepository;
+import de.mealdeal.persistence.sqlite.SqliteIngredientCategoryRepository;
 import de.mealdeal.persistence.sqlite.SqliteMealPlanRepository;
 import de.mealdeal.persistence.sqlite.SqliteRecipeRepository;
 import de.mealdeal.persistence.sqlite.SqliteTasteRepository;
@@ -48,6 +50,7 @@ public final class ApplicationContext {
     private static final String MAIN_VIEW_RESOURCE = "/de/mealdeal/ui/main-view.fxml";
     private final RecipeRepository recipeRepository;
     private final IngredientRepository ingredientRepository;
+    private final IngredientCategoryRepository ingredientCategoryRepository;
     private final TasteRepository tasteRepository;
     private final MealPlanRepository mealPlanRepository;
     private final RecipeScaler recipeScaler = new RecipeScaler();
@@ -66,7 +69,8 @@ public final class ApplicationContext {
                               IngredientRepository ingredientRepository,
                               TasteRepository tasteRepository) {
         this(recipeRepository, ingredientRepository, tasteRepository,
-                new UnavailableMealPlanRepository(), new ThemeService());
+                new UnavailableMealPlanRepository(), new CatalogIngredientCategoryRepository(),
+                new ThemeService());
     }
 
     /** Preserves the earlier isolated-test composition with an explicit theme service. */
@@ -75,7 +79,8 @@ public final class ApplicationContext {
                               TasteRepository tasteRepository,
                               ThemeService themeService) {
         this(recipeRepository, ingredientRepository, tasteRepository,
-                new UnavailableMealPlanRepository(), themeService);
+                new UnavailableMealPlanRepository(), new CatalogIngredientCategoryRepository(),
+                themeService);
     }
 
     /** Creates the production composition backed by the configured SQLite file. */
@@ -88,7 +93,7 @@ public final class ApplicationContext {
     private ApplicationContext(SqliteDatabase database, ThemeService themeService) {
         this(new SqliteRecipeRepository(database), new SqliteIngredientRepository(database),
                 new SqliteTasteRepository(database), new SqliteMealPlanRepository(database),
-                themeService);
+                new SqliteIngredientCategoryRepository(database), themeService);
     }
 
     /** Creates a composition with explicit repositories, primarily for isolated tests. */
@@ -97,7 +102,8 @@ public final class ApplicationContext {
                               TasteRepository tasteRepository,
                               MealPlanRepository mealPlanRepository) {
         this(recipeRepository, ingredientRepository, tasteRepository,
-                mealPlanRepository, new ThemeService());
+                mealPlanRepository, new CatalogIngredientCategoryRepository(),
+                new ThemeService());
     }
 
     /** Creates a composition with explicit repositories and theme service. */
@@ -106,10 +112,24 @@ public final class ApplicationContext {
                               TasteRepository tasteRepository,
                               MealPlanRepository mealPlanRepository,
                               ThemeService themeService) {
+        this(recipeRepository, ingredientRepository, tasteRepository, mealPlanRepository,
+                new CatalogIngredientCategoryRepository(), themeService);
+    }
+
+    /** Creates a composition with explicit persistence-backed category reference data. */
+    public ApplicationContext(RecipeRepository recipeRepository,
+                              IngredientRepository ingredientRepository,
+                              TasteRepository tasteRepository,
+                              MealPlanRepository mealPlanRepository,
+                              IngredientCategoryRepository ingredientCategoryRepository,
+                              ThemeService themeService) {
         this.recipeRepository = Objects.requireNonNull(
                 recipeRepository, "Recipe repository must not be null.");
         this.ingredientRepository = Objects.requireNonNull(
                 ingredientRepository, "Ingredient repository must not be null.");
+        this.ingredientCategoryRepository = Objects.requireNonNull(
+                ingredientCategoryRepository,
+                "Ingredient category repository must not be null.");
         this.tasteRepository = Objects.requireNonNull(
                 tasteRepository, "Taste repository must not be null.");
         this.mealPlanRepository = Objects.requireNonNull(
@@ -154,7 +174,8 @@ public final class ApplicationContext {
         }
         if (controllerType == CreateRecipeController.class) {
             return new CreateRecipeController(
-                    recipeRepository, ingredientRepository, tasteRepository);
+                    recipeRepository, ingredientRepository, tasteRepository,
+                    ingredientCategoryRepository);
         }
         if (controllerType == WeekPlanController.class) {
             return new WeekPlanController(weeklyMealPlanService);
@@ -220,6 +241,26 @@ public final class ApplicationContext {
         private static PersistenceException unavailable() {
             return new PersistenceException(
                     "Meal plan repository is not configured in this isolated composition.");
+        }
+    }
+
+    private static final class CatalogIngredientCategoryRepository
+            implements IngredientCategoryRepository {
+
+        @Override
+        public void save(de.mealdeal.domain.IngredientCategory category) {
+            throw new UnsupportedOperationException("The built-in category catalog is read-only.");
+        }
+
+        @Override
+        public Optional<de.mealdeal.domain.IngredientCategory> findById(UUID id) {
+            return de.mealdeal.domain.IngredientCategories.all().stream()
+                    .filter(category -> category.getId().equals(id)).findFirst();
+        }
+
+        @Override
+        public List<de.mealdeal.domain.IngredientCategory> findAll() {
+            return de.mealdeal.domain.IngredientCategories.all();
         }
     }
 }

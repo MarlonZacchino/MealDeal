@@ -1,5 +1,7 @@
 package de.mealdeal.ui.form;
 
+import de.mealdeal.domain.IngredientCategories;
+import de.mealdeal.domain.IngredientCategory;
 import de.mealdeal.domain.Unit;
 
 import java.util.UUID;
@@ -10,5 +12,12 @@ public record IngredientOptionFormInput(
         String ingredientName,
         String quantity,
         Unit unit,
-        int position) {
+        int position,
+        IngredientCategory category) {
+
+    /** Keeps form callers without category input compatible with the fallback category. */
+    public IngredientOptionFormInput(UUID optionId, String ingredientName, String quantity,
+                                     Unit unit, int position) {
+        this(optionId, ingredientName, quantity, unit, position, IngredientCategories.OTHER);
+    }
 }

@@ -1,6 +1,7 @@
 package de.mealdeal.ui.form;
 
 import de.mealdeal.domain.Unit;
+import de.mealdeal.domain.IngredientCategories;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.DishType;
 import de.mealdeal.persistence.sqlite.SqliteDatabase;
@@ -195,6 +196,31 @@ class RecipeFormServiceIntegrationTest {
                 .map(value -> value.getUnit()).toList());
         assertEquals(List.of("Hähnchen", "Kalb", "Schwein"), ingredients.findAll().stream()
                 .map(value -> value.getName()).sorted().toList());
+    }
+
+    @Test
+    void assignsCategoryToNewIngredientAndPreservesItWhenRecipeIsEdited() {
+        SqliteDatabase database = new SqliteDatabase(
+                temporaryDirectory.resolve("ingredient-category-form.db"));
+        var ingredients = new SqliteIngredientRepository(database);
+        var tastes = new SqliteTasteRepository(database);
+        var recipes = new SqliteRecipeRepository(database);
+        RecipeFormService service = new RecipeFormService(recipes, ingredients, tastes);
+        Recipe created = service.createAndSave(new RecipeFormInput("Gemüsepfanne", "2",
+                List.of(new IngredientFormInput("Paprika", "2", Unit.PIECE,
+                        IngredientCategories.VEGETABLES)),
+                List.of("Herzhaft"), List.of()));
+
+        service.updateAndSave(created.getId(), new RecipeFormInput("Gemüsepfanne", "4",
+                List.of(new IngredientFormInput("Paprika", "3", Unit.PIECE,
+                        IngredientCategories.OTHER)),
+                List.of("Herzhaft"), List.of()));
+
+        assertEquals(IngredientCategories.VEGETABLES,
+                ingredients.findAll().getFirst().getCategory());
+        assertEquals(IngredientCategories.VEGETABLES,
+                recipes.findById(created.getId()).orElseThrow().getIngredients().getFirst()
+                        .getIngredient().getCategory());
     }
 
     private static RecipeFormInput groupInput(UUID groupId,

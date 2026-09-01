@@ -1,6 +1,7 @@
 package de.mealdeal.persistence.sqlite;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.IngredientCategories;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,6 +36,18 @@ class SqliteIngredientRepositoryIntegrationTest {
 
         assertEquals(id, loaded.getId());
         assertEquals("Cherry tomato", loaded.getName());
+        assertEquals(IngredientCategories.OTHER, loaded.getCategory());
+    }
+
+    @Test
+    void savesAndLoadsSelectedCategory() {
+        Ingredient ingredient = new Ingredient("Tomato", IngredientCategories.VEGETABLES);
+
+        repository.save(ingredient);
+        Ingredient loaded = repository.findById(ingredient.getId()).orElseThrow();
+
+        assertEquals(IngredientCategories.VEGETABLES, loaded.getCategory());
+        assertEquals("Gemüse", loaded.getCategory().getName());
     }
 
     @Test

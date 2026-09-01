@@ -34,4 +34,13 @@ class IngredientTest {
         assertEquals(new Ingredient(id, "Tomato"), new Ingredient(id, "Tomato renamed"));
         assertNotEquals(new Ingredient("Tomato"), new Ingredient("Tomato"));
     }
+
+    @Test
+    void requiresExactlyOneCategoryAndKeepsFallbackCompatibility() {
+        Ingredient categorized = new Ingredient("Tomato", IngredientCategories.VEGETABLES);
+
+        assertEquals(IngredientCategories.VEGETABLES, categorized.getCategory());
+        assertEquals(IngredientCategories.OTHER, new Ingredient("Salt").getCategory());
+        assertThrows(NullPointerException.class, () -> new Ingredient("Tomato", null));
+    }
 }

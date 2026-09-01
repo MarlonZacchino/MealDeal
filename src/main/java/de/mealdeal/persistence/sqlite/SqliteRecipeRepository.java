@@ -1,6 +1,7 @@
 package de.mealdeal.persistence.sqlite;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.IngredientCategory;
 import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.domain.Recipe;
@@ -374,9 +375,13 @@ public final class SqliteRecipeRepository implements RecipeRepository {
     private static List<RecipeIngredientOption> loadIngredientOptions(
             Connection connection, UUID groupId) throws SQLException {
         String sql = """
-                SELECT rio.id, i.id AS ingredient_id, i.name, rio.quantity, rio.unit, rio.position
+                SELECT rio.id, i.id AS ingredient_id, i.name,
+                       category.id AS category_id, category.name AS category_name,
+                       category.position AS category_position,
+                       rio.quantity, rio.unit, rio.position
                 FROM recipe_ingredient_options rio
                 JOIN ingredients i ON i.id = rio.ingredient_id
+                JOIN ingredient_categories category ON category.id = i.category_id
                 WHERE rio.group_id = ?
                 ORDER BY rio.position, rio.id
                 """;
@@ -385,9 +390,13 @@ public final class SqliteRecipeRepository implements RecipeRepository {
             statement.setString(1, groupId.toString());
             try (var resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
+                    IngredientCategory category = new IngredientCategory(
+                            UUID.fromString(resultSet.getString("category_id")),
+                            resultSet.getString("category_name"),
+                            resultSet.getInt("category_position"));
                     Ingredient ingredient = new Ingredient(
                             UUID.fromString(resultSet.getString("ingredient_id")),
-                            resultSet.getString("name"));
+                            resultSet.getString("name"), category);
                     options.add(new RecipeIngredientOption(
                             UUID.fromString(resultSet.getString("id")), ingredient,
                             new BigDecimal(resultSet.getString("quantity")),

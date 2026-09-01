@@ -1,6 +1,7 @@
 package de.mealdeal.persistence.sqlite;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.IngredientCategory;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.repository.IngredientRepository;
 
@@ -24,13 +25,16 @@ public final class SqliteIngredientRepository implements IngredientRepository {
     public void save(Ingredient ingredient) {
         Objects.requireNonNull(ingredient, "Ingredient must not be null.");
         String sql = """
-                INSERT INTO ingredients (id, name) VALUES (?, ?)
-                ON CONFLICT(id) DO UPDATE SET name = excluded.name
+                INSERT INTO ingredients (id, name, category_id) VALUES (?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    name = excluded.name,
+                    category_id = excluded.category_id
                 """;
         try (var connection = database.openConnection();
              var statement = connection.prepareStatement(sql)) {
             statement.setString(1, ingredient.getId().toString());
             statement.setString(2, ingredient.getName());
+            statement.setString(3, ingredient.getCategory().getId().toString());
             statement.executeUpdate();
         } catch (SQLException exception) {
             throw new PersistenceException("Could not save ingredient.", exception);
@@ -40,7 +44,14 @@ public final class SqliteIngredientRepository implements IngredientRepository {
     @Override
     public Optional<Ingredient> findById(UUID id) {
         Objects.requireNonNull(id, "Ingredient ID must not be null.");
-        String sql = "SELECT id, name FROM ingredients WHERE id = ?";
+        String sql = """
+                SELECT ingredient.id, ingredient.name,
+                       category.id AS category_id, category.name AS category_name,
+                       category.position AS category_position
+                FROM ingredients ingredient
+                JOIN ingredient_categories category ON category.id = ingredient.category_id
+                WHERE ingredient.id = ?
+                """;
         try (var connection = database.openConnection();
              var statement = connection.prepareStatement(sql)) {
             statement.setString(1, id.toString());
@@ -48,8 +59,7 @@ public final class SqliteIngredientRepository implements IngredientRepository {
                 if (!resultSet.next()) {
                     return Optional.empty();
                 }
-                return Optional.of(new Ingredient(
-                        UUID.fromString(resultSet.getString("id")), resultSet.getString("name")));
+                return Optional.of(readIngredient(resultSet));
             }
         } catch (SQLException exception) {
             throw new PersistenceException("Could not load ingredient.", exception);
@@ -58,14 +68,20 @@ public final class SqliteIngredientRepository implements IngredientRepository {
 
     @Override
     public List<Ingredient> findAll() {
-        String sql = "SELECT id, name FROM ingredients ORDER BY name, id";
+        String sql = """
+                SELECT ingredient.id, ingredient.name,
+                       category.id AS category_id, category.name AS category_name,
+                       category.position AS category_position
+                FROM ingredients ingredient
+                JOIN ingredient_categories category ON category.id = ingredient.category_id
+                ORDER BY ingredient.name, ingredient.id
+                """;
         List<Ingredient> ingredients = new ArrayList<>();
         try (var connection = database.openConnection();
              var statement = connection.prepareStatement(sql);
              var resultSet = statement.executeQuery()) {
             while (resultSet.next()) {
-                ingredients.add(new Ingredient(UUID.fromString(resultSet.getString("id")),
-                        resultSet.getString("name")));
+                ingredients.add(readIngredient(resultSet));
             }
             return List.copyOf(ingredients);
         } catch (SQLException exception) {
@@ -83,5 +99,14 @@ public final class SqliteIngredientRepository implements IngredientRepository {
         } catch (SQLException exception) {
             throw new PersistenceException("Could not delete ingredient.", exception);
         }
+    }
+
+    private static Ingredient readIngredient(java.sql.ResultSet resultSet) throws SQLException {
+        IngredientCategory category = new IngredientCategory(
+                UUID.fromString(resultSet.getString("category_id")),
+                resultSet.getString("category_name"),
+                resultSet.getInt("category_position"));
+        return new Ingredient(UUID.fromString(resultSet.getString("id")),
+                resultSet.getString("name"), category);
     }
 }

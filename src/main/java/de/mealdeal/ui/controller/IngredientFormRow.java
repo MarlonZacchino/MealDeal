@@ -1,6 +1,8 @@
 package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.IngredientCategories;
+import de.mealdeal.domain.IngredientCategory;
 import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.domain.Unit;
 import de.mealdeal.ui.form.IngredientOptionFormInput;
@@ -23,19 +25,23 @@ import java.util.function.Consumer;
 final class IngredientFormRow {
 
     private final List<Ingredient> availableIngredients;
+    private final List<IngredientCategory> availableCategories;
     private final UUID optionId;
     private final HBox container = new HBox(12);
     private final ComboBox<Ingredient> ingredientInput = new ComboBox<>();
     private final TextField quantityInput = new TextField();
     private final ComboBox<Unit> unitInput = new ComboBox<>();
+    private final ComboBox<IngredientCategory> categoryInput = new ComboBox<>();
     private final RadioButton standardButton = new RadioButton("Standard");
     private final Button removeButton = new Button("Alternative entfernen");
 
     IngredientFormRow(UUID optionId, List<Ingredient> availableIngredients,
+                      List<IngredientCategory> availableCategories,
                       ToggleGroup standardGroup,
                       Consumer<IngredientFormRow> removalHandler) {
         this.optionId = optionId;
         this.availableIngredients = availableIngredients;
+        this.availableCategories = availableCategories;
         container.setAlignment(Pos.CENTER_LEFT);
         container.getStyleClass().add("form-row");
 
@@ -51,23 +57,43 @@ final class IngredientFormRow {
         unitInput.setItems(FXCollections.observableArrayList(availableUnits()));
         unitInput.setConverter(new GermanUnitStringConverter());
 
+        categoryInput.setPromptText("Kategorie");
+        categoryInput.setPrefWidth(210);
+        categoryInput.setConverter(new IngredientCategoryStringConverter());
+        refreshCategories();
+        categoryInput.setValue(IngredientCategories.OTHER);
+        ingredientInput.getEditor().textProperty().addListener(
+                (ignored, previous, current) -> updateCategoryForName(current));
+
         standardButton.setToggleGroup(standardGroup);
         standardButton.getStyleClass().add("ingredient-standard-choice");
 
         removeButton.getStyleClass().add("danger-button");
         removeButton.setOnAction(event -> removalHandler.accept(this));
-        container.getChildren().addAll(ingredientInput, quantityInput, unitInput,
+        container.getChildren().addAll(ingredientInput, categoryInput, quantityInput, unitInput,
                 standardButton, removeButton);
         refreshIngredients();
     }
 
     void refreshIngredients() {
         ingredientInput.setItems(FXCollections.observableArrayList(availableIngredients));
+        updateCategoryForName(ingredientInput.getEditor().getText());
+    }
+
+    void refreshCategories() {
+        IngredientCategory selected = categoryInput.getValue();
+        categoryInput.setItems(FXCollections.observableArrayList(availableCategories));
+        if (selected != null) {
+            categoryInput.setValue(availableCategories.stream()
+                    .filter(category -> category.getId().equals(selected.getId()))
+                    .findFirst().orElse(selected));
+        }
     }
 
     IngredientOptionFormInput toInput(int position) {
         return new IngredientOptionFormInput(optionId, ingredientInput.getEditor().getText(),
-                quantityInput.getText(), unitInput.getValue(), position);
+                quantityInput.getText(), unitInput.getValue(), position,
+                categoryInput.getValue());
     }
 
     void setValue(RecipeIngredientOption option) {
@@ -78,6 +104,8 @@ final class IngredientFormRow {
                 .orElse(option.getIngredient());
         ingredientInput.setValue(selected);
         ingredientInput.getEditor().setText(selected.getName());
+        categoryInput.setValue(selected.getCategory());
+        categoryInput.setDisable(true);
         quantityInput.setText(GermanRecipeDisplay.decimal(option.getQuantity()));
         unitInput.setValue(option.getUnit());
     }
@@ -102,6 +130,22 @@ final class IngredientFormRow {
         return List.of(Unit.values());
     }
 
+    private void updateCategoryForName(String name) {
+        Ingredient existing = availableIngredients.stream()
+                .filter(ingredient -> name != null
+                        && ingredient.getName().equalsIgnoreCase(name.strip()))
+                .findFirst().orElse(null);
+        if (existing != null) {
+            categoryInput.setValue(existing.getCategory());
+            categoryInput.setDisable(true);
+        } else {
+            if (categoryInput.isDisabled() || categoryInput.getValue() == null) {
+                categoryInput.setValue(IngredientCategories.OTHER);
+            }
+            categoryInput.setDisable(false);
+        }
+    }
+
     private final class IngredientStringConverter extends StringConverter<Ingredient> {
         @Override
         public String toString(Ingredient ingredient) {
@@ -115,7 +159,23 @@ final class IngredientFormRow {
             }
             return availableIngredients.stream()
                     .filter(ingredient -> ingredient.getName().equalsIgnoreCase(name.strip()))
-                    .findFirst().orElseGet(() -> new Ingredient(name));
+                    .findFirst().orElseGet(() -> new Ingredient(name,
+                            categoryInput.getValue() == null
+                                    ? IngredientCategories.OTHER : categoryInput.getValue()));
+        }
+    }
+
+    private static final class IngredientCategoryStringConverter
+            extends StringConverter<IngredientCategory> {
+        @Override
+        public String toString(IngredientCategory category) {
+            return category == null ? "" : category.getName();
+        }
+
+        @Override
+        public IngredientCategory fromString(String value) {
+            throw new UnsupportedOperationException(
+                    "Ingredient category selection is not editable.");
         }
     }
 }

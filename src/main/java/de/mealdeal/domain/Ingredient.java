@@ -13,6 +13,7 @@ public final class Ingredient {
 
     private final UUID id;
     private final String name;
+    private final IngredientCategory category;
 
     /**
      * Creates an ingredient with a new technical identity.
@@ -20,7 +21,12 @@ public final class Ingredient {
      * @param name the ingredient name
      */
     public Ingredient(String name) {
-        this(UUID.randomUUID(), name);
+        this(UUID.randomUUID(), name, IngredientCategories.OTHER);
+    }
+
+    /** Creates an ingredient in the selected central category. */
+    public Ingredient(String name, IngredientCategory category) {
+        this(UUID.randomUUID(), name, category);
     }
 
     /**
@@ -30,8 +36,15 @@ public final class Ingredient {
      * @param name the ingredient name
      */
     public Ingredient(UUID id, String name) {
+        this(id, name, IngredientCategories.OTHER);
+    }
+
+    /** Recreates an ingredient with its persisted category. */
+    public Ingredient(UUID id, String name, IngredientCategory category) {
         this.id = Objects.requireNonNull(id, "Ingredient ID must not be null.");
         this.name = requireNonBlank(name, "Ingredient name must not be blank.");
+        this.category = Objects.requireNonNull(
+                category, "Ingredient category must not be null.");
     }
 
     public UUID getId() {
@@ -40,6 +53,10 @@ public final class Ingredient {
 
     public String getName() {
         return name;
+    }
+
+    public IngredientCategory getCategory() {
+        return category;
     }
 
     @Override

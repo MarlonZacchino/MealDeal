@@ -65,7 +65,7 @@ public final class RecipeFormService {
             for (ValidatedIngredientOption optionInput : groupInput.options()) {
                 Ingredient ingredient = findIngredient(existingIngredients, optionInput.name());
                 if (ingredient == null) {
-                    ingredient = new Ingredient(optionInput.name());
+                    ingredient = new Ingredient(optionInput.name(), optionInput.category());
                     ingredientRepository.save(ingredient);
                     existingIngredients = append(existingIngredients, ingredient);
                 }
@@ -248,15 +248,18 @@ public final class RecipeFormService {
                 if (option == null || option.unit() == null) {
                     errors.add(prefix + "Bitte wähle eine Einheit.");
                 }
+                if (option == null || option.category() == null) {
+                    errors.add(prefix + "Bitte wähle eine Kategorie.");
+                }
                 UUID optionId = option == null || option.optionId() == null
                         ? UUID.randomUUID() : option.optionId();
                 if (!optionIds.add(optionId)) {
                     errors.add(prefix + "Die Options-ID ist doppelt.");
                 }
                 if (!optionName.isEmpty() && quantity != null
-                        && option != null && option.unit() != null) {
+                        && option != null && option.unit() != null && option.category() != null) {
                     options.add(new ValidatedIngredientOption(optionId, optionName, quantity,
-                            option.unit(), optionIndex));
+                            option.unit(), optionIndex, option.category()));
                 }
             }
             UUID standardId = group.standardOptionId();
@@ -281,7 +284,8 @@ public final class RecipeFormService {
                     new IngredientOptionFormInput(optionId,
                             ingredient == null ? null : ingredient.ingredientName(),
                             ingredient == null ? null : ingredient.quantity(),
-                            ingredient == null ? null : ingredient.unit(), 0)), optionId);
+                            ingredient == null ? null : ingredient.unit(), 0,
+                            ingredient == null ? null : ingredient.category())), optionId);
         }).toList();
     }
 
@@ -336,7 +340,8 @@ public final class RecipeFormService {
     }
 
     private record ValidatedIngredientOption(UUID id, String name, BigDecimal quantity,
-                                             de.mealdeal.domain.Unit unit, int position) {
+                                             de.mealdeal.domain.Unit unit, int position,
+                                             de.mealdeal.domain.IngredientCategory category) {
     }
 
     private record ValidatedIngredientGroup(UUID id,

@@ -1,12 +1,15 @@
 package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.IngredientCategories;
+import de.mealdeal.domain.IngredientCategory;
 import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.repository.IngredientRepository;
+import de.mealdeal.persistence.repository.IngredientCategoryRepository;
 import de.mealdeal.persistence.repository.RecipeRepository;
 import de.mealdeal.persistence.repository.TasteRepository;
 import de.mealdeal.ui.form.RecipeFormInput;
@@ -43,9 +46,12 @@ public final class CreateRecipeController implements NavigationAware {
     private final IngredientRepository ingredientRepository;
     private final TasteRepository tasteRepository;
     private final RecipeFormService formService;
+    private final java.util.function.Supplier<List<IngredientCategory>> categoryLoader;
     private final List<IngredientGroupFormRow> ingredientGroups = new ArrayList<>();
     private final List<RecipeStepFormRow> stepRows = new ArrayList<>();
     private final List<Ingredient> availableIngredients = new ArrayList<>();
+    private final List<IngredientCategory> availableCategories =
+            new ArrayList<>(IngredientCategories.all());
 
     private ViewNavigator navigator;
     private Recipe editingRecipe;
@@ -91,10 +97,30 @@ public final class CreateRecipeController implements NavigationAware {
     public CreateRecipeController(RecipeRepository recipeRepository,
                                   IngredientRepository ingredientRepository,
                                   TasteRepository tasteRepository) {
+        this(recipeRepository, ingredientRepository, tasteRepository, IngredientCategories::all);
+    }
+
+    /** Creates the production form controller with persisted category reference data. */
+    public CreateRecipeController(RecipeRepository recipeRepository,
+                                  IngredientRepository ingredientRepository,
+                                  TasteRepository tasteRepository,
+                                  IngredientCategoryRepository categoryRepository) {
+        this(recipeRepository, ingredientRepository, tasteRepository,
+                Objects.requireNonNull(categoryRepository,
+                        "Ingredient category repository must not be null.")::findAll);
+    }
+
+    private CreateRecipeController(RecipeRepository recipeRepository,
+                                   IngredientRepository ingredientRepository,
+                                   TasteRepository tasteRepository,
+                                   java.util.function.Supplier<List<IngredientCategory>>
+                                           categoryLoader) {
         this.ingredientRepository = Objects.requireNonNull(
                 ingredientRepository, "Ingredient repository must not be null.");
         this.tasteRepository = Objects.requireNonNull(
                 tasteRepository, "Taste repository must not be null.");
+        this.categoryLoader = Objects.requireNonNull(
+                categoryLoader, "Ingredient category loader must not be null.");
         formService = new RecipeFormService(recipeRepository, ingredientRepository, tasteRepository);
     }
 
@@ -136,7 +162,7 @@ public final class CreateRecipeController implements NavigationAware {
     @FXML
     private void addIngredientRow() {
         IngredientGroupFormRow group = new IngredientGroupFormRow(
-                availableIngredients, this::removeIngredientGroup);
+                availableIngredients, availableCategories, this::removeIngredientGroup);
         ingredientGroups.add(group);
         ingredientRowsContainer.getChildren().add(group.container());
         updateIngredientGroupRemoveButtons();
@@ -205,7 +231,8 @@ public final class CreateRecipeController implements NavigationAware {
         ingredientRowsContainer.getChildren().clear();
         recipe.getIngredientGroups().forEach(recipeGroup -> {
             IngredientGroupFormRow group = new IngredientGroupFormRow(
-                    availableIngredients, this::removeIngredientGroup, recipeGroup);
+                    availableIngredients, availableCategories,
+                    this::removeIngredientGroup, recipeGroup);
             ingredientGroups.add(group);
             ingredientRowsContainer.getChildren().add(group.container());
         });
@@ -246,7 +273,13 @@ public final class CreateRecipeController implements NavigationAware {
                     .sorted(Comparator.comparing(Ingredient::getName,
                             String.CASE_INSENSITIVE_ORDER))
                     .toList());
+            availableCategories.clear();
+            availableCategories.addAll(categoryLoader.get().stream()
+                    .sorted(Comparator.comparingInt(IngredientCategory::getPosition)
+                            .thenComparing(IngredientCategory::getName))
+                    .toList());
             ingredientGroups.forEach(IngredientGroupFormRow::refreshIngredients);
+            ingredientGroups.forEach(IngredientGroupFormRow::refreshCategories);
             tasteRepository.findAll().stream()
                     .sorted(Comparator.comparing(Taste::getName, String.CASE_INSENSITIVE_ORDER))
                     .forEach(taste -> addTasteOption(taste.getName(), false));

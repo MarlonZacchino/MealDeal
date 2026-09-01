@@ -1,6 +1,7 @@
 package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.IngredientCategory;
 import de.mealdeal.domain.RecipeIngredientGroup;
 import de.mealdeal.ui.form.IngredientGroupFormInput;
 import de.mealdeal.ui.form.IngredientGroupFormState;
@@ -22,6 +23,7 @@ import java.util.function.Consumer;
 final class IngredientGroupFormRow {
 
     private final List<Ingredient> availableIngredients;
+    private final List<IngredientCategory> availableCategories;
     private final Consumer<IngredientGroupFormRow> removalHandler;
     private final IngredientGroupFormState state;
     private final VBox container = new VBox(10);
@@ -31,21 +33,27 @@ final class IngredientGroupFormRow {
     private final Button removeGroupButton = new Button("Zutatengruppe entfernen");
 
     IngredientGroupFormRow(List<Ingredient> availableIngredients,
+                           List<IngredientCategory> availableCategories,
                            Consumer<IngredientGroupFormRow> removalHandler) {
-        this(availableIngredients, removalHandler, new IngredientGroupFormState(), null);
+        this(availableIngredients, availableCategories, removalHandler,
+                new IngredientGroupFormState(), null);
     }
 
     IngredientGroupFormRow(List<Ingredient> availableIngredients,
+                           List<IngredientCategory> availableCategories,
                            Consumer<IngredientGroupFormRow> removalHandler,
                            RecipeIngredientGroup group) {
-        this(availableIngredients, removalHandler, new IngredientGroupFormState(group), group);
+        this(availableIngredients, availableCategories, removalHandler,
+                new IngredientGroupFormState(group), group);
     }
 
     private IngredientGroupFormRow(List<Ingredient> availableIngredients,
+                                   List<IngredientCategory> availableCategories,
                                    Consumer<IngredientGroupFormRow> removalHandler,
                                    IngredientGroupFormState state,
                                    RecipeIngredientGroup group) {
         this.availableIngredients = availableIngredients;
+        this.availableCategories = availableCategories;
         this.removalHandler = removalHandler;
         this.state = state;
         container.getStyleClass().add("ingredient-group-form");
@@ -81,6 +89,7 @@ final class IngredientGroupFormRow {
     private void addOptionRow(UUID optionId,
                               de.mealdeal.domain.RecipeIngredientOption option) {
         IngredientFormRow row = new IngredientFormRow(optionId, availableIngredients,
+                availableCategories,
                 standardGroup, this::removeOption);
         row.standardButton().setOnAction(event -> state.selectStandard(row.optionId()));
         if (option != null) {
@@ -117,6 +126,10 @@ final class IngredientGroupFormRow {
 
     void refreshIngredients() {
         optionRows.forEach(IngredientFormRow::refreshIngredients);
+    }
+
+    void refreshCategories() {
+        optionRows.forEach(IngredientFormRow::refreshCategories);
     }
 
     VBox container() {

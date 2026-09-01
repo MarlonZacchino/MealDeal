@@ -1,12 +1,14 @@
 package de.mealdeal.persistence.sqlite;
 
+import de.mealdeal.domain.IngredientCategories;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 8;
+    static final int CURRENT_VERSION = 10;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -115,6 +117,14 @@ final class SqliteSchema {
         }
         if (version == 7) {
             createVersion8(connection);
+            version = 8;
+        }
+        if (version == 8) {
+            createVersion9(connection);
+            version = 9;
+        }
+        if (version == 9) {
+            createVersion10(connection);
         }
     }
 
@@ -325,6 +335,82 @@ final class SqliteSchema {
                     )
                     """);
             statement.execute("PRAGMA user_version = 8");
+        }
+    }
+
+    /** Adds the ordered category catalog and assigns old ingredients to Sonstiges. */
+    static void createVersion9(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("""
+                    CREATE TABLE ingredient_categories (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        name TEXT NOT NULL UNIQUE CHECK (length(trim(name)) > 0),
+                        position INTEGER NOT NULL UNIQUE CHECK (position >= 0)
+                    )
+                    """);
+        }
+        try (var insert = connection.prepareStatement(
+                "INSERT INTO ingredient_categories (id, name, position) VALUES (?, ?, ?)")) {
+            for (var category : IngredientCategories.all()) {
+                insert.setString(1, category.getId().toString());
+                insert.setString(2, category.getName());
+                insert.setInt(3, category.getPosition());
+                insert.addBatch();
+            }
+            insert.executeBatch();
+        }
+
+        String[] statements = {
+            "CREATE TEMP TABLE ingredients_migration_v9 AS SELECT id, name FROM ingredients",
+            """
+            CREATE TEMP TABLE recipe_ingredient_options_migration_v9 AS
+            SELECT id, group_id, ingredient_id, quantity, unit, position
+            FROM recipe_ingredient_options
+            """,
+            "DELETE FROM recipe_ingredient_options",
+            "DROP TABLE ingredients",
+            """
+            CREATE TABLE ingredients (
+                id TEXT PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+                category_id TEXT NOT NULL,
+                FOREIGN KEY (category_id) REFERENCES ingredient_categories(id)
+                    ON DELETE RESTRICT
+            )
+            """,
+            "INSERT INTO ingredients (id, name, category_id) SELECT id, name, '"
+                    + IngredientCategories.OTHER.getId() + "' FROM ingredients_migration_v9",
+            """
+            INSERT INTO recipe_ingredient_options
+                (id, group_id, ingredient_id, quantity, unit, position)
+            SELECT id, group_id, ingredient_id, quantity, unit, position
+            FROM recipe_ingredient_options_migration_v9
+            """,
+            "DROP TABLE recipe_ingredient_options_migration_v9",
+            "DROP TABLE ingredients_migration_v9"
+        };
+        try (Statement statement = connection.createStatement()) {
+            for (String sql : statements) {
+                statement.execute(sql);
+            }
+            statement.execute("PRAGMA user_version = 9");
+        }
+    }
+
+    /** Adds persistent local inventory without changing existing application data. */
+    static void createVersion10(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("""
+                    CREATE TABLE inventory_items (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        ingredient_id TEXT NOT NULL,
+                        quantity TEXT NOT NULL CHECK (length(trim(quantity)) > 0),
+                        unit TEXT NOT NULL,
+                        FOREIGN KEY (ingredient_id) REFERENCES ingredients(id)
+                            ON DELETE RESTRICT
+                    )
+                    """);
+            statement.execute("PRAGMA user_version = 10");
         }
     }
 }
