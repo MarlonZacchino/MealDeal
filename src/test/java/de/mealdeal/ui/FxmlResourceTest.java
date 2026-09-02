@@ -124,6 +124,15 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:id=\"todayEmptyState\""));
         assertTrue(fxml.contains("fx:id=\"weekOverviewContainer\""));
         assertTrue(fxml.contains("fx:id=\"weekErrorState\""));
+        int weekPaneStart = fxml.indexOf("<TitledPane text=\"Wochenplan\"");
+        int weekPaneEnd = fxml.indexOf("</TitledPane>", weekPaneStart);
+        assertTrue(weekPaneStart >= 0);
+        assertTrue(weekPaneEnd > weekPaneStart);
+        assertTrue(fxml.indexOf("fx:id=\"weekOverviewContainer\"") > weekPaneStart);
+        assertTrue(fxml.indexOf("fx:id=\"weekOverviewContainer\"") < weekPaneEnd);
+        assertTrue(fxml.substring(weekPaneStart, weekPaneEnd).contains("expanded=\"false\""));
+        assertTrue(fxml.substring(weekPaneStart, weekPaneEnd)
+                .contains("styleClass=\"expandable-pane, home-week-pane\""));
         assertFalse(fxml.contains("styleClass=\"page-header\""));
         assertFalse(fxml.contains("styleClass=\"page-title\""));
         assertFalse(fxml.contains("styleClass=\"page-subtitle\""));
@@ -216,6 +225,7 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:controller=\"de.mealdeal.ui.controller.WeekPlanController\""));
         assertTrue(fxml.contains("fx:id=\"weekRangeLabel\""));
         assertTrue(fxml.contains("fx:id=\"dayCardsContainer\""));
+        assertTrue(fxml.contains("spacing=\"8.0\" styleClass=\"meal-plan-days\""));
         assertTrue(fxml.contains("Änderungen speichern"));
         assertTrue(fxml.contains("StackPane.alignment=\"BOTTOM_RIGHT\""));
         assertTrue(fxml.contains("styleClass=\"primary-button, meal-plan-save-button\""));
@@ -235,6 +245,9 @@ class FxmlResourceTest {
         assertTrue(css.contains(".meal-plan-dessert-row"));
         assertTrue(css.contains(".meal-plan-day-card > .title"));
         assertTrue(css.contains(".meal-plan-day-summary"));
+        assertFalse(css.contains("viewport-wide .meal-plan-days"));
+        assertFalse(css.contains("viewport-extra-wide .meal-plan-days"));
+        assertTrue(css.contains(".home-week-pane > *.content"));
         assertTrue(css.contains(".home-plan-dessert-entry"));
     }
 

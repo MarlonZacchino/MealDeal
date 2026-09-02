@@ -24,6 +24,7 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
@@ -177,10 +178,8 @@ public final class WeekPlanController implements NavigationAware {
         content.getChildren().addAll(mainSection(day.date(), draft),
                 sideSection(day.date(), draft), dessertSection(day.date(), draft), localChangeNote);
 
-        Label summary = new Label(viewState.summary(draft));
-        summary.setWrapText(true);
-        summary.getStyleClass().add("meal-plan-day-summary");
-        VBox title = new VBox(5, dayHeader(day), summary);
+        HBox title = dayHeader(day, viewState.summary(draft));
+        title.setMinWidth(0);
         title.setMaxWidth(Double.MAX_VALUE);
         title.getStyleClass().add("meal-plan-day-title");
 
@@ -199,16 +198,28 @@ public final class WeekPlanController implements NavigationAware {
         return card;
     }
 
-    private HBox dayHeader(MealPlanDay day) {
+    private HBox dayHeader(MealPlanDay day, String summaryText) {
         Label dayName = new Label(titleCase(DAY_NAME.format(day.date())));
         dayName.getStyleClass().add("meal-plan-day-name");
         Label date = new Label(FULL_DATE.format(day.date()));
         date.getStyleClass().add("meal-plan-date");
-        HBox header = new HBox(14, new VBox(3, dayName, date));
+
+        VBox dateBlock = new VBox(3, dayName, date);
+        Label summary = new Label(summaryText);
+        summary.setMinWidth(0);
+        summary.setMaxWidth(Double.MAX_VALUE);
+        summary.setWrapText(true);
+        summary.getStyleClass().add("meal-plan-day-summary");
+        StackPane summaryContainer = new StackPane(summary);
+        summaryContainer.setAlignment(Pos.CENTER_LEFT);
+        summaryContainer.setMinWidth(0);
+        summaryContainer.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(summaryContainer, Priority.ALWAYS);
+
+        HBox header = new HBox(20, dateBlock, summaryContainer);
         header.setAlignment(Pos.CENTER_LEFT);
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        header.getChildren().add(spacer);
+        header.setMinWidth(0);
+        header.setMaxWidth(Double.MAX_VALUE);
         if (day.today()) {
             Label today = new Label("Heute");
             today.getStyleClass().add("meal-plan-today-badge");

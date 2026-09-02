@@ -3,6 +3,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -43,20 +44,25 @@
                     </VBox>
                 </VBox>
 
-                <VBox spacing="12.0" styleClass="dashboard-section">
-                    <Label text="Wochenplan" styleClass="section-title"/>
-                    <VBox maxWidth="1.7976931348623157E308" spacing="12.0" styleClass="card, wide-card">
-                        <VBox fx:id="weekOverviewContainer" maxWidth="1.7976931348623157E308"
-                              spacing="8.0" styleClass="home-week-overview"/>
-                        <VBox fx:id="weekErrorState" alignment="CENTER_LEFT" spacing="8.0"
-                              managed="false" visible="false">
-                            <Label text="Die Wochenübersicht konnte nicht geladen werden."
-                                   wrapText="true" styleClass="card-title"/>
+                <TitledPane text="Wochenplan" collapsible="true" expanded="false"
+                            maxWidth="1.7976931348623157E308"
+                            styleClass="expandable-pane, home-week-pane">
+                    <content>
+                        <VBox maxWidth="1.7976931348623157E308" spacing="12.0"
+                              styleClass="home-week-content">
+                            <VBox fx:id="weekOverviewContainer"
+                                  maxWidth="1.7976931348623157E308"
+                                  spacing="8.0" styleClass="home-week-overview"/>
+                            <VBox fx:id="weekErrorState" alignment="CENTER_LEFT" spacing="8.0"
+                                  managed="false" visible="false">
+                                <Label text="Die Wochenübersicht konnte nicht geladen werden."
+                                       wrapText="true" styleClass="card-title"/>
+                            </VBox>
+                            <Button text="Wochenplan öffnen" onAction="#openWeekPlan"
+                                    styleClass="primary-button"/>
                         </VBox>
-                        <Button text="Wochenplan öffnen" onAction="#openWeekPlan"
-                                styleClass="primary-button"/>
-                    </VBox>
-                </VBox>
+                    </content>
+                </TitledPane>
 
                 <VBox spacing="12.0" styleClass="dashboard-section, compact-section">
                     <Label text="Meine Gerichte" styleClass="section-title"/>

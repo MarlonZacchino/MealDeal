@@ -378,8 +378,37 @@
 }
 
 .meal-plan-day-summary {
-    -fx-font-size: 15px;
-    -fx-text-fill: -md-text-muted;
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-on-accent;
+}
+
+.home-week-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.home-week-pane > .title {
+    -fx-background-radius: 14px;
+    -fx-border-radius: 14px;
+    -fx-padding: 16px 20px;
+}
+
+.home-week-pane:expanded > .title {
+    -fx-background-radius: 14px 14px 0 0;
+    -fx-border-radius: 14px 14px 0 0;
+}
+
+.home-week-pane > *.content {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 0 0 14px 14px;
+    -fx-border-color: transparent -md-border -md-border -md-border;
+    -fx-border-radius: 0 0 14px 14px;
+    -fx-padding: 0;
+}
+
+.home-week-content {
+    -fx-padding: 22px 24px 24px 24px;
 }
 
 .meal-plan-day-card > .title > .arrow-button .arrow {

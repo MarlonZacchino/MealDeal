@@ -48,6 +48,21 @@ class WeekPlanDayViewStateTest {
         assertTrue(draft.isChanged());
     }
 
+    @Test
+    void summaryKeepsUnsavedDraftDataAcrossCollapseAndExpand() {
+        WeeklyMealPlanDayDraft draft = emptyDraft();
+        WeekPlanDayViewState state = new WeekPlanDayViewState();
+
+        state.setExpanded(false);
+        draft.setMainRecipe(recipe("Schnitzel", DishType.MAIN));
+        draft.addSide(recipe("Kartoffeln", DishType.SIDE));
+        draft.addDessert(recipe("Eis", DishType.DESSERT));
+        state.setExpanded(true);
+
+        assertEquals("Schnitzel · Kartoffeln · Eis", state.summary(draft));
+        assertTrue(draft.isChanged());
+    }
+
     private static WeeklyMealPlanDayDraft emptyDraft() {
         return new WeeklyMealPlanDayDraft(new MealPlanDay(
                 DATE, false, Optional.empty(), List.of(), List.of()));

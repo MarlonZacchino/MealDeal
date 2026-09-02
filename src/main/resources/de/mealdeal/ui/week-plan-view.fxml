@@ -25,7 +25,7 @@
                     </VBox>
 
                     <VBox fx:id="dayCardsContainer" maxWidth="1.7976931348623157E308"
-                          spacing="16.0" styleClass="meal-plan-days"/>
+                          spacing="8.0" styleClass="meal-plan-days"/>
 
                     <VBox fx:id="errorState" alignment="CENTER" managed="false" visible="false"
                           maxWidth="1.7976931348623157E308" spacing="12.0"
