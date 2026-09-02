@@ -148,6 +148,29 @@ public final class SqliteMealPlanRepository implements MealPlanRepository {
     }
 
     @Override
+    public List<MealPlanEntry> findBefore(LocalDate cutoffExclusive) {
+        Objects.requireNonNull(cutoffExclusive, "Cutoff date must not be null.");
+        String sql = SELECT_COLUMNS
+                + " WHERE planned_date < ?"
+                + " ORDER BY planned_date,"
+                + " CASE meal_role WHEN 'MAIN' THEN 0 WHEN 'SIDE' THEN 1 ELSE 2 END,"
+                + " position, id";
+        List<EntryRow> rows = new ArrayList<>();
+        try (var connection = database.openConnection();
+             var statement = connection.prepareStatement(sql)) {
+            statement.setString(1, cutoffExclusive.toString());
+            try (var resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    rows.add(readRow(resultSet));
+                }
+            }
+        } catch (SQLException exception) {
+            throw new PersistenceException("Could not load past meal-plan entries.", exception);
+        }
+        return rows.stream().map(this::toDomainEntry).toList();
+    }
+
+    @Override
     public boolean deleteById(UUID id) {
         Objects.requireNonNull(id, "Meal plan entry ID must not be null.");
         try (var connection = database.openConnection();

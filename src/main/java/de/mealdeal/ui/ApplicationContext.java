@@ -6,6 +6,7 @@ import de.mealdeal.persistence.repository.IngredientRepository;
 import de.mealdeal.persistence.repository.IngredientCategoryRepository;
 import de.mealdeal.persistence.repository.MealPlanRepository;
 import de.mealdeal.persistence.repository.InventoryRepository;
+import de.mealdeal.persistence.repository.InventoryConsumptionRepository;
 import de.mealdeal.persistence.repository.RecipeRepository;
 import de.mealdeal.persistence.repository.TasteRepository;
 import de.mealdeal.persistence.sqlite.SqliteDatabase;
@@ -13,6 +14,7 @@ import de.mealdeal.persistence.sqlite.SqliteIngredientRepository;
 import de.mealdeal.persistence.sqlite.SqliteIngredientCategoryRepository;
 import de.mealdeal.persistence.sqlite.SqliteMealPlanRepository;
 import de.mealdeal.persistence.sqlite.SqliteInventoryRepository;
+import de.mealdeal.persistence.sqlite.SqliteInventoryConsumptionRepository;
 import de.mealdeal.persistence.sqlite.SqliteRecipeRepository;
 import de.mealdeal.persistence.sqlite.SqliteTasteRepository;
 import de.mealdeal.ui.controller.CreateRecipeController;
@@ -26,6 +28,7 @@ import de.mealdeal.ui.controller.ShoppingListController;
 import de.mealdeal.ui.controller.WeekPlanController;
 import de.mealdeal.service.CombinedRecipeSearchService;
 import de.mealdeal.service.InventoryService;
+import de.mealdeal.service.InventoryConsumptionService;
 import de.mealdeal.service.RecipeScaler;
 import de.mealdeal.service.RecipeSearchService;
 import de.mealdeal.service.ShoppingListService;
@@ -66,6 +69,7 @@ public final class ApplicationContext {
     private final WeeklyMealPlanService weeklyMealPlanService;
     private final ShoppingListService shoppingListService;
     private final InventoryService inventoryService;
+    private final InventoryConsumptionService inventoryConsumptionService;
 
     /**
      * Preserves the earlier isolated-test composition without requiring a meal-plan fixture.
@@ -100,7 +104,9 @@ public final class ApplicationContext {
         this(new SqliteRecipeRepository(database), new SqliteIngredientRepository(database),
                 new SqliteTasteRepository(database), new SqliteMealPlanRepository(database),
                 new SqliteIngredientCategoryRepository(database),
-                new SqliteInventoryRepository(database), themeService);
+                new SqliteInventoryRepository(database),
+                new SqliteInventoryConsumptionRepository(database), themeService);
+        inventoryConsumptionService.consumePastEntries();
     }
 
     /** Creates a composition with explicit repositories, primarily for isolated tests. */
@@ -131,7 +137,8 @@ public final class ApplicationContext {
                               IngredientCategoryRepository ingredientCategoryRepository,
                               ThemeService themeService) {
         this(recipeRepository, ingredientRepository, tasteRepository, mealPlanRepository,
-                ingredientCategoryRepository, new EmptyInventoryRepository(), themeService);
+                ingredientCategoryRepository, new EmptyInventoryRepository(),
+                null, themeService, false);
     }
 
     /** Creates a composition with explicit inventory persistence, primarily for tests. */
@@ -142,6 +149,34 @@ public final class ApplicationContext {
                               IngredientCategoryRepository ingredientCategoryRepository,
                               InventoryRepository inventoryRepository,
                               ThemeService themeService) {
+        this(recipeRepository, ingredientRepository, tasteRepository, mealPlanRepository,
+                ingredientCategoryRepository, inventoryRepository,
+                null, themeService, false);
+    }
+
+    /** Creates a composition with explicit consumption persistence. */
+    public ApplicationContext(RecipeRepository recipeRepository,
+                              IngredientRepository ingredientRepository,
+                              TasteRepository tasteRepository,
+                              MealPlanRepository mealPlanRepository,
+                              IngredientCategoryRepository ingredientCategoryRepository,
+                              InventoryRepository inventoryRepository,
+                              InventoryConsumptionRepository consumptionRepository,
+                              ThemeService themeService) {
+        this(recipeRepository, ingredientRepository, tasteRepository, mealPlanRepository,
+                ingredientCategoryRepository, inventoryRepository, consumptionRepository,
+                themeService, true);
+    }
+
+    private ApplicationContext(RecipeRepository recipeRepository,
+                               IngredientRepository ingredientRepository,
+                               TasteRepository tasteRepository,
+                               MealPlanRepository mealPlanRepository,
+                               IngredientCategoryRepository ingredientCategoryRepository,
+                               InventoryRepository inventoryRepository,
+                               InventoryConsumptionRepository consumptionRepository,
+                               ThemeService themeService,
+                               boolean consumptionEnabled) {
         this.recipeRepository = Objects.requireNonNull(
                 recipeRepository, "Recipe repository must not be null.");
         this.ingredientRepository = Objects.requireNonNull(
@@ -159,10 +194,17 @@ public final class ApplicationContext {
                 themeService, "Theme service must not be null.");
         this.weeklyMealPlanService = new WeeklyMealPlanService(
                 this.mealPlanRepository, this.recipeRepository);
+        this.inventoryConsumptionService = consumptionEnabled
+                ? new InventoryConsumptionService(this.mealPlanRepository,
+                        this.inventoryRepository, Objects.requireNonNull(consumptionRepository,
+                                "Consumption repository must not be null."))
+                : null;
         this.inventoryService = new InventoryService(
                 this.inventoryRepository, this.ingredientRepository);
-        this.shoppingListService = new ShoppingListService(
-                this.mealPlanRepository, this.inventoryRepository);
+        this.shoppingListService = consumptionEnabled
+                ? new ShoppingListService(this.mealPlanRepository, this.inventoryRepository,
+                        this.inventoryConsumptionService)
+                : new ShoppingListService(this.mealPlanRepository, this.inventoryRepository);
     }
 
     /** Loads the application's single main view. */
@@ -208,7 +250,7 @@ public final class ApplicationContext {
             return new ShoppingListController(shoppingListService);
         }
         if (controllerType == InventoryController.class) {
-            return new InventoryController(inventoryService);
+            return new InventoryController(inventoryService, inventoryConsumptionService);
         }
         try {
             return controllerType.getDeclaredConstructor().newInstance();
@@ -304,4 +346,5 @@ public final class ApplicationContext {
         }
         @Override public boolean deleteById(UUID id) { return false; }
     }
+
 }

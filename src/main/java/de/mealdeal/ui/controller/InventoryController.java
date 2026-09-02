@@ -7,6 +7,7 @@ import de.mealdeal.persistence.DuplicateInventoryItemException;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.service.InventoryCategoryGroup;
 import de.mealdeal.service.InventoryService;
+import de.mealdeal.service.InventoryConsumptionService;
 import de.mealdeal.ui.form.DecimalInputParser;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -32,6 +33,7 @@ public final class InventoryController {
             System.getLogger(InventoryController.class.getName());
 
     private final InventoryService inventoryService;
+    private final InventoryConsumptionService consumptionService;
 
     @FXML private ComboBox<Ingredient> ingredientBox;
     @FXML private TextField quantityField;
@@ -43,8 +45,15 @@ public final class InventoryController {
     @FXML private Label loadErrorMessage;
 
     public InventoryController(InventoryService inventoryService) {
+        this(inventoryService, null);
+    }
+
+    /** Creates the inventory view with safe reconciliation before every reload. */
+    public InventoryController(InventoryService inventoryService,
+                               InventoryConsumptionService consumptionService) {
         this.inventoryService = Objects.requireNonNull(
                 inventoryService, "Inventory service must not be null.");
+        this.consumptionService = consumptionService;
     }
 
     @FXML
@@ -60,6 +69,9 @@ public final class InventoryController {
     @FXML
     public void refresh() {
         try {
+            if (consumptionService != null) {
+                consumptionService.consumePastEntries();
+            }
             List<Ingredient> ingredients = inventoryService.loadAvailableIngredients();
             Ingredient selected = ingredientBox.getValue();
             ingredientBox.setItems(FXCollections.observableArrayList(ingredients));

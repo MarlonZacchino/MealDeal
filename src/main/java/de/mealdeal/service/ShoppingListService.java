@@ -43,6 +43,7 @@ public final class ShoppingListService {
     private final RecipeScaler recipeScaler;
     private final WeekService weekService;
     private final Clock clock;
+    private final InventoryConsumptionService consumptionService;
 
     /** Creates production calculation using the local system time zone. */
     public ShoppingListService(MealPlanRepository repository) {
@@ -54,7 +55,16 @@ public final class ShoppingListService {
     public ShoppingListService(MealPlanRepository repository,
                                InventoryRepository inventoryRepository) {
         this(repository, inventoryRepository, new RecipeScaler(), new WeekService(),
-                Clock.systemDefaultZone());
+                Clock.systemDefaultZone(), null);
+    }
+
+    /** Creates production calculation that reconciles past consumption before stock reads. */
+    public ShoppingListService(MealPlanRepository repository,
+                               InventoryRepository inventoryRepository,
+                               InventoryConsumptionService consumptionService) {
+        this(repository, inventoryRepository, new RecipeScaler(), new WeekService(),
+                Clock.systemDefaultZone(), Objects.requireNonNull(
+                        consumptionService, "Consumption service must not be null."));
     }
 
     /** Creates deterministic calculation with explicit collaborators. */
@@ -67,12 +77,20 @@ public final class ShoppingListService {
     public ShoppingListService(MealPlanRepository repository,
                                InventoryRepository inventoryRepository,
                                RecipeScaler recipeScaler, WeekService weekService, Clock clock) {
+        this(repository, inventoryRepository, recipeScaler, weekService, clock, null);
+    }
+
+    ShoppingListService(MealPlanRepository repository,
+                        InventoryRepository inventoryRepository,
+                        RecipeScaler recipeScaler, WeekService weekService, Clock clock,
+                        InventoryConsumptionService consumptionService) {
         this.repository = Objects.requireNonNull(repository, "Meal plan repository must not be null.");
         this.inventoryRepository = Objects.requireNonNull(
                 inventoryRepository, "Inventory repository must not be null.");
         this.recipeScaler = Objects.requireNonNull(recipeScaler, "Recipe scaler must not be null.");
         this.weekService = Objects.requireNonNull(weekService, "Week service must not be null.");
         this.clock = Objects.requireNonNull(clock, "Clock must not be null.");
+        this.consumptionService = consumptionService;
     }
 
     /** Builds a list from every plan entry for the local current date. */
@@ -120,6 +138,9 @@ public final class ShoppingListService {
 
     ShoppingList subtractInventory(ShoppingList requiredList) {
         Objects.requireNonNull(requiredList, "Required shopping list must not be null.");
+        if (consumptionService != null) {
+            consumptionService.consumePastEntries();
+        }
         List<InventoryItem> inventory = inventoryRepository.findAll();
         List<ShoppingListItem> remaining = requiredList.getItems().stream()
                 .map(required -> subtractCompatibleStock(required, inventory))

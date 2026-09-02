@@ -31,6 +31,15 @@ public interface MealPlanRepository {
 
     List<MealPlanEntry> findBetween(LocalDate startInclusive, LocalDate endInclusive);
 
+    /** Returns entries strictly before the cutoff in deterministic plan order. */
+    default List<MealPlanEntry> findBefore(LocalDate cutoffExclusive) {
+        java.util.Objects.requireNonNull(cutoffExclusive, "Cutoff date must not be null.");
+        if (cutoffExclusive.equals(LocalDate.MIN)) {
+            return List.of();
+        }
+        return findBetween(LocalDate.MIN, cutoffExclusive.minusDays(1));
+    }
+
     boolean deleteById(UUID id);
 
     int deleteBefore(LocalDate cutoffExclusive);

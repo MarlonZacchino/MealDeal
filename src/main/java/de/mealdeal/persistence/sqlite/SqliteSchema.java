@@ -8,7 +8,7 @@ import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 11;
+    static final int CURRENT_VERSION = 12;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -129,6 +129,10 @@ final class SqliteSchema {
         }
         if (version == 10) {
             createVersion11(connection);
+            version = 11;
+        }
+        if (version == 11) {
+            createVersion12(connection);
         }
     }
 
@@ -553,6 +557,42 @@ final class SqliteSchema {
                 statement.execute(sql);
             }
             statement.execute("PRAGMA user_version = 11");
+        }
+    }
+
+    /** Adds immutable consumption history without referencing deletable meal-plan entries. */
+    static void createVersion12(Connection connection) throws SQLException {
+        String[] statements = {
+            """
+            CREATE TABLE inventory_consumptions (
+                id TEXT PRIMARY KEY NOT NULL,
+                meal_plan_entry_id TEXT NOT NULL UNIQUE,
+                planned_date TEXT NOT NULL,
+                processed_at TEXT NOT NULL
+            )
+            """,
+            """
+            CREATE TABLE inventory_consumption_items (
+                consumption_id TEXT NOT NULL,
+                position INTEGER NOT NULL CHECK (position >= 0),
+                ingredient_id TEXT NOT NULL,
+                quantity TEXT NOT NULL CHECK (length(trim(quantity)) > 0),
+                unit TEXT NOT NULL,
+                PRIMARY KEY (consumption_id, position),
+                FOREIGN KEY (consumption_id) REFERENCES inventory_consumptions(id)
+                    ON DELETE CASCADE
+            )
+            """,
+            """
+            CREATE INDEX inventory_consumptions_planned_date
+            ON inventory_consumptions (planned_date, id)
+            """,
+            "PRAGMA user_version = 12"
+        };
+        try (Statement statement = connection.createStatement()) {
+            for (String sql : statements) {
+                statement.execute(sql);
+            }
         }
     }
 }
