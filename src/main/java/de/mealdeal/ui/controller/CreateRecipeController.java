@@ -73,6 +73,8 @@ public final class CreateRecipeController implements NavigationAware {
     @FXML
     private TextField bakingTimeField;
     @FXML
+    private TextField restingTimeField;
+    @FXML
     private TextField caloriesField;
     @FXML
     private TextField proteinField;
@@ -148,6 +150,7 @@ public final class CreateRecipeController implements NavigationAware {
         preparationTimeField.setText(timeText(recipe.getPreparationTimeMinutes()));
         cookingTimeField.setText(timeText(recipe.getCookingTimeMinutes()));
         bakingTimeField.setText(timeText(recipe.getBakingTimeMinutes()));
+        restingTimeField.setText(timeText(recipe.getRestingTimeMinutes()));
         NutritionInfo nutrition = recipe.getNutritionInfo().orElse(null);
         caloriesField.setText(nutrition == null ? "" : timeText(nutrition.getCaloriesKcal()));
         proteinField.setText(nutrition == null ? "" : decimalText(nutrition.getProteinGrams()));
@@ -301,8 +304,8 @@ public final class CreateRecipeController implements NavigationAware {
         List<String> steps = stepRows.stream().map(RecipeStepFormRow::description).toList();
         return RecipeFormInput.withIngredientGroups(nameField.getText(),
                 servingCountField.getText(), groups, tastes, steps, preparationTimeField.getText(),
-                cookingTimeField.getText(), bakingTimeField.getText(), caloriesField.getText(),
-                proteinField.getText(),
+                cookingTimeField.getText(), bakingTimeField.getText(), restingTimeField.getText(),
+                caloriesField.getText(), proteinField.getText(),
                 carbohydratesField.getText(), fatField.getText(), dishTypeBox.getValue());
     }
 
@@ -382,7 +385,7 @@ public final class CreateRecipeController implements NavigationAware {
     }
 
     private static String decimalText(Optional<java.math.BigDecimal> value) {
-        return value.map(GermanRecipeDisplay::decimal).orElse("");
+        return value.map(GermanRecipeDisplay::editableDecimal).orElse("");
     }
 
 }

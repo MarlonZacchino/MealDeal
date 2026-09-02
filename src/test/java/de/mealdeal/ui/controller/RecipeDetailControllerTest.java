@@ -53,12 +53,13 @@ class RecipeDetailControllerTest {
     @Test
     void displaysOnlyPresentIndividualTimesAndTheirDerivedTotal() {
         Recipe recipe = new Recipe("Baked pasta", 2, List.of(), List.of(),
-                List.of(new Taste("Herzhaft")), 10, null, 70, null, DishType.MAIN);
+                List.of(new Taste("Herzhaft")), 10, null, 70, 20, null, DishType.MAIN);
 
         assertEquals(List.of(
                 new RecipeDetailController.TimeDisplay("Vorbereitungszeit", "10 Min."),
                 new RecipeDetailController.TimeDisplay("Backzeit", "1 Std. 10 Min."),
-                new RecipeDetailController.TimeDisplay("Gesamtzeit", "1 Std. 20 Min.")),
+                new RecipeDetailController.TimeDisplay("Ruhezeit", "20 Min."),
+                new RecipeDetailController.TimeDisplay("Gesamtzeit", "1 Std. 40 Min.")),
                 RecipeDetailController.timeDisplays(recipe));
     }
 

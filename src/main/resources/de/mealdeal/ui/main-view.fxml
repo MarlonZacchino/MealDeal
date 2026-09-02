@@ -26,7 +26,7 @@
                         onAction="#showHome" styleClass="nav-button"/>
                 <Button fx:id="recipesButton" text="Gerichte" maxWidth="1.7976931348623157E308"
                         onAction="#showRecipes" styleClass="nav-button"/>
-                <Button fx:id="searchButton" text="Was essen?" maxWidth="1.7976931348623157E308"
+                <Button fx:id="searchButton" text="Gericht finden" maxWidth="1.7976931348623157E308"
                         onAction="#showSearch" styleClass="nav-button"/>
                 <Button fx:id="weekPlanButton" text="Wochenplan" maxWidth="1.7976931348623157E308"
                         onAction="#showWeekPlan" styleClass="nav-button"/>

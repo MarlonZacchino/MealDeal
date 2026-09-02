@@ -5,7 +5,8 @@ import de.mealdeal.domain.IngredientCategory;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.service.IngredientCategoryService;
 import de.mealdeal.service.IngredientManagementService;
-import javafx.collections.FXCollections;
+import de.mealdeal.ui.IngredientCategoryGrouping;
+import de.mealdeal.ui.control.SearchableComboBoxSupport;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
@@ -18,7 +19,6 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.util.StringConverter;
 
 import java.util.List;
 import java.util.Objects;
@@ -209,8 +209,20 @@ public final class IngredientsController {
             ingredientManagementContainer.getChildren().add(empty);
             return;
         }
-        ingredients.stream().map(ingredient -> ingredientRow(ingredient, categories))
-                .forEach(ingredientManagementContainer.getChildren()::add);
+        IngredientCategoryGrouping.group(ingredients, "", List.of()).forEach(group -> {
+            VBox rows = new VBox(8);
+            rows.getStyleClass().add("ingredient-category-content");
+            group.ingredients().stream().map(ingredient -> ingredientRow(ingredient, categories))
+                    .forEach(rows.getChildren()::add);
+            TitledPane categoryPane = new TitledPane(group.category().getName(), rows);
+            categoryPane.setAnimated(true);
+            categoryPane.setCollapsible(true);
+            categoryPane.setExpanded(false);
+            categoryPane.setMaxWidth(Double.MAX_VALUE);
+            categoryPane.getStyleClass().addAll(
+                    "expandable-card", "ingredient-category-pane");
+            ingredientManagementContainer.getChildren().add(categoryPane);
+        });
     }
 
     private HBox ingredientRow(Ingredient ingredient, List<IngredientCategory> categories) {
@@ -218,11 +230,9 @@ public final class IngredientsController {
         name.setMaxWidth(Double.MAX_VALUE);
         name.getStyleClass().add("inventory-ingredient-management-name");
         HBox.setHgrow(name, Priority.ALWAYS);
-        Label category = new Label(ingredient.getCategory().getName());
-        category.getStyleClass().add("inventory-ingredient-category-badge");
         Button edit = new Button("Bearbeiten");
         edit.getStyleClass().add("secondary-button");
-        HBox row = new HBox(10, name, category, edit);
+        HBox row = new HBox(10, name, edit);
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().add("inventory-ingredient-management-row");
         edit.setOnAction(ignored -> showIngredientEditor(row, ingredient, categories));
@@ -234,9 +244,9 @@ public final class IngredientsController {
         TextField name = new TextField(ingredient.getName());
         name.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(name, Priority.ALWAYS);
-        ComboBox<IngredientCategory> category = new ComboBox<>(
-                FXCollections.observableArrayList(categories));
-        category.setConverter(new CategoryStringConverter());
+        ComboBox<IngredientCategory> category = new ComboBox<>();
+        SearchableComboBoxSupport.forValidValues(
+                category, categories, IngredientCategory::getName);
         category.getSelectionModel().select(categories.stream()
                 .filter(candidate -> candidate.getId().equals(ingredient.getCategory().getId()))
                 .findFirst().orElse(null));
@@ -292,15 +302,5 @@ public final class IngredientsController {
     private static String messageOf(RuntimeException exception) {
         return exception.getMessage() == null || exception.getMessage().isBlank()
                 ? "Die Eingabe ist ungültig." : exception.getMessage();
-    }
-
-    private static final class CategoryStringConverter
-            extends StringConverter<IngredientCategory> {
-        @Override public String toString(IngredientCategory category) {
-            return category == null ? "" : category.getName();
-        }
-        @Override public IngredientCategory fromString(String value) {
-            throw new UnsupportedOperationException("Category selection is not editable.");
-        }
     }
 }

@@ -28,7 +28,7 @@
                     <Button text="Bearbeiten" onAction="#editRecipe" styleClass="primary-button"/>
                 </HBox>
 
-                <HBox alignment="CENTER_LEFT" spacing="18.0" styleClass="card, compact-card">
+                <HBox alignment="CENTER_LEFT" spacing="18.0" styleClass="content-card">
                     <VBox spacing="4.0">
                         <Label text="Personenanzahl" styleClass="section-title"/>
                         <Label text="Die Zutatenmengen passen sich automatisch an."
@@ -40,28 +40,28 @@
                 </HBox>
 
                 <VBox fx:id="timeSection" spacing="10.0" managed="false" visible="false"
-                      styleClass="card, detail-section-card">
+                      styleClass="content-card, detail-section-card">
                     <Label text="Zeitangaben" styleClass="section-title"/>
                     <VBox fx:id="timesContainer" spacing="8.0"/>
                 </VBox>
 
                 <VBox fx:id="nutritionSection" spacing="10.0" managed="false" visible="false"
-                      styleClass="card, detail-section-card">
+                      styleClass="content-card, detail-section-card">
                     <Label text="Nährwerte pro Portion" styleClass="section-title"/>
                     <VBox fx:id="nutritionContainer" spacing="8.0"/>
                 </VBox>
 
-                <VBox spacing="10.0" styleClass="card, detail-section-card">
+                <VBox spacing="10.0" styleClass="content-card, detail-section-card">
                     <Label text="Geschmacksrichtungen" styleClass="section-title"/>
                     <Label fx:id="tastesLabel" wrapText="true" styleClass="detail-row-text"/>
                 </VBox>
 
-                <VBox spacing="14.0" styleClass="card, detail-section-card">
+                <VBox spacing="14.0" styleClass="content-card, detail-section-card">
                     <Label text="Zutaten" styleClass="section-title"/>
                     <VBox fx:id="ingredientsContainer" spacing="8.0"/>
                 </VBox>
 
-                <VBox spacing="14.0" styleClass="card, detail-section-card">
+                <VBox spacing="14.0" styleClass="content-card, detail-section-card">
                     <Label text="Zubereitung" styleClass="section-title"/>
                     <Label fx:id="emptyStepsLabel" text="Noch keine Zubereitung hinterlegt."
                            managed="false" visible="false" styleClass="card-text"/>

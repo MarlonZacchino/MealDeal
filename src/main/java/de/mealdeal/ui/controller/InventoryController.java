@@ -8,6 +8,7 @@ import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.service.InventoryCategoryGroup;
 import de.mealdeal.service.InventoryConsumptionService;
 import de.mealdeal.service.InventoryService;
+import de.mealdeal.ui.control.SearchableComboBoxSupport;
 import de.mealdeal.ui.form.DecimalInputParser;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -20,7 +21,6 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.util.StringConverter;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -34,6 +34,7 @@ public final class InventoryController {
 
     private final InventoryService inventoryService;
     private final InventoryConsumptionService consumptionService;
+    private SearchableComboBoxSupport<Ingredient> ingredientSearch;
 
     @FXML private ComboBox<Ingredient> ingredientBox;
     @FXML private TextField quantityField;
@@ -58,7 +59,9 @@ public final class InventoryController {
 
     @FXML
     private void initialize() {
-        ingredientBox.setConverter(new IngredientStringConverter());
+        ingredientSearch = SearchableComboBoxSupport.forValidValues(
+                ingredientBox, List.of(), ingredient -> ingredient.getName() + " · "
+                        + ingredient.getCategory().getName());
         unitBox.setConverter(new GermanUnitStringConverter());
         unitBox.setItems(FXCollections.observableArrayList(Unit.values()));
         unitBox.setValue(Unit.GRAM);
@@ -74,7 +77,7 @@ public final class InventoryController {
             }
             List<Ingredient> ingredients = inventoryService.loadAvailableIngredients();
             Ingredient selected = ingredientBox.getValue();
-            ingredientBox.setItems(FXCollections.observableArrayList(ingredients));
+            ingredientSearch.setOptions(ingredients);
             ingredientBox.setValue(selected != null && ingredients.contains(selected)
                     ? selected : ingredients.stream().findFirst().orElse(null));
             render(inventoryService.loadGroupedInventory());
@@ -127,7 +130,7 @@ public final class InventoryController {
         VBox rows = new VBox(8);
         group.items().stream().map(this::itemRow).forEach(rows.getChildren()::add);
         VBox card = new VBox(14, title, rows);
-        card.getStyleClass().addAll("card", "wide-card", "inventory-category-card");
+        card.getStyleClass().addAll("content-card", "inventory-category-card");
         card.setMaxWidth(Double.MAX_VALUE);
         return card;
     }
@@ -161,7 +164,7 @@ public final class InventoryController {
         ingredient.setMaxWidth(Double.MAX_VALUE);
         ingredient.getStyleClass().add("inventory-ingredient");
         HBox.setHgrow(ingredient, Priority.ALWAYS);
-        TextField quantity = new TextField(GermanRecipeDisplay.decimal(item.getQuantity()));
+        TextField quantity = new TextField(GermanRecipeDisplay.editableDecimal(item.getQuantity()));
         quantity.setPromptText("Menge");
         quantity.getStyleClass().add("inventory-edit-quantity");
         ComboBox<Unit> unit = new ComboBox<>(FXCollections.observableArrayList(Unit.values()));
@@ -247,15 +250,5 @@ public final class InventoryController {
         }
         return exception.getMessage() == null || exception.getMessage().isBlank()
                 ? "Die Eingabe ist ungültig." : exception.getMessage();
-    }
-
-    private static final class IngredientStringConverter extends StringConverter<Ingredient> {
-        @Override public String toString(Ingredient ingredient) {
-            return ingredient == null ? "" : ingredient.getName() + " · "
-                    + ingredient.getCategory().getName();
-        }
-        @Override public Ingredient fromString(String value) {
-            throw new UnsupportedOperationException("Ingredient selection is not editable.");
-        }
     }
 }

@@ -29,7 +29,7 @@
 
                     <VBox fx:id="errorState" alignment="CENTER" managed="false" visible="false"
                           maxWidth="1.7976931348623157E308" spacing="12.0"
-                          styleClass="card, recipe-state-card, error-state-card">
+                          styleClass="content-card, recipe-state-card, error-state-card">
                         <Label text="Wochenplan konnte nicht geladen werden." styleClass="card-title"/>
                         <Label fx:id="errorMessage" wrapText="true" styleClass="card-text"/>
                         <Button text="Erneut versuchen" onAction="#refresh"

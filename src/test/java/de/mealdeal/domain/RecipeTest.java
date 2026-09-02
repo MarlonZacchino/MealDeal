@@ -43,6 +43,7 @@ class RecipeTest {
         assertTrue(recipe.getPreparationTimeMinutes().isEmpty());
         assertTrue(recipe.getCookingTimeMinutes().isEmpty());
         assertTrue(recipe.getBakingTimeMinutes().isEmpty());
+        assertTrue(recipe.getRestingTimeMinutes().isEmpty());
         assertTrue(recipe.getTotalTimeMinutes().isEmpty());
     }
 
@@ -100,6 +101,16 @@ class RecipeTest {
     }
 
     @Test
+    void derivesTotalTimeIncludingOptionalRestingTime() {
+        Recipe recipe = new Recipe("Pasta", 2, List.of(recipeIngredient),
+                List.of(recipeStep), List.of(savory), 10, 20, 30, 40,
+                null, DishType.MAIN);
+
+        assertEquals(40, recipe.getRestingTimeMinutes().orElseThrow());
+        assertEquals(100, recipe.getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
     void keepsNutritionInfoOptionalAndPerServing() {
         Recipe withoutNutrition = createRecipe("Pasta", 2);
         NutritionInfo nutrition = new NutritionInfo(650, new BigDecimal("42"),
@@ -124,6 +135,9 @@ class RecipeTest {
                         List.of(savory), null, -1));
         assertThrows(IllegalArgumentException.class,
                 () -> recipeWithTimes(null, null, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Recipe("Pasta", 2, List.of(recipeIngredient), List.of(recipeStep),
+                        List.of(savory), null, null, null, -1, null, DishType.MAIN));
     }
 
     @Test

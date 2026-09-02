@@ -1,6 +1,7 @@
 package de.mealdeal.ui.search;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.IngredientCategory;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
 import de.mealdeal.domain.RecipeStep;
@@ -99,6 +100,42 @@ class IngredientSearchModelTest {
 
         assertEquals(List.of("Apfel", "Zwiebel"), model.loadAvailableIngredients().stream()
                 .map(Ingredient::getName).toList());
+    }
+
+    @Test
+    void groupsAvailableIngredientsByAlphabeticalCategoryAndIngredientName() {
+        IngredientCategory fruit = new IngredientCategory("Obst", 9);
+        IngredientCategory vegetables = new IngredientCategory("Gemüse", 1);
+        Ingredient apple = new Ingredient("Apfel", fruit);
+        Ingredient pear = new Ingredient("Birne", fruit);
+        Ingredient carrot = new Ingredient("Karotte", vegetables);
+        IngredientSearchModel model = model(List.of(pear, carrot, apple), List.of());
+
+        var groups = model.groupAvailableIngredients(List.of(pear, carrot, apple), "");
+
+        assertEquals(List.of("Gemüse", "Obst"), groups.stream()
+                .map(group -> group.category().getName()).toList());
+        assertEquals(List.of("Apfel", "Birne"), groups.get(1).ingredients().stream()
+                .map(Ingredient::getName).toList());
+    }
+
+    @Test
+    void filteringHidesEmptyCategoriesWithoutChangingSelection() {
+        IngredientCategory fruit = new IngredientCategory("Obst", 0);
+        IngredientCategory vegetables = new IngredientCategory("Gemüse", 1);
+        Ingredient apple = new Ingredient("Apfel", fruit);
+        Ingredient pear = new Ingredient("Birne", fruit);
+        Ingredient carrot = new Ingredient("Karotte", vegetables);
+        IngredientSearchModel model = model(List.of(apple, pear, carrot), List.of());
+        model.select(apple);
+
+        var groups = model.groupAvailableIngredients(List.of(apple, pear, carrot), "BIR");
+
+        assertEquals(List.of("Obst"), groups.stream()
+                .map(group -> group.category().getName()).toList());
+        assertEquals(List.of("Birne"), groups.getFirst().ingredients().stream()
+                .map(Ingredient::getName).toList());
+        assertEquals(List.of(apple), model.getSelectedIngredients());
     }
 
     @Test

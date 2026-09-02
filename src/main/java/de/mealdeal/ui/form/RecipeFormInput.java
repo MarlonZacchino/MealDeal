@@ -15,6 +15,7 @@ public record RecipeFormInput(
         String preparationTimeMinutes,
         String cookingTimeMinutes,
         String bakingTimeMinutes,
+        String restingTimeMinutes,
         String caloriesKcal,
         String proteinGrams,
         String carbohydrateGrams,
@@ -32,8 +33,8 @@ public record RecipeFormInput(
     public RecipeFormInput(String name, String standardServingCount,
                            List<IngredientFormInput> ingredients, List<String> tasteNames,
                            List<String> stepDescriptions) {
-        this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
-                null, null, null, null, null, null, null, DishType.MAIN);
+        this(name, standardServingCount, ingredients, List.of(), tasteNames, stepDescriptions,
+                null, null, null, null, null, null, null, null, DishType.MAIN);
     }
 
     /** Creates an input with optional time values but without nutrition values. */
@@ -41,8 +42,8 @@ public record RecipeFormInput(
                            List<IngredientFormInput> ingredients, List<String> tasteNames,
                            List<String> stepDescriptions, String preparationTimeMinutes,
                            String cookingTimeMinutes) {
-        this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
-                preparationTimeMinutes, cookingTimeMinutes, null, null, null, null, null,
+        this(name, standardServingCount, ingredients, List.of(), tasteNames, stepDescriptions,
+                preparationTimeMinutes, cookingTimeMinutes, null, null, null, null, null, null,
                 DishType.MAIN);
     }
 
@@ -52,8 +53,8 @@ public record RecipeFormInput(
                            List<String> stepDescriptions, String preparationTimeMinutes,
                            String cookingTimeMinutes, String caloriesKcal, String proteinGrams,
                            String carbohydrateGrams, String fatGrams) {
-        this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
-                preparationTimeMinutes, cookingTimeMinutes, null, caloriesKcal, proteinGrams,
+        this(name, standardServingCount, ingredients, List.of(), tasteNames, stepDescriptions,
+                preparationTimeMinutes, cookingTimeMinutes, null, null, caloriesKcal, proteinGrams,
                 carbohydrateGrams, fatGrams, DishType.MAIN);
     }
 
@@ -63,8 +64,8 @@ public record RecipeFormInput(
                            List<String> stepDescriptions, String preparationTimeMinutes,
                            String cookingTimeMinutes, String caloriesKcal, String proteinGrams,
                            String carbohydrateGrams, String fatGrams, DishType dishType) {
-        this(name, standardServingCount, ingredients, tasteNames, stepDescriptions,
-                preparationTimeMinutes, cookingTimeMinutes, null, caloriesKcal, proteinGrams,
+        this(name, standardServingCount, ingredients, List.of(), tasteNames, stepDescriptions,
+                preparationTimeMinutes, cookingTimeMinutes, null, null, caloriesKcal, proteinGrams,
                 carbohydrateGrams, fatGrams, dishType);
     }
 
@@ -76,7 +77,7 @@ public record RecipeFormInput(
                            String caloriesKcal, String proteinGrams, String carbohydrateGrams,
                            String fatGrams, DishType dishType) {
         this(name, standardServingCount, ingredients, List.of(), tasteNames, stepDescriptions,
-                preparationTimeMinutes, cookingTimeMinutes, bakingTimeMinutes, caloriesKcal,
+                preparationTimeMinutes, cookingTimeMinutes, bakingTimeMinutes, null, caloriesKcal,
                 proteinGrams, carbohydrateGrams, fatGrams, dishType);
     }
 
@@ -88,9 +89,24 @@ public record RecipeFormInput(
             String preparationTimeMinutes, String cookingTimeMinutes,
             String bakingTimeMinutes, String caloriesKcal, String proteinGrams,
             String carbohydrateGrams, String fatGrams, DishType dishType) {
+        return withIngredientGroups(name, standardServingCount, ingredientGroups, tasteNames,
+                stepDescriptions, preparationTimeMinutes, cookingTimeMinutes,
+                bakingTimeMinutes, null, caloriesKcal, proteinGrams, carbohydrateGrams,
+                fatGrams, dishType);
+    }
+
+    /** Creates the complete form snapshot including optional resting time. */
+    public static RecipeFormInput withIngredientGroups(
+            String name, String standardServingCount,
+            List<IngredientGroupFormInput> ingredientGroups,
+            List<String> tasteNames, List<String> stepDescriptions,
+            String preparationTimeMinutes, String cookingTimeMinutes,
+            String bakingTimeMinutes, String restingTimeMinutes,
+            String caloriesKcal, String proteinGrams,
+            String carbohydrateGrams, String fatGrams, DishType dishType) {
         return new RecipeFormInput(name, standardServingCount, List.of(), ingredientGroups,
                 tasteNames, stepDescriptions, preparationTimeMinutes, cookingTimeMinutes,
-                bakingTimeMinutes, caloriesKcal, proteinGrams, carbohydrateGrams, fatGrams,
-                dishType);
+                bakingTimeMinutes, restingTimeMinutes, caloriesKcal, proteinGrams,
+                carbohydrateGrams, fatGrams, dishType);
     }
 }

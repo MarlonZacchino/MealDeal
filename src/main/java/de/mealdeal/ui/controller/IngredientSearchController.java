@@ -14,6 +14,7 @@ import de.mealdeal.service.MatchQuality;
 import de.mealdeal.service.RecipeSearchService;
 import de.mealdeal.service.TasteFilterMode;
 import de.mealdeal.service.TasteSearchResult;
+import de.mealdeal.ui.IngredientCategoryGrouping;
 import de.mealdeal.ui.navigation.NavigationAware;
 import de.mealdeal.ui.navigation.ViewNavigator;
 import de.mealdeal.ui.search.IngredientSearchModel;
@@ -24,6 +25,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -53,7 +55,7 @@ public final class IngredientSearchController implements NavigationAware {
     @FXML
     private TextField ingredientFilterField;
     @FXML
-    private FlowPane availableIngredientsContainer;
+    private VBox availableIngredientsContainer;
     @FXML
     private FlowPane selectedIngredientsContainer;
     @FXML
@@ -240,25 +242,36 @@ public final class IngredientSearchController implements NavigationAware {
 
     private void renderAvailableIngredients() {
         availableIngredientsContainer.getChildren().clear();
-        String filter = normalized(ingredientFilterField.getText());
-        List<Ingredient> selected = searchModel.getSelectedIngredients();
-        List<Ingredient> visible = availableIngredients.stream()
-                .filter(ingredient -> !selected.contains(ingredient))
-                .filter(ingredient -> normalized(ingredient.getName()).contains(filter))
-                .toList();
-        if (visible.isEmpty()) {
-            Label noIngredients = new Label(filter.isEmpty()
+        String filter = ingredientFilterField.getText();
+        List<IngredientCategoryGrouping.Group> groups =
+                searchModel.groupAvailableIngredients(availableIngredients, filter);
+        if (groups.isEmpty()) {
+            Label noIngredients = new Label(normalized(filter).isEmpty()
                     ? "Keine weiteren Zutaten verfügbar."
                     : "Keine passende Zutat gefunden.");
             noIngredients.getStyleClass().add("card-text");
             availableIngredientsContainer.getChildren().add(noIngredients);
             return;
         }
-        visible.forEach(ingredient -> {
-            Button option = new Button(ingredient.getName());
-            option.setOnAction(ignored -> selectIngredient(ingredient));
-            option.getStyleClass().add("ingredient-option");
-            availableIngredientsContainer.getChildren().add(option);
+        groups.forEach(group -> {
+            FlowPane ingredientOptions = new FlowPane(10, 10);
+            ingredientOptions.getStyleClass().add("ingredient-category-options");
+            group.ingredients().forEach(ingredient -> {
+                Button option = new Button(ingredient.getName());
+                option.setOnAction(ignored -> selectIngredient(ingredient));
+                option.getStyleClass().add("ingredient-option");
+                ingredientOptions.getChildren().add(option);
+            });
+            TitledPane categoryPane = new TitledPane(
+                    group.category().getName(), ingredientOptions);
+            categoryPane.setAnimated(true);
+            categoryPane.setCollapsible(true);
+            categoryPane.setExpanded(
+                    IngredientCategoryGrouping.shouldExpandForFilter(filter));
+            categoryPane.setMaxWidth(Double.MAX_VALUE);
+            categoryPane.getStyleClass().addAll(
+                    "expandable-card", "ingredient-category-pane");
+            availableIngredientsContainer.getChildren().add(categoryPane);
         });
     }
 

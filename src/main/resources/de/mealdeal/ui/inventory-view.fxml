@@ -22,7 +22,7 @@
                 </VBox>
 
                 <VBox maxWidth="1.7976931348623157E308" spacing="14.0"
-                      styleClass="card, wide-card, inventory-add-card">
+                      styleClass="content-card, inventory-add-card">
                     <Label text="Bestand hinzufügen" styleClass="card-title"/>
                     <FlowPane hgap="12.0" vgap="10.0" alignment="CENTER_LEFT">
                         <ComboBox fx:id="ingredientBox" promptText="Zutat auswählen"
@@ -42,14 +42,14 @@
                 <VBox fx:id="categoryContainer" spacing="16.0"/>
 
                 <VBox fx:id="emptyState" alignment="CENTER" spacing="8.0"
-                      styleClass="card, inventory-state">
+                      styleClass="content-card, inventory-state">
                     <Label text="Noch kein Inventar erfasst." styleClass="card-title"/>
                     <Label text="Füge oben deinen ersten vorhandenen Bestand hinzu."
                            textAlignment="CENTER" wrapText="true" styleClass="card-text"/>
                 </VBox>
 
                 <VBox fx:id="loadErrorState" alignment="CENTER" managed="false" visible="false"
-                      spacing="10.0" styleClass="card, inventory-state, error-state-card">
+                      spacing="10.0" styleClass="content-card, inventory-state, error-state-card">
                     <Label text="Inventar konnte nicht geladen werden." styleClass="card-title"/>
                     <Label fx:id="loadErrorMessage" textAlignment="CENTER"
                            wrapText="true" styleClass="card-text"/>

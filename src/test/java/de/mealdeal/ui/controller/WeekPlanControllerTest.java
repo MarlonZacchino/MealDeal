@@ -15,6 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class WeekPlanControllerTest {
 
@@ -31,6 +32,12 @@ class WeekPlanControllerTest {
         controller.openRecipe(recipe);
 
         assertSame(recipe, navigatedRecipe.get());
+    }
+
+    @Test
+    void formatsServingCountForCompactViewRows() {
+        assertEquals("1 Person", WeekPlanController.servingCountText(1));
+        assertEquals("2 Personen", WeekPlanController.servingCountText(2));
     }
 
     private static final class EmptyMealPlanRepository implements MealPlanRepository {

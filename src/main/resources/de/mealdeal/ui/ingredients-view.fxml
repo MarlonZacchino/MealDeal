@@ -26,7 +26,7 @@
                                 text="Zentrale Zutaten bearbeiten"
                                 collapsible="true" expanded="true"
                                 maxWidth="1.7976931348623157E308"
-                                styleClass="expandable-pane, ingredient-management-pane">
+                                styleClass="expandable-card, ingredient-management-pane">
                         <content>
                             <VBox spacing="14.0" styleClass="inventory-category-management-content">
                                 <Label text="Name und Kategorie ändern" styleClass="card-title"/>
@@ -43,7 +43,7 @@
                                 text="Zutatenkategorien verwalten"
                                 collapsible="true" expanded="false"
                                 maxWidth="1.7976931348623157E308"
-                                styleClass="expandable-pane, ingredient-management-pane">
+                                styleClass="expandable-card, ingredient-management-pane">
                         <content>
                             <VBox spacing="14.0" styleClass="inventory-category-management-content">
                                 <Label text="Kategorien" styleClass="card-title"/>
@@ -65,7 +65,7 @@
                 </VBox>
 
                 <VBox fx:id="loadErrorState" alignment="CENTER" managed="false" visible="false"
-                      spacing="10.0" styleClass="card, inventory-state, error-state-card">
+                      spacing="10.0" styleClass="content-card, inventory-state, error-state-card">
                     <Label text="Zutaten konnten nicht geladen werden." styleClass="card-title"/>
                     <Label fx:id="loadErrorMessage" textAlignment="CENTER"
                            wrapText="true" styleClass="card-text"/>

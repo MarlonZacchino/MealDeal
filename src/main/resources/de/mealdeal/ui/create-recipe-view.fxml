@@ -26,7 +26,7 @@
                 <Label fx:id="formMessage" managed="false" visible="false"
                        wrapText="true" styleClass="form-message"/>
 
-                <VBox spacing="18.0" styleClass="card, form-section-card">
+                <VBox spacing="18.0" styleClass="content-card, form-section-card">
                     <Label text="Allgemein" styleClass="card-title"/>
                     <HBox spacing="18.0">
                         <VBox spacing="7.0" HBox.hgrow="ALWAYS" styleClass="form-field">
@@ -62,25 +62,27 @@
                                 <TextField fx:id="bakingTimeField" promptText="z. B. 30"
                                            maxWidth="1.7976931348623157E308"/>
                             </VBox>
+                            <VBox spacing="6.0" HBox.hgrow="ALWAYS" styleClass="form-field">
+                                <Label text="Ruhezeit" styleClass="form-label"/>
+                                <TextField fx:id="restingTimeField" promptText="z. B. 20"
+                                           maxWidth="1.7976931348623157E308"/>
+                            </VBox>
                         </HBox>
                     </VBox>
                 </VBox>
 
-                <VBox spacing="16.0" styleClass="card, form-section-card">
-                    <HBox alignment="CENTER_LEFT" spacing="12.0">
-                        <VBox spacing="4.0">
-                            <Label text="Zutaten" styleClass="card-title"/>
-                            <Label text="Pro Zutatengruppe kannst du Alternativen mit eigener Menge und Einheit ergänzen."
-                                   wrapText="true" styleClass="card-text"/>
-                        </VBox>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Button text="Zutatengruppe hinzufügen" onAction="#addIngredientRow"
-                                styleClass="secondary-button"/>
-                    </HBox>
+                <VBox spacing="16.0" styleClass="content-card, form-section-card">
+                    <VBox spacing="4.0">
+                        <Label text="Zutaten" styleClass="card-title"/>
+                        <Label text="Pro Zutat kannst du Alternativen mit eigener Menge und Einheit ergänzen."
+                               wrapText="true" styleClass="card-text"/>
+                    </VBox>
                     <VBox fx:id="ingredientRowsContainer" spacing="12.0"/>
+                    <Button text="Zutat hinzufügen" onAction="#addIngredientRow"
+                            maxWidth="1.7976931348623157E308" styleClass="secondary-button"/>
                 </VBox>
 
-                <VBox spacing="16.0" styleClass="card, form-section-card">
+                <VBox spacing="16.0" styleClass="content-card, form-section-card">
                     <Label text="Geschmacksrichtung" styleClass="card-title"/>
                     <Label text="Wähle mindestens eine Geschmacksrichtung aus."
                            wrapText="true" styleClass="card-text"/>
@@ -94,7 +96,7 @@
                     </HBox>
                 </VBox>
 
-                <VBox spacing="12.0" styleClass="card, form-section-card">
+                <VBox spacing="12.0" styleClass="content-card, form-section-card">
                     <VBox spacing="4.0">
                         <Label text="Nährwerte pro Portion" styleClass="card-title"/>
                         <Label text="Optional: Angaben gelten immer für eine Portion."
@@ -126,7 +128,7 @@
                     </HBox>
                 </VBox>
 
-                <VBox spacing="16.0" styleClass="card, form-section-card">
+                <VBox spacing="16.0" styleClass="content-card, form-section-card">
                     <HBox alignment="CENTER_LEFT" spacing="12.0">
                         <VBox spacing="4.0">
                             <Label text="Zubereitung" styleClass="card-title"/>

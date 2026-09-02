@@ -78,15 +78,24 @@ class FxmlResourceTest {
                     < fxml.indexOf("fx:id=\"tasteAndMode\""));
             assertTrue(fxml.indexOf("fx:id=\"tasteRankingMode\"")
                     < fxml.indexOf("text=\"Gericht finden\""));
+            assertTrue(fxml.indexOf("text=\"Gericht finden\"")
+                    < fxml.indexOf("text=\"Alle Filter zurücksetzen\""));
+            assertTrue(fxml.contains("<HBox alignment=\"CENTER_RIGHT\" spacing=\"12.0\">"));
+            assertFalse(fxml.contains("styleClass=\"search-actions\""));
+            assertFalse(css.contains(".search-actions"));
             assertTrue(fxml.contains("onAction=\"#resetFilters\""));
             assertTrue(fxml.contains("styleClass=\"secondary-button, search-reset-button\""));
             assertTrue(fxml.contains("onAction=\"#search\""));
             assertTrue(fxml.contains("fx:id=\"resultsContainer\" alignment=\"TOP_LEFT\""));
+            assertTrue(fxml.contains("fx:id=\"availableIngredientsContainer\" spacing=\"10.0\""));
             assertTrue(fxml.contains("VBox.vgrow=\"NEVER\""));
             assertTrue(css.contains(".search-result-item {"));
             assertTrue(css.contains("-fx-max-height: -1"));
-            assertTrue(css.contains(".search-options-pane > .title"));
-            assertTrue(css.contains(".search-options-pane:expanded > .title"));
+            assertTrue(css.contains(".expandable-card > .title"));
+            assertTrue(css.contains(".ingredient-category-pane > .title"));
+            assertTrue(css.contains(".ingredient-category-options .ingredient-option"));
+            assertTrue(css.contains(".ingredient-category-options .ingredient-option:hover"));
+            assertTrue(css.contains(".selected-ingredient-chip"));
         }
     }
 
@@ -132,15 +141,37 @@ class FxmlResourceTest {
         assertTrue(fxml.indexOf("fx:id=\"weekOverviewContainer\"") < weekPaneEnd);
         assertTrue(fxml.substring(weekPaneStart, weekPaneEnd).contains("expanded=\"false\""));
         assertTrue(fxml.substring(weekPaneStart, weekPaneEnd)
-                .contains("styleClass=\"expandable-pane, home-week-pane\""));
+                .contains("styleClass=\"expandable-card, home-week-pane\""));
+        int searchTitle = fxml.indexOf("text=\"Was möchtest du essen?\"");
+        int recipesTitle = fxml.indexOf("text=\"Meine Gerichte\"");
+        int todayTitle = fxml.indexOf("text=\"Heute\"");
+        int weekTitle = fxml.indexOf("<TitledPane text=\"Wochenplan\"");
+        assertTrue(searchTitle < recipesTitle);
+        assertTrue(recipesTitle < todayTitle);
+        assertTrue(todayTitle < weekTitle);
+        assertEquals(3, fxml.split("styleClass=\"content-card-header\"", -1).length - 1);
+        assertEquals(3, fxml.split("styleClass=\"content-card-header-title\"", -1).length - 1);
+        assertEquals(3, fxml.split("styleClass=\"content-card-body\"", -1).length - 1);
+        assertEquals(1, fxml.split("<TitledPane", -1).length - 1);
+        assertFalse(fxml.contains("text=\"Heute\" styleClass=\"section-title\""));
+        assertFalse(fxml.contains("text=\"Meine Gerichte\" styleClass=\"section-title\""));
+        assertFalse(fxml.contains("styleClass=\"dashboard-section"));
         assertFalse(fxml.contains("styleClass=\"page-header\""));
         assertFalse(fxml.contains("styleClass=\"page-title\""));
         assertFalse(fxml.contains("styleClass=\"page-subtitle\""));
-        assertTrue(fxml.indexOf("text=\"Was möchtest du essen?\"")
-                < fxml.indexOf("text=\"Heute\""));
+        assertTrue(fxml.contains("onAction=\"#openRecipes\""));
+        assertTrue(fxml.contains("onAction=\"#openCreateRecipe\""));
+        assertEquals(2, fxml.split("onAction=\"#openWeekPlan\"", -1).length - 1);
         assertTrue(css.contains(".home-plan-main-entry"));
         assertTrue(css.contains(".home-plan-side-entry"));
         assertTrue(css.contains(".home-week-day"));
+        assertTrue(Pattern.compile(
+                "\\.content-card-header-title,\\s*\\.home-week-pane > \\.title\\s*\\{")
+                .matcher(css).find());
+        assertTrue(css.contains(".content-card-header {"));
+        assertTrue(css.contains(".content-card-body {"));
+        assertTrue(css.contains(".root-shell.viewport-wide .content-card-header-title"));
+        assertTrue(css.contains(".root-shell.viewport-extra-wide .content-card-header-title"));
     }
 
     @Test
@@ -150,6 +181,7 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:id=\"preparationTimeField\""));
         assertTrue(fxml.contains("fx:id=\"cookingTimeField\""));
         assertTrue(fxml.contains("fx:id=\"bakingTimeField\""));
+        assertTrue(fxml.contains("fx:id=\"restingTimeField\""));
         assertFalse(fxml.contains("totalTimeField"));
         assertTrue(fxml.contains("Zeitangaben (optional, in Minuten)"));
         assertTrue(fxml.contains("fx:id=\"caloriesField\""));
@@ -159,7 +191,9 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("Nährwerte pro Portion"));
         assertTrue(fxml.contains("fx:id=\"dishTypeBox\""));
         assertTrue(fxml.contains("text=\"Gerichtstyp\""));
-        assertTrue(fxml.contains("Zutatengruppe hinzufügen"));
+        assertTrue(fxml.contains("Zutat hinzufügen"));
+        assertTrue(fxml.indexOf("fx:id=\"ingredientRowsContainer\"")
+                < fxml.indexOf("text=\"Zutat hinzufügen\""));
         assertTrue(fxml.contains("Alternativen mit eigener Menge und Einheit"));
         assertTrue(fxml.indexOf("text=\"Allgemein\"") < fxml.indexOf("text=\"Zutaten\""));
         assertTrue(fxml.indexOf("text=\"Zutaten\"")
@@ -212,9 +246,13 @@ class FxmlResourceTest {
         assertTrue(css.contains(".root-shell.viewport-wide .page-container"));
         assertTrue(css.contains(".root-shell.viewport-extra-wide .page-container"));
         assertTrue(css.contains("-fx-max-width: 1640px"));
-        assertTrue(css.contains(".expandable-pane > .title"));
+        assertTrue(css.contains(".content-card"));
+        assertTrue(css.contains(".sub-card"));
+        assertTrue(css.contains(".expandable-card > .title"));
+        assertFalse(css.contains("\n.card {"));
+        assertFalse(css.contains(".expandable-pane"));
         assertTrue(css.contains("-fx-background-color: -md-accent"));
-        assertTrue(css.contains(".expandable-pane > .title > .arrow-button .arrow"));
+        assertTrue(css.contains(".expandable-card > .title > .arrow-button .arrow"));
     }
 
     @Test
@@ -241,13 +279,38 @@ class FxmlResourceTest {
         assertTrue(css.contains(".meal-plan-day-today"));
         assertTrue(css.contains(".meal-plan-controls"));
         assertTrue(css.contains(".meal-plan-role-section"));
+        assertTrue(css.contains(".meal-plan-main-row"));
         assertTrue(css.contains(".meal-plan-side-row"));
         assertTrue(css.contains(".meal-plan-dessert-row"));
+        assertTrue(css.contains(".meal-plan-role-header"));
+        assertTrue(css.contains(".meal-plan-view-row"));
+        assertTrue(css.contains(".meal-plan-serving-text"));
+        assertTrue(css.contains(".meal-plan-day-edit-button"));
+        assertTrue(Pattern.compile(
+                "\\.meal-plan-main-row,\\s*\\.meal-plan-side-row,\\s*"
+                        + "\\.meal-plan-dessert-row\\s*\\{")
+                .matcher(css).find());
+        assertTrue(css.contains(".combo-box > .list-cell"));
+        assertTrue(css.contains(".spinner > .text-field"));
+        assertTrue(Pattern.compile(
+                "\\.combo-box > \\.list-cell,\\s*"
+                        + "\\.combo-box-base > \\.text-field,\\s*"
+                        + "\\.spinner > \\.text-field\\s*\\{[^}]*"
+                        + "-fx-background-color: transparent;[^}]*"
+                        + "-fx-border-color: transparent;",
+                Pattern.DOTALL).matcher(css).find());
+        assertTrue(css.contains(".combo-box-base > .arrow-button"));
+        assertTrue(css.contains(".spinner > .increment-arrow-button"));
+        assertTrue(css.contains(".searchable-combo-box"));
         assertTrue(css.contains(".meal-plan-day-card > .title"));
         assertTrue(css.contains(".meal-plan-day-summary"));
+        assertTrue(Pattern.compile(
+                "\\.meal-plan-day-name,\\s*\\.meal-plan-day-summary\\s*\\{")
+                .matcher(css).find());
+        assertTrue(css.contains("-fx-font-size: 23px"));
         assertFalse(css.contains("viewport-wide .meal-plan-days"));
         assertFalse(css.contains("viewport-extra-wide .meal-plan-days"));
-        assertTrue(css.contains(".home-week-pane > *.content"));
+        assertTrue(css.contains(".expandable-card > *.content"));
         assertTrue(css.contains(".home-plan-dessert-entry"));
     }
 
@@ -322,7 +385,11 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:id=\"categoryNameField\""));
         assertTrue(fxml.contains("onAction=\"#addCategory\""));
         assertTrue(fxml.contains("fx:id=\"categoryManagementContainer\""));
-        assertEquals(2, fxml.split("styleClass=\"expandable-pane, ingredient-management-pane\"", -1).length - 1);
+        assertEquals(2, fxml.split("styleClass=\"expandable-card, ingredient-management-pane\"", -1).length - 1);
+        String css = readResource("/de/mealdeal/ui/styles.css");
+        assertTrue(css.contains(".ingredient-category-pane > .title"));
+        assertTrue(css.contains(".ingredient-category-content"));
+        assertFalse(css.contains(".inventory-ingredient-category-badge"));
         assertControllerWiring(fxml, IngredientsController.class);
     }
 

@@ -59,7 +59,7 @@ final class IngredientGroupFormRow {
         container.getStyleClass().add("ingredient-group-form");
 
         Label title = new Label("Zutat");
-        title.getStyleClass().add("form-label");
+        title.getStyleClass().add("ingredient-group-title");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         removeGroupButton.getStyleClass().add("danger-button");

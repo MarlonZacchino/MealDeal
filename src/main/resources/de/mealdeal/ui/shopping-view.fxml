@@ -22,7 +22,7 @@
                            wrapText="true" styleClass="page-subtitle"/>
                 </VBox>
                 <VBox maxWidth="1.7976931348623157E308" spacing="16.0"
-                      styleClass="card, wide-card, shopping-mode-card">
+                      styleClass="content-card, shopping-mode-card">
                     <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="shopping-mode-switch">
                         <ToggleButton fx:id="todayMode" text="Heute" selected="true"
                                       onAction="#showToday" styleClass="shopping-mode-button"/>
@@ -44,7 +44,7 @@
                 </VBox>
 
                 <VBox maxWidth="1.7976931348623157E308" spacing="14.0"
-                      styleClass="card, wide-card, shopping-results-card">
+                      styleClass="content-card, shopping-results-card">
                     <VBox fx:id="itemsContainer" managed="false" visible="false" spacing="8.0"/>
 
                     <VBox fx:id="emptyState" alignment="CENTER" spacing="8.0"

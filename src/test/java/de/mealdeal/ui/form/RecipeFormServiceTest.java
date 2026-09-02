@@ -224,6 +224,22 @@ class RecipeFormServiceTest {
     }
 
     @Test
+    void createsRecipeWithOnlyRestingTime() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+        RecipeFormInput input = new RecipeFormInput("Brotzeit", "2",
+                List.of(new IngredientFormInput("Brot", "2", Unit.PIECE)), List.of(),
+                List.of("Herzhaft"), List.of(), "", "", "", "35",
+                "", "", "", "", DishType.MAIN);
+
+        Recipe recipe = service.createAndSave(input);
+
+        assertEquals(35, recipe.getRestingTimeMinutes().orElseThrow());
+        assertEquals(35, recipe.getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
     void updatesAllRecipeValuesAndKeepsUuid() {
         MemoryIngredientRepository ingredients = new MemoryIngredientRepository();
         MemoryTasteRepository tastes = new MemoryTasteRepository();

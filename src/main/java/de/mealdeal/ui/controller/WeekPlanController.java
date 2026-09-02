@@ -8,9 +8,9 @@ import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.service.MealPlanDay;
 import de.mealdeal.service.WeeklyMealPlanDayDraft;
 import de.mealdeal.service.WeeklyMealPlanService;
+import de.mealdeal.ui.control.SearchableComboBoxSupport;
 import de.mealdeal.ui.navigation.NavigationAware;
 import de.mealdeal.ui.navigation.ViewNavigator;
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -24,7 +24,6 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
@@ -49,12 +48,6 @@ public final class WeekPlanController implements NavigationAware {
             DateTimeFormatter.ofPattern("EEEE", Locale.GERMAN);
     private static final DateTimeFormatter FULL_DATE =
             DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMAN);
-    private static final StringConverter<Recipe> RECIPE_CONVERTER = new StringConverter<>() {
-        @Override public String toString(Recipe recipe) { return recipe == null ? "" : recipe.getName(); }
-        @Override public Recipe fromString(String value) {
-            throw new UnsupportedOperationException("Recipe selection is not editable.");
-        }
-    };
     private static final StringConverter<RecipeIngredientOption> OPTION_CONVERTER =
             new StringConverter<>() {
                 @Override public String toString(RecipeIngredientOption option) {
@@ -178,7 +171,7 @@ public final class WeekPlanController implements NavigationAware {
         content.getChildren().addAll(mainSection(day.date(), draft),
                 sideSection(day.date(), draft), dessertSection(day.date(), draft), localChangeNote);
 
-        HBox title = dayHeader(day, viewState.summary(draft));
+        VBox title = dayHeader(day, viewState.summary(draft), viewState);
         title.setMinWidth(0);
         title.setMaxWidth(Double.MAX_VALUE);
         title.getStyleClass().add("meal-plan-day-title");
@@ -189,7 +182,7 @@ public final class WeekPlanController implements NavigationAware {
         card.setExpanded(viewState.isExpanded());
         card.setAnimated(true);
         card.setMaxWidth(Double.MAX_VALUE);
-        card.getStyleClass().addAll("card", "expandable-pane", "meal-plan-day-card");
+        card.getStyleClass().addAll("expandable-card", "meal-plan-day-card");
         if (day.today()) {
             card.getStyleClass().add("meal-plan-day-today");
         }
@@ -198,58 +191,87 @@ public final class WeekPlanController implements NavigationAware {
         return card;
     }
 
-    private HBox dayHeader(MealPlanDay day, String summaryText) {
+    private VBox dayHeader(MealPlanDay day, String summaryText,
+                           WeekPlanDayViewState viewState) {
         Label dayName = new Label(titleCase(DAY_NAME.format(day.date())));
         dayName.getStyleClass().add("meal-plan-day-name");
         Label date = new Label(FULL_DATE.format(day.date()));
         date.getStyleClass().add("meal-plan-date");
 
-        VBox dateBlock = new VBox(3, dayName, date);
         Label summary = new Label(summaryText);
         summary.setMinWidth(0);
         summary.setMaxWidth(Double.MAX_VALUE);
         summary.setWrapText(true);
         summary.getStyleClass().add("meal-plan-day-summary");
-        StackPane summaryContainer = new StackPane(summary);
-        summaryContainer.setAlignment(Pos.CENTER_LEFT);
-        summaryContainer.setMinWidth(0);
-        summaryContainer.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(summaryContainer, Priority.ALWAYS);
+        HBox.setHgrow(summary, Priority.ALWAYS);
 
-        HBox header = new HBox(20, dateBlock, summaryContainer);
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.setMinWidth(0);
-        header.setMaxWidth(Double.MAX_VALUE);
+        HBox topRow = new HBox(20, dayName, summary);
+        topRow.setAlignment(Pos.BASELINE_LEFT);
+        topRow.setMinWidth(0);
+        topRow.setMaxWidth(Double.MAX_VALUE);
+        topRow.getStyleClass().add("meal-plan-day-top-row");
         if (day.today()) {
             Label today = new Label("Heute");
             today.getStyleClass().add("meal-plan-today-badge");
-            header.getChildren().add(today);
+            topRow.getChildren().add(today);
         }
+        Button edit = secondaryButton(viewState.isEditing() ? "Fertig" : "Bearbeiten", () -> {
+            viewState.setEditing(!viewState.isEditing());
+            rerenderDay(day.date());
+        });
+        edit.getStyleClass().add("meal-plan-day-edit-button");
+        topRow.getChildren().add(edit);
+
+        VBox header = new VBox(3, topRow, date);
+        header.setMinWidth(0);
+        header.setMaxWidth(Double.MAX_VALUE);
         return header;
     }
 
     private VBox mainSection(LocalDate date, WeeklyMealPlanDayDraft draft) {
         VBox section = new VBox(10);
         section.getStyleClass().add("meal-plan-role-section");
-        Label title = new Label("Hauptgericht");
-        title.getStyleClass().add("section-title");
+        WeekPlanDayViewState viewState = dayViewStates.get(date);
         MealPlanEntry entry = draft.getMainEntry().orElse(null);
-        if (entry == null) {
-            Label empty = new Label("Kein Hauptgericht geplant.");
-            empty.getStyleClass().add("card-text");
-            section.getChildren().add(empty);
-        } else {
-            section.getChildren().add(recipeLink(entry));
-        }
+        HBox header = roleHeader("Hauptgericht");
+        section.getChildren().add(header);
 
+        if (entry == null) {
+            if (viewState.isEditing()) {
+                ComboBox<Recipe> selection = recipeBox(mainRecipes, "Hauptgericht auswählen");
+                selection.valueProperty().addListener((ignored, previous, selected) -> {
+                    if (selected != null) {
+                        draft.setMainRecipe(selected);
+                        rerenderDay(date);
+                    }
+                });
+                section.getChildren().add(selection);
+            } else {
+                Label empty = new Label("Kein Hauptgericht geplant.");
+                empty.getStyleClass().add("card-text");
+                section.getChildren().add(empty);
+            }
+        } else if (viewState.isEditing()) {
+            section.getChildren().add(mainEditRow(date, draft, entry, viewState));
+        } else {
+            section.getChildren().add(viewEntryRow(entry, "meal-plan-main-row", () -> {
+                draft.setMainRecipe(null);
+                rerenderDay(date);
+            }));
+        }
+        return section;
+    }
+
+    private VBox mainEditRow(LocalDate date, WeeklyMealPlanDayDraft draft,
+                             MealPlanEntry entry, WeekPlanDayViewState viewState) {
         ComboBox<Recipe> selection = recipeBox(mainRecipes, "Hauptgericht auswählen");
-        selection.setValue(entry == null ? null : entry.getRecipe());
-        Spinner<Integer> servings = servingSpinner(entry == null
-                ? Recipe.DEFAULT_SERVING_COUNT : entry.getServingCount());
-        servings.setDisable(entry == null);
+        selection.setValue(entry.getRecipe());
+        Spinner<Integer> servings = servingSpinner(entry.getServingCount());
         selection.valueProperty().addListener((ignored, previous, selected) -> {
-            draft.setMainRecipe(selected);
-            rerenderDay(date);
+            if (selected != null) {
+                draft.setMainRecipe(selected);
+                rerenderDay(date);
+            }
         });
         servings.valueProperty().addListener((ignored, previous, selected) -> {
             if (draft.getMainEntry().isPresent()) {
@@ -257,51 +279,34 @@ public final class WeekPlanController implements NavigationAware {
                 rerenderDay(date);
             }
         });
-
-        FlowPane controls = controls(labeledControl("Hauptgericht", selection),
-                labeledControl("Personen", servings));
-        if (entry != null) {
-            Button remove = new Button("Hauptgericht entfernen");
-            remove.getStyleClass().add("danger-button");
-            remove.setOnAction(ignored -> {
-                draft.setMainRecipe(null);
-                rerenderDay(date);
-            });
-            controls.getChildren().add(remove);
-        }
-        section.getChildren().add(controls);
-        if (entry != null) {
-            VBox alternatives = alternativeSelections(entry, (groupId, optionId) -> {
-                draft.setMainIngredientOption(groupId, optionId);
-                rerenderDay(date);
-            });
-            if (!alternatives.getChildren().isEmpty()) {
-                section.getChildren().add(alternatives);
-            }
-        }
-        return section;
+        Button remove = removeButton(() -> {
+            draft.setMainRecipe(null);
+            rerenderDay(date);
+        });
+        FlowPane controls = controls(labeledControl("Gericht", selection),
+                labeledControl("Personen", servings), remove);
+        VBox alternatives = alternativeSelections(entry, (groupId, optionId) -> {
+            draft.setMainIngredientOption(groupId, optionId);
+            rerenderDay(date);
+        });
+        return editEntryRow(controls, alternatives, "meal-plan-main-row");
     }
 
     private VBox sideSection(LocalDate date, WeeklyMealPlanDayDraft draft) {
         VBox section = new VBox(10);
         section.getStyleClass().add("meal-plan-role-section");
-        HBox header = new HBox();
-        header.setAlignment(Pos.CENTER_LEFT);
-        Label title = new Label("Beilagen");
-        title.getStyleClass().add("section-title");
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        Button add = new Button("Beilage hinzufügen");
-        add.getStyleClass().add("secondary-button");
-        add.setDisable(sideRecipes.isEmpty());
-        add.setOnAction(ignored -> {
+        WeekPlanDayViewState viewState = dayViewStates.get(date);
+        boolean hasEntries = !draft.getSideEntries().isEmpty();
+        Button add = secondaryButton("+ Beilage hinzufügen", () -> {
             draft.addSide(sideRecipes.getFirst());
             rerenderDay(date);
         });
-        header.getChildren().addAll(title, spacer, add);
+        add.setDisable(sideRecipes.isEmpty());
+        HBox header = viewState.isEditing()
+                ? roleHeader("Beilagen", add) : roleHeader("Beilagen");
         section.getChildren().add(header);
 
-        if (draft.getSideEntries().isEmpty()) {
+        if (!hasEntries) {
             Label empty = new Label(sideRecipes.isEmpty()
                     ? "Keine Beilagen-Rezepte verfügbar." : "Keine Beilage geplant.");
             empty.getStyleClass().add("card-text");
@@ -309,14 +314,26 @@ public final class WeekPlanController implements NavigationAware {
         } else {
             VBox rows = new VBox(10);
             for (int index = 0; index < draft.getSideEntries().size(); index++) {
-                rows.getChildren().add(sideRow(date, draft, index));
+                rows.getChildren().add(viewState.isEditing()
+                        ? sideEditRow(date, draft, index, viewState)
+                        : sideViewRow(date, draft, index, viewState));
             }
             section.getChildren().add(rows);
         }
         return section;
     }
 
-    private VBox sideRow(LocalDate date, WeeklyMealPlanDayDraft draft, int index) {
+    private HBox sideViewRow(LocalDate date, WeeklyMealPlanDayDraft draft, int index,
+                            WeekPlanDayViewState viewState) {
+        MealPlanEntry side = draft.getSideEntries().get(index);
+        return viewEntryRow(side, "meal-plan-side-row", () -> {
+            draft.removeSide(index);
+            rerenderDay(date);
+        });
+    }
+
+    private VBox sideEditRow(LocalDate date, WeeklyMealPlanDayDraft draft, int index,
+                             WeekPlanDayViewState viewState) {
         MealPlanEntry side = draft.getSideEntries().get(index);
         ComboBox<Recipe> selection = recipeBox(sideRecipes, "Beilage auswählen");
         selection.setValue(side.getRecipe());
@@ -339,44 +356,35 @@ public final class WeekPlanController implements NavigationAware {
         down.setDisable(index == draft.getSideEntries().size() - 1);
         down.setAccessibleText("Beilage nach unten verschieben");
         down.setOnAction(ignored -> { draft.moveSideDown(index); rerenderDay(date); });
-        Button remove = new Button("Entfernen");
-        remove.getStyleClass().add("danger-button");
-        remove.setOnAction(ignored -> { draft.removeSide(index); rerenderDay(date); });
+        Button remove = removeButton(() -> {
+            draft.removeSide(index);
+            rerenderDay(date);
+        });
 
-        FlowPane controls = controls(labeledControl("Beilage", selection),
+        FlowPane controls = controls(labeledControl("Gericht", selection),
                 labeledControl("Personen", servings), up, down, remove);
-        VBox row = new VBox(7, recipeLink(side), controls);
         VBox alternatives = alternativeSelections(side, (groupId, optionId) -> {
             draft.setSideIngredientOption(index, groupId, optionId);
             rerenderDay(date);
         });
-        if (!alternatives.getChildren().isEmpty()) {
-            row.getChildren().add(alternatives);
-        }
-        row.getStyleClass().add("meal-plan-side-row");
-        return row;
+        return editEntryRow(controls, alternatives, "meal-plan-side-row");
     }
 
     private VBox dessertSection(LocalDate date, WeeklyMealPlanDayDraft draft) {
         VBox section = new VBox(10);
         section.getStyleClass().add("meal-plan-role-section");
-        HBox header = new HBox();
-        header.setAlignment(Pos.CENTER_LEFT);
-        Label title = new Label("Nachtische");
-        title.getStyleClass().add("section-title");
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        Button add = new Button("Nachtisch hinzufügen");
-        add.getStyleClass().add("secondary-button");
-        add.setDisable(dessertRecipes.isEmpty());
-        add.setOnAction(ignored -> {
+        WeekPlanDayViewState viewState = dayViewStates.get(date);
+        boolean hasEntries = !draft.getDessertEntries().isEmpty();
+        Button add = secondaryButton("+ Nachtisch hinzufügen", () -> {
             draft.addDessert(dessertRecipes.getFirst());
             rerenderDay(date);
         });
-        header.getChildren().addAll(title, spacer, add);
+        add.setDisable(dessertRecipes.isEmpty());
+        HBox header = viewState.isEditing()
+                ? roleHeader("Nachtische", add) : roleHeader("Nachtische");
         section.getChildren().add(header);
 
-        if (draft.getDessertEntries().isEmpty()) {
+        if (!hasEntries) {
             Label empty = new Label(dessertRecipes.isEmpty()
                     ? "Keine Nachtisch-Rezepte verfügbar." : "Kein Nachtisch geplant.");
             empty.getStyleClass().add("card-text");
@@ -384,14 +392,26 @@ public final class WeekPlanController implements NavigationAware {
         } else {
             VBox rows = new VBox(10);
             for (int index = 0; index < draft.getDessertEntries().size(); index++) {
-                rows.getChildren().add(dessertRow(date, draft, index));
+                rows.getChildren().add(viewState.isEditing()
+                        ? dessertEditRow(date, draft, index, viewState)
+                        : dessertViewRow(date, draft, index, viewState));
             }
             section.getChildren().add(rows);
         }
         return section;
     }
 
-    private VBox dessertRow(LocalDate date, WeeklyMealPlanDayDraft draft, int index) {
+    private HBox dessertViewRow(LocalDate date, WeeklyMealPlanDayDraft draft, int index,
+                               WeekPlanDayViewState viewState) {
+        MealPlanEntry dessert = draft.getDessertEntries().get(index);
+        return viewEntryRow(dessert, "meal-plan-dessert-row", () -> {
+            draft.removeDessert(index);
+            rerenderDay(date);
+        });
+    }
+
+    private VBox dessertEditRow(LocalDate date, WeeklyMealPlanDayDraft draft, int index,
+                                WeekPlanDayViewState viewState) {
         MealPlanEntry dessert = draft.getDessertEntries().get(index);
         ComboBox<Recipe> selection = recipeBox(dessertRecipes, "Nachtisch auswählen");
         selection.setValue(dessert.getRecipe());
@@ -414,22 +434,73 @@ public final class WeekPlanController implements NavigationAware {
         down.setDisable(index == draft.getDessertEntries().size() - 1);
         down.setAccessibleText("Nachtisch nach unten verschieben");
         down.setOnAction(ignored -> { draft.moveDessertDown(index); rerenderDay(date); });
-        Button remove = new Button("Entfernen");
-        remove.getStyleClass().add("danger-button");
-        remove.setOnAction(ignored -> { draft.removeDessert(index); rerenderDay(date); });
+        Button remove = removeButton(() -> {
+            draft.removeDessert(index);
+            rerenderDay(date);
+        });
 
-        FlowPane controls = controls(labeledControl("Nachtisch", selection),
+        FlowPane controls = controls(labeledControl("Gericht", selection),
                 labeledControl("Personen", servings), up, down, remove);
-        VBox row = new VBox(7, recipeLink(dessert), controls);
         VBox alternatives = alternativeSelections(dessert, (groupId, optionId) -> {
             draft.setDessertIngredientOption(index, groupId, optionId);
             rerenderDay(date);
         });
+        return editEntryRow(controls, alternatives, "meal-plan-dessert-row");
+    }
+
+    private static HBox roleHeader(String titleText, Button... actions) {
+        Label title = new Label(titleText);
+        title.getStyleClass().add("section-title");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox header = new HBox(10, title, spacer);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setMaxWidth(Double.MAX_VALUE);
+        header.getStyleClass().add("meal-plan-role-header");
+        header.getChildren().addAll(actions);
+        return header;
+    }
+
+    private HBox viewEntryRow(MealPlanEntry entry, String roleStyleClass,
+                              Runnable removeAction) {
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Label servings = new Label(servingCountText(entry.getServingCount()));
+        servings.getStyleClass().add("meal-plan-serving-text");
+        HBox row = new HBox(16, recipeLink(entry), spacer, servings,
+                removeButton(removeAction));
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setMaxWidth(Double.MAX_VALUE);
+        row.getStyleClass().addAll(roleStyleClass, "meal-plan-view-row");
+        return row;
+    }
+
+    private static VBox editEntryRow(FlowPane controls, VBox alternatives,
+                                     String roleStyleClass) {
+        VBox row = new VBox(7, controls);
         if (!alternatives.getChildren().isEmpty()) {
             row.getChildren().add(alternatives);
         }
-        row.getStyleClass().add("meal-plan-dessert-row");
+        row.getStyleClass().addAll(roleStyleClass, "meal-plan-edit-row");
         return row;
+    }
+
+    private static Button secondaryButton(String text, Runnable action) {
+        Button button = new Button(text);
+        button.getStyleClass().add("secondary-button");
+        button.setOnAction(ignored -> action.run());
+        return button;
+    }
+
+    private static Button removeButton(Runnable action) {
+        Button button = new Button("Entfernen");
+        button.getStyleClass().add("danger-button");
+        button.setOnAction(ignored -> action.run());
+        return button;
+    }
+
+    static String servingCountText(int servingCount) {
+        return servingCount + (servingCount == 1 ? " Person" : " Personen");
     }
 
     private static VBox alternativeSelections(
@@ -439,9 +510,9 @@ public final class WeekPlanController implements NavigationAware {
         entry.getRecipe().getIngredientGroups().stream()
                 .filter(group -> group.getOptions().size() > 1)
                 .forEach(group -> {
-                    ComboBox<RecipeIngredientOption> selection = new ComboBox<>(
-                            FXCollections.observableArrayList(group.getOptions()));
-                    selection.setConverter(OPTION_CONVERTER);
+                    ComboBox<RecipeIngredientOption> selection = new ComboBox<>();
+                    SearchableComboBoxSupport.forValidValues(selection, group.getOptions(),
+                            OPTION_CONVERTER::toString);
                     selection.setValue(entry.getSelectedOption(group));
                     selection.setMaxWidth(Double.MAX_VALUE);
                     selection.getStyleClass().add("meal-plan-ingredient-picker");
@@ -467,8 +538,8 @@ public final class WeekPlanController implements NavigationAware {
     }
 
     private ComboBox<Recipe> recipeBox(List<Recipe> recipes, String promptText) {
-        ComboBox<Recipe> selection = new ComboBox<>(FXCollections.observableArrayList(recipes));
-        selection.setConverter(RECIPE_CONVERTER);
+        ComboBox<Recipe> selection = new ComboBox<>();
+        SearchableComboBoxSupport.forValidValues(selection, recipes, Recipe::getName);
         selection.setPromptText(recipes.isEmpty() ? "Keine Gerichte verfügbar" : promptText);
         selection.setDisable(recipes.isEmpty());
         selection.getStyleClass().add("meal-plan-recipe-picker");

@@ -8,7 +8,7 @@ import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 12;
+    static final int CURRENT_VERSION = 13;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -133,6 +133,10 @@ final class SqliteSchema {
         }
         if (version == 11) {
             createVersion12(connection);
+            version = 12;
+        }
+        if (version == 12) {
+            createVersion13(connection);
         }
     }
 
@@ -593,6 +597,15 @@ final class SqliteSchema {
             for (String sql : statements) {
                 statement.execute(sql);
             }
+        }
+    }
+
+    /** Adds optional recipe resting time while keeping total time derived. */
+    static void createVersion13(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("ALTER TABLE recipes ADD COLUMN resting_time_minutes INTEGER "
+                    + "CHECK (resting_time_minutes > 0)");
+            statement.execute("PRAGMA user_version = 13");
         }
     }
 }

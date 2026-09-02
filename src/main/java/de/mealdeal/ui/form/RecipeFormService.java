@@ -96,7 +96,8 @@ public final class RecipeFormService {
         Recipe recipe = Recipe.withIngredientGroups(stableRecipeId, validated.name(),
                 validated.servingCount(), ingredientGroups, steps, recipeTastes,
                 validated.preparationTimeMinutes(), validated.cookingTimeMinutes(),
-                validated.bakingTimeMinutes(), validated.nutritionInfo(), validated.dishType());
+                validated.bakingTimeMinutes(), validated.restingTimeMinutes(),
+                validated.nutritionInfo(), validated.dishType());
         recipeRepository.save(recipe);
         return recipe;
     }
@@ -118,6 +119,8 @@ public final class RecipeFormService {
                 input.cookingTimeMinutes(), "Die Kochzeit", errors);
         Integer bakingTime = parseOptionalMinutes(
                 input.bakingTimeMinutes(), "Die Backzeit", errors);
+        Integer restingTime = parseOptionalMinutes(
+                input.restingTimeMinutes(), "Die Ruhezeit", errors);
         Integer calories = parseOptionalNonNegativeInteger(
                 input.caloriesKcal(), "Die Kalorien", errors);
         BigDecimal protein = parseOptionalNonNegativeDecimal(
@@ -134,7 +137,7 @@ public final class RecipeFormService {
             throw new RecipeFormValidationException(errors);
         }
         return new ValidatedForm(name, servingCount, ingredientGroups, tasteNames, steps,
-                preparationTime, cookingTime, bakingTime,
+                preparationTime, cookingTime, bakingTime, restingTime,
                 new NutritionInfo(calories, protein, carbohydrates, fat), dishType);
     }
 
@@ -356,6 +359,7 @@ public final class RecipeFormService {
                                  Integer preparationTimeMinutes,
                                  Integer cookingTimeMinutes,
                                  Integer bakingTimeMinutes,
+                                 Integer restingTimeMinutes,
                                  NutritionInfo nutritionInfo,
                                  DishType dishType) {
     }

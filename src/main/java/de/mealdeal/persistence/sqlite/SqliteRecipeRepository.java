@@ -118,15 +118,17 @@ public final class SqliteRecipeRepository implements RecipeRepository {
         String sql = """
                 INSERT INTO recipes (
                     id, name, standard_serving_count, preparation_time_minutes,
-                    cooking_time_minutes, baking_time_minutes, calories_kcal, protein_grams,
+                    cooking_time_minutes, baking_time_minutes, resting_time_minutes,
+                    calories_kcal, protein_grams,
                     carbohydrate_grams, fat_grams, dish_type)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     name = excluded.name,
                     standard_serving_count = excluded.standard_serving_count,
                     preparation_time_minutes = excluded.preparation_time_minutes,
                     cooking_time_minutes = excluded.cooking_time_minutes,
                     baking_time_minutes = excluded.baking_time_minutes,
+                    resting_time_minutes = excluded.resting_time_minutes,
                     calories_kcal = excluded.calories_kcal,
                     protein_grams = excluded.protein_grams,
                     carbohydrate_grams = excluded.carbohydrate_grams,
@@ -140,8 +142,9 @@ public final class SqliteRecipeRepository implements RecipeRepository {
             setOptionalTime(statement, 4, recipe.getPreparationTimeMinutes());
             setOptionalTime(statement, 5, recipe.getCookingTimeMinutes());
             setOptionalTime(statement, 6, recipe.getBakingTimeMinutes());
+            setOptionalTime(statement, 7, recipe.getRestingTimeMinutes());
             setNutrition(statement, recipe.getNutritionInfo().orElse(null));
-            statement.setString(11, recipe.getDishType().name());
+            statement.setString(12, recipe.getDishType().name());
             statement.executeUpdate();
         }
     }
@@ -269,7 +272,8 @@ public final class SqliteRecipeRepository implements RecipeRepository {
     private static Optional<Recipe> loadRecipe(Connection connection, UUID id) throws SQLException {
         String sql = """
                 SELECT name, standard_serving_count, preparation_time_minutes,
-                       cooking_time_minutes, baking_time_minutes, calories_kcal, protein_grams,
+                       cooking_time_minutes, baking_time_minutes, resting_time_minutes,
+                       calories_kcal, protein_grams,
                        carbohydrate_grams, fat_grams, dish_type
                 FROM recipes WHERE id = ?
                 """;
@@ -287,6 +291,7 @@ public final class SqliteRecipeRepository implements RecipeRepository {
                         nullableInteger(resultSet, "preparation_time_minutes"),
                         nullableInteger(resultSet, "cooking_time_minutes"),
                         nullableInteger(resultSet, "baking_time_minutes"),
+                        nullableInteger(resultSet, "resting_time_minutes"),
                         nutritionInfo(resultSet),
                         DishType.valueOf(resultSet.getString("dish_type"))));
             }
@@ -314,16 +319,16 @@ public final class SqliteRecipeRepository implements RecipeRepository {
     private static void setNutrition(java.sql.PreparedStatement statement, NutritionInfo nutrition)
             throws SQLException {
         if (nutrition == null) {
-            statement.setNull(7, java.sql.Types.INTEGER);
-            for (int index = 8; index <= 10; index++) {
+            statement.setNull(8, java.sql.Types.INTEGER);
+            for (int index = 9; index <= 11; index++) {
                 statement.setNull(index, java.sql.Types.VARCHAR);
             }
             return;
         }
-        setOptionalTime(statement, 7, nutrition.getCaloriesKcal());
-        setOptionalDecimal(statement, 8, nutrition.getProteinGrams());
-        setOptionalDecimal(statement, 9, nutrition.getCarbohydrateGrams());
-        setOptionalDecimal(statement, 10, nutrition.getFatGrams());
+        setOptionalTime(statement, 8, nutrition.getCaloriesKcal());
+        setOptionalDecimal(statement, 9, nutrition.getProteinGrams());
+        setOptionalDecimal(statement, 10, nutrition.getCarbohydrateGrams());
+        setOptionalDecimal(statement, 11, nutrition.getFatGrams());
     }
 
     private static void setOptionalDecimal(java.sql.PreparedStatement statement, int index,

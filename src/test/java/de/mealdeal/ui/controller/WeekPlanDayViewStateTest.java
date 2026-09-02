@@ -2,7 +2,6 @@ package de.mealdeal.ui.controller;
 
 import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.MealPlanEntry;
-import de.mealdeal.domain.MealRole;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.service.MealPlanDay;
@@ -30,6 +29,35 @@ class WeekPlanDayViewStateTest {
         state.setExpanded(false);
 
         assertFalse(state.isExpanded());
+        assertFalse(draft.isChanged());
+    }
+
+    @Test
+    void dayEditModeStartsInactiveAndChangesWithoutTouchingDraft() {
+        WeeklyMealPlanDayDraft draft = emptyDraft();
+        WeekPlanDayViewState state = new WeekPlanDayViewState();
+
+        assertFalse(state.isEditing());
+
+        state.setEditing(true);
+        assertTrue(state.isEditing());
+        assertFalse(draft.isChanged());
+
+        state.setEditing(false);
+        assertFalse(state.isEditing());
+        assertFalse(draft.isChanged());
+    }
+
+    @Test
+    void collapseAndExpandPreserveRoleEditModeAndDraft() {
+        WeeklyMealPlanDayDraft draft = emptyDraft();
+        WeekPlanDayViewState state = new WeekPlanDayViewState();
+
+        state.setEditing(true);
+        state.setExpanded(false);
+        state.setExpanded(true);
+
+        assertTrue(state.isEditing());
         assertFalse(draft.isChanged());
     }
 

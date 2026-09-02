@@ -16,7 +16,9 @@ class GermanRecipeDisplayTest {
     @CsvSource({
             "1, 1",
             "1.50, '1,5'",
-            "0.125, '0,125'",
+            "0.125, '0,13'",
+            "1.234, '1,23'",
+            "1.235, '1,24'",
             "1000.000, 1000"
     })
     void formatsBigDecimalWithGermanDecimalSeparator(String amount, String expected) {
@@ -30,10 +32,18 @@ class GermanRecipeDisplayTest {
     }
 
     @Test
+    void keepsExactDecimalsForEditableFields() {
+        assertEquals("1,2345", GermanRecipeDisplay.editableDecimal(
+                new BigDecimal("1.234500")));
+    }
+
+    @Test
     void displaysSlicesWithGermanSingularAndPlural() {
         assertEquals("1 Scheibe", GermanRecipeDisplay.quantity(BigDecimal.ONE, Unit.SLICE));
         assertEquals("2 Scheiben", GermanRecipeDisplay.quantity(
                 new BigDecimal("2"), Unit.SLICE));
+        assertEquals("1 Scheibe", GermanRecipeDisplay.quantity(
+                new BigDecimal("1.001"), Unit.SLICE));
     }
 
     @Test

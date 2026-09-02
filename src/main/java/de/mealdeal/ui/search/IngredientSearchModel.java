@@ -1,6 +1,7 @@
 package de.mealdeal.ui.search;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.ui.IngredientCategoryGrouping;
 import de.mealdeal.persistence.repository.IngredientRepository;
 import de.mealdeal.persistence.repository.RecipeRepository;
 import de.mealdeal.service.IngredientSearchResult;
@@ -41,6 +42,13 @@ public final class IngredientSearchModel {
     /** Loads all selectable central ingredients in deterministic display order. */
     public List<Ingredient> loadAvailableIngredients() {
         return ingredientRepository.findAll().stream().sorted(INGREDIENT_ORDER).toList();
+    }
+
+    /** Groups unselected, filtered ingredients by their persisted category for presentation. */
+    public List<IngredientCategoryGrouping.Group> groupAvailableIngredients(
+            List<Ingredient> availableIngredients, String filterText) {
+        return IngredientCategoryGrouping.group(availableIngredients, filterText,
+                selectedIngredients.stream().map(Ingredient::getId).toList());
     }
 
     /** Adds one unique ingredient unless the ten-item UI limit has been reached. */
@@ -85,4 +93,5 @@ public final class IngredientSearchModel {
         ALREADY_SELECTED,
         LIMIT_REACHED
     }
+
 }

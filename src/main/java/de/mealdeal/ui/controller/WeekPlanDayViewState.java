@@ -11,6 +11,7 @@ import java.util.Objects;
 final class WeekPlanDayViewState {
 
     private boolean expanded = true;
+    private boolean editing;
 
     boolean isExpanded() {
         return expanded;
@@ -18,6 +19,14 @@ final class WeekPlanDayViewState {
 
     void setExpanded(boolean expanded) {
         this.expanded = expanded;
+    }
+
+    boolean isEditing() {
+        return editing;
+    }
+
+    void setEditing(boolean editing) {
+        this.editing = editing;
     }
 
     String summary(WeeklyMealPlanDayDraft draft) {

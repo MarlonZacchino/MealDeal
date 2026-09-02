@@ -5,6 +5,7 @@ import de.mealdeal.domain.IngredientCategories;
 import de.mealdeal.domain.IngredientCategory;
 import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.domain.Unit;
+import de.mealdeal.ui.control.SearchableComboBoxSupport;
 import de.mealdeal.ui.form.IngredientOptionFormInput;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
@@ -32,6 +33,8 @@ final class IngredientFormRow {
     private final TextField quantityInput = new TextField();
     private final ComboBox<Unit> unitInput = new ComboBox<>();
     private final ComboBox<IngredientCategory> categoryInput = new ComboBox<>();
+    private final SearchableComboBoxSupport<Ingredient> ingredientSearch;
+    private final SearchableComboBoxSupport<IngredientCategory> categorySearch;
     private final RadioButton standardButton = new RadioButton("Standard");
     private final Button removeButton = new Button("Alternative entfernen");
 
@@ -45,10 +48,10 @@ final class IngredientFormRow {
         container.setAlignment(Pos.CENTER_LEFT);
         container.getStyleClass().add("form-row");
 
-        ingredientInput.setEditable(true);
         ingredientInput.setPromptText("Zutat auswählen oder neu eingeben");
         ingredientInput.setMaxWidth(Double.MAX_VALUE);
-        ingredientInput.setConverter(new IngredientStringConverter());
+        ingredientSearch = SearchableComboBoxSupport.allowingCustomText(
+                ingredientInput, availableIngredients, new IngredientStringConverter());
         HBox.setHgrow(ingredientInput, Priority.ALWAYS);
 
         quantityInput.setPromptText("Menge");
@@ -59,7 +62,8 @@ final class IngredientFormRow {
 
         categoryInput.setPromptText("Kategorie");
         categoryInput.setPrefWidth(210);
-        categoryInput.setConverter(new IngredientCategoryStringConverter());
+        categorySearch = SearchableComboBoxSupport.forValidValues(
+                categoryInput, availableCategories, IngredientCategory::getName);
         refreshCategories();
         categoryInput.setValue(IngredientCategories.OTHER);
         ingredientInput.getEditor().textProperty().addListener(
@@ -76,13 +80,13 @@ final class IngredientFormRow {
     }
 
     void refreshIngredients() {
-        ingredientInput.setItems(FXCollections.observableArrayList(availableIngredients));
+        ingredientSearch.setOptions(availableIngredients);
         updateCategoryForName(ingredientInput.getEditor().getText());
     }
 
     void refreshCategories() {
         IngredientCategory selected = categoryInput.getValue();
-        categoryInput.setItems(FXCollections.observableArrayList(availableCategories));
+        categorySearch.setOptions(availableCategories);
         if (selected != null) {
             categoryInput.setValue(availableCategories.stream()
                     .filter(category -> category.getId().equals(selected.getId()))
@@ -106,7 +110,7 @@ final class IngredientFormRow {
         ingredientInput.getEditor().setText(selected.getName());
         categoryInput.setValue(selected.getCategory());
         categoryInput.setDisable(true);
-        quantityInput.setText(GermanRecipeDisplay.decimal(option.getQuantity()));
+        quantityInput.setText(GermanRecipeDisplay.editableDecimal(option.getQuantity()));
         unitInput.setValue(option.getUnit());
     }
 
@@ -165,17 +169,4 @@ final class IngredientFormRow {
         }
     }
 
-    private static final class IngredientCategoryStringConverter
-            extends StringConverter<IngredientCategory> {
-        @Override
-        public String toString(IngredientCategory category) {
-            return category == null ? "" : category.getName();
-        }
-
-        @Override
-        public IngredientCategory fromString(String value) {
-            throw new UnsupportedOperationException(
-                    "Ingredient category selection is not editable.");
-        }
-    }
 }

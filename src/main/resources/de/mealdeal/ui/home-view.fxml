@@ -13,19 +13,44 @@
             fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
     <content>
         <StackPane alignment="TOP_CENTER" styleClass="page-shell">
-            <VBox maxWidth="1.7976931348623157E308" spacing="30.0" styleClass="page-container">
-                <VBox maxWidth="1.7976931348623157E308" spacing="16.0"
-                      styleClass="card, search-card">
-                    <Label text="Was möchtest du essen?" wrapText="true" styleClass="card-title"/>
-                    <Label text="Suche nach passenden Gerichten anhand deiner Zutaten oder deines Geschmacks."
-                           wrapText="true" styleClass="card-text"/>
-                    <Button text="Gericht finden" onAction="#openSearch"
-                            styleClass="primary-button"/>
+            <VBox maxWidth="1.7976931348623157E308" spacing="8.0" styleClass="page-container">
+                <VBox maxWidth="1.7976931348623157E308"
+                      styleClass="content-card, home-card">
+                    <HBox alignment="CENTER_LEFT" styleClass="content-card-header">
+                        <Label text="Was möchtest du essen?" wrapText="true"
+                               styleClass="content-card-header-title"/>
+                    </HBox>
+                    <VBox spacing="16.0" styleClass="content-card-body">
+                        <Label text="Suche nach passenden Gerichten anhand deiner Zutaten oder deines Geschmacks."
+                               wrapText="true" styleClass="card-text"/>
+                        <Button text="Gericht finden" onAction="#openSearch"
+                                styleClass="primary-button"/>
+                    </VBox>
                 </VBox>
 
-                <VBox spacing="12.0" styleClass="dashboard-section">
-                    <Label text="Heute" styleClass="section-title"/>
-                    <VBox maxWidth="1.7976931348623157E308" spacing="12.0" styleClass="card, wide-card">
+                <VBox maxWidth="1.7976931348623157E308"
+                      styleClass="content-card, home-card">
+                    <HBox alignment="CENTER_LEFT" styleClass="content-card-header">
+                        <Label text="Meine Gerichte" styleClass="content-card-header-title"/>
+                    </HBox>
+                    <VBox spacing="14.0" styleClass="content-card-body">
+                        <Label text="Verwalte deine gespeicherten Gerichte." wrapText="true"
+                               styleClass="card-text"/>
+                        <HBox spacing="12.0" styleClass="button-row">
+                            <Button text="Gerichte ansehen" onAction="#openRecipes"
+                                    styleClass="primary-button"/>
+                            <Button text="Neues Gericht hinzufügen" onAction="#openCreateRecipe"
+                                    styleClass="secondary-button"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+
+                <VBox maxWidth="1.7976931348623157E308"
+                      styleClass="content-card, home-card">
+                    <HBox alignment="CENTER_LEFT" styleClass="content-card-header">
+                        <Label text="Heute" styleClass="content-card-header-title"/>
+                    </HBox>
+                    <VBox spacing="12.0" styleClass="content-card-body">
                         <VBox fx:id="todayPlanContent" maxWidth="1.7976931348623157E308"
                               spacing="10.0" styleClass="home-plan-content"/>
                         <VBox fx:id="todayEmptyState" alignment="CENTER_LEFT" spacing="8.0"
@@ -46,7 +71,7 @@
 
                 <TitledPane text="Wochenplan" collapsible="true" expanded="false"
                             maxWidth="1.7976931348623157E308"
-                            styleClass="expandable-pane, home-week-pane">
+                            styleClass="expandable-card, home-week-pane">
                     <content>
                         <VBox maxWidth="1.7976931348623157E308" spacing="12.0"
                               styleClass="home-week-content">
@@ -63,20 +88,6 @@
                         </VBox>
                     </content>
                 </TitledPane>
-
-                <VBox spacing="12.0" styleClass="dashboard-section, compact-section">
-                    <Label text="Meine Gerichte" styleClass="section-title"/>
-                    <VBox maxWidth="1.7976931348623157E308" spacing="14.0" styleClass="card, compact-card">
-                        <Label text="Verwalte deine gespeicherten Gerichte." wrapText="true"
-                               styleClass="card-text"/>
-                        <HBox spacing="12.0" styleClass="button-row">
-                            <Button text="Gerichte ansehen" onAction="#openRecipes"
-                                    styleClass="primary-button"/>
-                            <Button text="Neues Gericht hinzufügen" onAction="#openCreateRecipe"
-                                    styleClass="secondary-button"/>
-                        </HBox>
-                    </VBox>
-                </VBox>
             </VBox>
         </StackPane>
     </content>

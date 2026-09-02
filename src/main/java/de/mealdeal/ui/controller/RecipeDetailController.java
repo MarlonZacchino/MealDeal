@@ -214,6 +214,7 @@ public final class RecipeDetailController implements NavigationAware {
         addTimeDisplay(result, "Vorbereitungszeit", recipe.getPreparationTimeMinutes());
         addTimeDisplay(result, "Kochzeit", recipe.getCookingTimeMinutes());
         addTimeDisplay(result, "Backzeit", recipe.getBakingTimeMinutes());
+        addTimeDisplay(result, "Ruhezeit", recipe.getRestingTimeMinutes());
         addTimeDisplay(result, "Gesamtzeit", recipe.getTotalTimeMinutes());
         return List.copyOf(result);
     }

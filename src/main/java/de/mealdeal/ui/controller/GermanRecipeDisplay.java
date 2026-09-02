@@ -4,6 +4,7 @@ import de.mealdeal.domain.Unit;
 import de.mealdeal.domain.DishType;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Objects;
 
 /** Formats recipe quantities and units for the German user interface. */
@@ -19,6 +20,16 @@ final class GermanRecipeDisplay {
 
     static String decimal(BigDecimal amount) {
         Objects.requireNonNull(amount, "Amount must not be null.");
+        return normalizedDecimal(amount.setScale(2, RoundingMode.HALF_UP));
+    }
+
+    /** Preserves exact values in editable fields so merely saving cannot round domain data. */
+    static String editableDecimal(BigDecimal amount) {
+        Objects.requireNonNull(amount, "Amount must not be null.");
+        return normalizedDecimal(amount);
+    }
+
+    private static String normalizedDecimal(BigDecimal amount) {
         BigDecimal normalized = amount.stripTrailingZeros();
         if (normalized.scale() < 0) {
             normalized = normalized.setScale(0);
@@ -45,7 +56,8 @@ final class GermanRecipeDisplay {
 
     static String unit(BigDecimal amount, Unit unit) {
         Objects.requireNonNull(amount, "Amount must not be null.");
-        if (amount.compareTo(BigDecimal.ONE) != 0) {
+        BigDecimal displayedAmount = amount.setScale(2, RoundingMode.HALF_UP);
+        if (displayedAmount.compareTo(BigDecimal.ONE) != 0) {
             return switch (unit) {
                 case SLICE -> "Scheiben";
                 case CLOVE -> "Zehen";

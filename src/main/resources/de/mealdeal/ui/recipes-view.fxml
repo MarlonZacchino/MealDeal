@@ -31,7 +31,7 @@
                       styleClass="recipe-groups">
                     <TitledPane fx:id="mainRecipesPane" text="Hauptgerichte" expanded="true"
                                 animated="true" maxWidth="1.7976931348623157E308"
-                                styleClass="expandable-pane, recipe-group-pane">
+                                styleClass="expandable-card, recipe-group-pane">
                         <content>
                             <VBox fx:id="mainRecipesContainer" spacing="12.0"
                                   styleClass="recipe-list, recipe-group-content"/>
@@ -39,7 +39,7 @@
                     </TitledPane>
                     <TitledPane fx:id="sideRecipesPane" text="Beilagen" expanded="true"
                                 animated="true" maxWidth="1.7976931348623157E308"
-                                styleClass="expandable-pane, recipe-group-pane">
+                                styleClass="expandable-card, recipe-group-pane">
                         <content>
                             <VBox fx:id="sideRecipesContainer" spacing="12.0"
                                   styleClass="recipe-list, recipe-group-content"/>
@@ -47,7 +47,7 @@
                     </TitledPane>
                     <TitledPane fx:id="dessertRecipesPane" text="Nachtische" expanded="true"
                                 animated="true" maxWidth="1.7976931348623157E308"
-                                styleClass="expandable-pane, recipe-group-pane">
+                                styleClass="expandable-card, recipe-group-pane">
                         <content>
                             <VBox fx:id="dessertRecipesContainer" spacing="12.0"
                                   styleClass="recipe-list, recipe-group-content"/>
@@ -57,7 +57,7 @@
 
                 <VBox fx:id="errorState" alignment="CENTER" managed="false" visible="false"
                       maxWidth="1.7976931348623157E308" spacing="12.0"
-                      styleClass="card, recipe-state-card, error-state-card">
+                      styleClass="content-card, recipe-state-card, error-state-card">
                     <Label text="Gerichte konnten nicht geladen werden." styleClass="card-title"/>
                     <Label fx:id="errorMessage" wrapText="true" styleClass="card-text"/>
                     <Button text="Erneut versuchen" onAction="#refresh"
