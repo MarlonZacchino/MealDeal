@@ -78,7 +78,6 @@ public final class WeekPlanController implements NavigationAware {
 
     @FXML private Label weekRangeLabel;
     @FXML private VBox dayCardsContainer;
-    @FXML private HBox weekSaveBar;
     @FXML private Button saveChangesButton;
     @FXML private Label saveChangesMessage;
     @FXML private VBox errorState;
@@ -107,7 +106,8 @@ public final class WeekPlanController implements NavigationAware {
     }
 
     @FXML private void initialize() {
-        weekSaveBar.setMaxWidth(Region.USE_PREF_SIZE);
+        saveChangesButton.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+        saveChangesMessage.setMaxSize(360, Region.USE_PREF_SIZE);
         refresh();
     }
 
@@ -502,13 +502,14 @@ public final class WeekPlanController implements NavigationAware {
 
     private void showContent() {
         dayCardsContainer.setManaged(true); dayCardsContainer.setVisible(true);
-        weekSaveBar.setManaged(true); weekSaveBar.setVisible(true);
+        saveChangesButton.setManaged(true); saveChangesButton.setVisible(true);
         errorState.setManaged(false); errorState.setVisible(false);
     }
 
     private void showLoadError() {
         dayCardsContainer.setManaged(false); dayCardsContainer.setVisible(false);
-        weekSaveBar.setManaged(false); weekSaveBar.setVisible(false);
+        saveChangesButton.setManaged(false); saveChangesButton.setVisible(false);
+        clearSaveMessage();
         errorMessage.setText("Die aktuelle Woche konnte nicht geladen werden. Bitte versuche es erneut.");
         errorState.setManaged(true); errorState.setVisible(true);
     }

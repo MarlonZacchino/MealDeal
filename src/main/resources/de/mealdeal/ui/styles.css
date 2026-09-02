@@ -386,21 +386,18 @@
     -fx-background-color: -md-accent;
 }
 
-.meal-plan-save-bar {
-    -fx-alignment: center-right;
-    -fx-padding: 8px;
-}
-
-.meal-plan-save-overlay {
+.meal-plan-save-message {
     -fx-background-color: -md-surface;
     -fx-background-radius: 12px;
     -fx-border-color: -md-border;
     -fx-border-radius: 12px;
+    -fx-padding: 10px 14px;
     -fx-effect: dropshadow(gaussian, rgba(31, 20, 23, 0.22), 18, 0.12, 0, 5);
 }
 
 .meal-plan-save-button {
     -fx-padding: 10px 16px;
+    -fx-effect: dropshadow(gaussian, rgba(31, 20, 23, 0.22), 18, 0.12, 0, 5);
 }
 
 .meal-plan-unsaved-note {
