@@ -34,7 +34,7 @@
                 <TitledPane fx:id="ingredientSelectionPane" text="Zutaten auswählen"
                             animated="true" collapsible="true" expanded="false"
                             maxWidth="1.7976931348623157E308"
-                            styleClass="search-options-pane, search-selection-pane">
+                            styleClass="expandable-pane, search-options-pane, search-selection-pane">
                     <content>
                         <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
                               styleClass="search-selection-content">
@@ -58,7 +58,7 @@
                 <TitledPane fx:id="tasteSelectionPane" text="Geschmacksrichtungen auswählen"
                             animated="true" collapsible="true" expanded="false"
                             maxWidth="1.7976931348623157E308"
-                            styleClass="search-options-pane, search-selection-pane">
+                            styleClass="expandable-pane, search-options-pane, search-selection-pane">
                     <content>
                         <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
                               styleClass="search-selection-content">
@@ -82,7 +82,7 @@
                 <TitledPane fx:id="searchOptionsPane" text="Filter &amp; Suchoptionen"
                             animated="true" collapsible="true" expanded="false"
                             maxWidth="1.7976931348623157E308"
-                            styleClass="search-options-pane">
+                            styleClass="expandable-pane, search-options-pane">
                     <content>
                         <VBox spacing="12.0" styleClass="search-options-content">
                             <Label text="Geschmacksfilter" styleClass="form-label"/>

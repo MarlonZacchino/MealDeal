@@ -21,6 +21,7 @@ import de.mealdeal.ui.controller.CreateRecipeController;
 import de.mealdeal.ui.controller.HomeController;
 import de.mealdeal.ui.controller.IngredientSearchController;
 import de.mealdeal.ui.controller.InventoryController;
+import de.mealdeal.ui.controller.IngredientsController;
 import de.mealdeal.ui.controller.MainController;
 import de.mealdeal.ui.controller.RecipeDetailController;
 import de.mealdeal.ui.controller.RecipesController;
@@ -258,8 +259,11 @@ public final class ApplicationContext {
             return new ShoppingListController(shoppingListService);
         }
         if (controllerType == InventoryController.class) {
-            return new InventoryController(inventoryService, ingredientCategoryService,
-                    ingredientManagementService, inventoryConsumptionService);
+            return new InventoryController(inventoryService, inventoryConsumptionService);
+        }
+        if (controllerType == IngredientsController.class) {
+            return new IngredientsController(
+                    ingredientCategoryService, ingredientManagementService);
         }
         try {
             return controllerType.getDeclaredConstructor().newInstance();

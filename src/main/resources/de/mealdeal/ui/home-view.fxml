@@ -13,12 +13,6 @@
     <content>
         <StackPane alignment="TOP_CENTER" styleClass="page-shell">
             <VBox maxWidth="1.7976931348623157E308" spacing="30.0" styleClass="page-container">
-                <VBox spacing="6.0" styleClass="page-header">
-                    <Label text="Was möchtest du heute essen?" wrapText="true" styleClass="page-title"/>
-                    <Label text="Finde eine Idee, plane den Tag oder behalte deine Woche im Blick."
-                           wrapText="true" styleClass="page-subtitle"/>
-                </VBox>
-
                 <VBox maxWidth="1.7976931348623157E308" spacing="16.0"
                       styleClass="card, search-card">
                     <Label text="Was möchtest du essen?" wrapText="true" styleClass="card-title"/>

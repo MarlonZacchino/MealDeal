@@ -44,15 +44,15 @@
     </ScrollPane>
 
     <HBox fx:id="weekSaveBar" alignment="CENTER_RIGHT" spacing="16.0"
-          maxWidth="720.0" StackPane.alignment="BOTTOM_RIGHT"
-          styleClass="card, meal-plan-save-bar, meal-plan-save-overlay">
+          StackPane.alignment="BOTTOM_RIGHT"
+          styleClass="meal-plan-save-bar, meal-plan-save-overlay">
         <StackPane.margin>
             <Insets top="24.0" right="32.0" bottom="28.0" left="32.0"/>
         </StackPane.margin>
         <Label fx:id="saveChangesMessage" managed="false" visible="false"
                wrapText="true"/>
-        <Region HBox.hgrow="ALWAYS"/>
         <Button fx:id="saveChangesButton" text="Änderungen speichern"
-                onAction="#saveChanges" styleClass="primary-button"/>
+                onAction="#saveChanges"
+                styleClass="primary-button, meal-plan-save-button"/>
     </HBox>
 </StackPane>

@@ -138,7 +138,9 @@ ApplicationContext / Services
 Domain und Repositories
 ```
 
-`MealDealApplication` öffnet genau eine primäre Stage. `MainController` hält die Seitenleiste dauerhaft sichtbar, während `ViewNavigator` nur den Inhaltsbereich austauscht und den aktiven Navigationseintrag markiert. Dadurch entstehen beim Wechsel zwischen Start, Gerichten, Suche, Wochenplan und Einkauf keine zusätzlichen Fenster.
+`MealDealApplication` öffnet genau eine primäre Stage. `MainController` hält die Seitenleiste dauerhaft sichtbar, während `ViewNavigator` nur den Inhaltsbereich austauscht und den aktiven Navigationseintrag markiert. Dadurch entstehen beim Wechsel zwischen Start, Gerichten, Suche, Wochenplan, Einkauf, Zutaten und Inventar keine zusätzlichen Fenster.
+
+Die zentrale Zutaten- und Kategorieverwaltung besitzt mit `IngredientsController` eine eigene Ansicht. Sie verwendet weiterhin ausschließlich `IngredientManagementService` und `IngredientCategoryService`; Umbenennen, Umkategorisieren, Sortieren und das transaktionale Löschen einer Kategorie bleiben damit außerhalb der UI. `InventoryController` verwaltet dagegen nur noch Bestandsmenge und Unit zentraler Ingredients. Beide Controller erhalten ihre Services weiterhin manuell über den `ApplicationContext`.
 
 Jede Hauptansicht verwendet einen vertikal scrollbar ausgeführten Inhaltsbereich. Darin zentriert ein `StackPane` einen Seitencontainer, der bei kleineren Fenstern automatisch schrumpft. Das Layout richtet sich ausschließlich nach dem verfügbaren Scene- und Pane-Bereich; Monitorauflösung, DPI-Prozentwerte oder feste Bildschirmkoordinaten fließen nicht in die Positionierung ein. So bleibt der Inhalt beim Maximieren, Verkleinern und Verschieben zwischen Monitoren stabil, ohne auf den primären Monitor zurückzuspringen.
 

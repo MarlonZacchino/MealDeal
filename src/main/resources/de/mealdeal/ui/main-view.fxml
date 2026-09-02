@@ -30,6 +30,8 @@
                         onAction="#showSearch" styleClass="nav-button"/>
                 <Button fx:id="weekPlanButton" text="Wochenplan" maxWidth="1.7976931348623157E308"
                         onAction="#showWeekPlan" styleClass="nav-button"/>
+                <Button fx:id="ingredientsButton" text="Zutaten" maxWidth="1.7976931348623157E308"
+                        onAction="#showIngredients" styleClass="nav-button"/>
                 <Button fx:id="inventoryButton" text="Inventar" maxWidth="1.7976931348623157E308"
                         onAction="#showInventory" styleClass="nav-button"/>
                 <Button fx:id="shoppingButton" text="Einkaufsliste" maxWidth="1.7976931348623157E308"

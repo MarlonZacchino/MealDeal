@@ -106,7 +106,10 @@ public final class WeekPlanController implements NavigationAware {
         detailNavigation = configuredNavigator::navigateToRecipeDetail;
     }
 
-    @FXML private void initialize() { refresh(); }
+    @FXML private void initialize() {
+        weekSaveBar.setMaxWidth(Region.USE_PREF_SIZE);
+        refresh();
+    }
 
     /** Reloads recipes and the persisted state for the current calendar week. */
     @FXML public void refresh() {
@@ -187,7 +190,7 @@ public final class WeekPlanController implements NavigationAware {
         card.setExpanded(viewState.isExpanded());
         card.setAnimated(true);
         card.setMaxWidth(Double.MAX_VALUE);
-        card.getStyleClass().addAll("card", "meal-plan-day-card");
+        card.getStyleClass().addAll("card", "expandable-pane", "meal-plan-day-card");
         if (day.today()) {
             card.getStyleClass().add("meal-plan-day-today");
         }

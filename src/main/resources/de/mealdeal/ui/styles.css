@@ -387,12 +387,20 @@
 }
 
 .meal-plan-save-bar {
-    -fx-alignment: center-left;
-    -fx-padding: 18px 22px;
+    -fx-alignment: center-right;
+    -fx-padding: 8px;
 }
 
 .meal-plan-save-overlay {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 12px;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 12px;
     -fx-effect: dropshadow(gaussian, rgba(31, 20, 23, 0.22), 18, 0.12, 0, 5);
+}
+
+.meal-plan-save-button {
+    -fx-padding: 10px 16px;
 }
 
 .meal-plan-unsaved-note {
@@ -1071,6 +1079,34 @@
     -fx-font-weight: bold;
     -fx-min-width: 92px;
     -fx-text-fill: -md-text;
+}
+
+/* Shared visual language for every independently expandable application section. */
+.expandable-pane > .title {
+    -fx-background-color: -md-accent;
+    -fx-border-color: -md-accent-hover;
+    -fx-text-fill: -md-on-accent;
+}
+
+.expandable-pane > .title:hover {
+    -fx-background-color: -md-accent-hover;
+}
+
+.expandable-pane > .title > .text {
+    -fx-fill: -md-on-accent;
+}
+
+.expandable-pane > .title .label {
+    -fx-text-fill: -md-on-accent;
+}
+
+.expandable-pane > .title > .arrow-button .arrow {
+    -fx-background-color: -md-on-accent;
+}
+
+.meal-plan-day-card.meal-plan-day-today > .title {
+    -fx-background-color: -md-accent;
+    -fx-border-color: -md-on-accent;
 }
 
 .scroll-bar .track {

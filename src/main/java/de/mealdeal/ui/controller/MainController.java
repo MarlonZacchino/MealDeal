@@ -46,6 +46,8 @@ public final class MainController {
     @FXML
     private Button weekPlanButton;
     @FXML
+    private Button ingredientsButton;
+    @FXML
     private Button inventoryButton;
     @FXML
     private Button shoppingButton;
@@ -67,6 +69,7 @@ public final class MainController {
         navigationButtons.put(ViewType.RECIPES, recipesButton);
         navigationButtons.put(ViewType.SEARCH, searchButton);
         navigationButtons.put(ViewType.WEEK_PLAN, weekPlanButton);
+        navigationButtons.put(ViewType.INGREDIENTS, ingredientsButton);
         navigationButtons.put(ViewType.INVENTORY, inventoryButton);
         navigationButtons.put(ViewType.SHOPPING, shoppingButton);
         applyTheme(themeService.getMode());
@@ -100,6 +103,11 @@ public final class MainController {
     @FXML
     private void showShopping() {
         navigator.navigateTo(ViewType.SHOPPING);
+    }
+
+    @FXML
+    private void showIngredients() {
+        navigator.navigateTo(ViewType.INGREDIENTS);
     }
 
     @FXML

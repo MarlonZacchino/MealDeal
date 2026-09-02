@@ -2,6 +2,7 @@ package de.mealdeal.ui;
 
 import de.mealdeal.ui.navigation.ViewType;
 import de.mealdeal.ui.controller.InventoryController;
+import de.mealdeal.ui.controller.IngredientsController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -123,6 +124,11 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:id=\"todayEmptyState\""));
         assertTrue(fxml.contains("fx:id=\"weekOverviewContainer\""));
         assertTrue(fxml.contains("fx:id=\"weekErrorState\""));
+        assertFalse(fxml.contains("styleClass=\"page-header\""));
+        assertFalse(fxml.contains("styleClass=\"page-title\""));
+        assertFalse(fxml.contains("styleClass=\"page-subtitle\""));
+        assertTrue(fxml.indexOf("text=\"Was möchtest du essen?\"")
+                < fxml.indexOf("text=\"Heute\""));
         assertTrue(css.contains(".home-plan-main-entry"));
         assertTrue(css.contains(".home-plan-side-entry"));
         assertTrue(css.contains(".home-week-day"));
@@ -179,6 +185,8 @@ class FxmlResourceTest {
 
         assertTrue(fxml.contains("fx:id=\"rootShell\""));
         assertTrue(fxml.contains("fx:id=\"themeToggle\""));
+        assertTrue(fxml.contains("fx:id=\"ingredientsButton\""));
+        assertTrue(fxml.contains("onAction=\"#showIngredients\""));
         assertTrue(fxml.contains("onAction=\"#toggleTheme\""));
         assertTrue(fxml.contains("VBox.vgrow=\"ALWAYS\""));
         assertTrue(fxml.contains("maxWidth=\"1.7976931348623157E308\""));
@@ -195,6 +203,9 @@ class FxmlResourceTest {
         assertTrue(css.contains(".root-shell.viewport-wide .page-container"));
         assertTrue(css.contains(".root-shell.viewport-extra-wide .page-container"));
         assertTrue(css.contains("-fx-max-width: 1640px"));
+        assertTrue(css.contains(".expandable-pane > .title"));
+        assertTrue(css.contains("-fx-background-color: -md-accent"));
+        assertTrue(css.contains(".expandable-pane > .title > .arrow-button .arrow"));
     }
 
     @Test
@@ -207,7 +218,10 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:id=\"dayCardsContainer\""));
         assertTrue(fxml.contains("Änderungen speichern"));
         assertTrue(fxml.contains("StackPane.alignment=\"BOTTOM_RIGHT\""));
-        assertTrue(fxml.contains("styleClass=\"card, meal-plan-save-bar, meal-plan-save-overlay\""));
+        assertTrue(fxml.contains("styleClass=\"meal-plan-save-bar, meal-plan-save-overlay\""));
+        assertTrue(fxml.contains("styleClass=\"primary-button, meal-plan-save-button\""));
+        assertTrue(fxml.indexOf("</ScrollPane>") < fxml.indexOf("fx:id=\"weekSaveBar\""));
+        assertFalse(fxml.contains("<Region HBox.hgrow=\"ALWAYS\"/>"));
         assertTrue(fxml.contains("<Region minHeight=\"110.0\"/>"));
         assertTrue(fxml.contains("fx:id=\"errorState\""));
         assertTrue(fxml.contains("onAction=\"#refresh\""));
@@ -260,15 +274,10 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("onAction=\"#addItem\""));
         assertTrue(fxml.contains("fx:id=\"categoryContainer\""));
         assertTrue(fxml.contains("fx:id=\"emptyState\""));
-        assertTrue(fxml.contains("fx:id=\"categoryManagementSection\""));
-        assertTrue(fxml.contains("text=\"Zutatenkategorien verwalten\""));
-        assertTrue(fxml.contains("fx:id=\"categoryNameField\""));
-        assertTrue(fxml.contains("onAction=\"#addCategory\""));
-        assertTrue(fxml.contains("fx:id=\"categoryManagementContainer\""));
-        assertTrue(fxml.contains("fx:id=\"ingredientManagementSection\""));
-        assertTrue(fxml.contains("text=\"Zentrale Zutaten bearbeiten\""));
-        assertTrue(fxml.contains("fx:id=\"ingredientManagementContainer\""));
-        assertTrue(fxml.contains("fx:id=\"ingredientManagementError\""));
+        assertFalse(fxml.contains("categoryManagementSection"));
+        assertFalse(fxml.contains("ingredientManagementSection"));
+        assertFalse(fxml.contains("Zutatenkategorien verwalten"));
+        assertFalse(fxml.contains("Zentrale Zutaten bearbeiten"));
         assertTrue(css.contains(".inventory-category-card"));
         assertTrue(css.contains(".inventory-row"));
         assertTrue(css.contains(".inventory-category-management-row"));
@@ -278,17 +287,41 @@ class FxmlResourceTest {
     @Test
     void inventoryViewReferencesExistingControllerFieldsAndActions() throws Exception {
         String fxml = readResource("/de/mealdeal/ui/inventory-view.fxml");
+        assertControllerWiring(fxml, InventoryController.class);
+    }
+
+    @Test
+    void ingredientsViewDefinesNavigationAndCompleteManagementWiring() throws Exception {
+        String main = readResource(MAIN_VIEW);
+        String fxml = readResource("/de/mealdeal/ui/ingredients-view.fxml");
+
+        assertTrue(main.contains("fx:id=\"ingredientsButton\""));
+        assertTrue(main.contains("text=\"Zutaten\""));
+        assertTrue(main.contains("onAction=\"#showIngredients\""));
+        assertTrue(fxml.contains(
+                "fx:controller=\"de.mealdeal.ui.controller.IngredientsController\""));
+        assertTrue(fxml.contains("fx:id=\"ingredientManagementSection\""));
+        assertTrue(fxml.contains("fx:id=\"ingredientManagementContainer\""));
+        assertTrue(fxml.contains("fx:id=\"categoryManagementSection\""));
+        assertTrue(fxml.contains("fx:id=\"categoryNameField\""));
+        assertTrue(fxml.contains("onAction=\"#addCategory\""));
+        assertTrue(fxml.contains("fx:id=\"categoryManagementContainer\""));
+        assertEquals(2, fxml.split("styleClass=\"expandable-pane, ingredient-management-pane\"", -1).length - 1);
+        assertControllerWiring(fxml, IngredientsController.class);
+    }
+
+    private static void assertControllerWiring(String fxml, Class<?> controllerType) {
         var idMatcher = Pattern.compile("fx:id=\\\"([^\\\"]+)\\\"").matcher(fxml);
         while (idMatcher.find()) {
             String fieldName = idMatcher.group(1);
-            assertDoesNotThrow(() -> InventoryController.class.getDeclaredField(fieldName),
-                    () -> "Missing InventoryController field: " + fieldName);
+            assertDoesNotThrow(() -> controllerType.getDeclaredField(fieldName),
+                    () -> "Missing " + controllerType.getSimpleName() + " field: " + fieldName);
         }
         var actionMatcher = Pattern.compile("onAction=\\\"#([^\\\"]+)\\\"").matcher(fxml);
         while (actionMatcher.find()) {
             String methodName = actionMatcher.group(1);
-            assertDoesNotThrow(() -> InventoryController.class.getDeclaredMethod(methodName),
-                    () -> "Missing InventoryController action: " + methodName);
+            assertDoesNotThrow(() -> controllerType.getDeclaredMethod(methodName),
+                    () -> "Missing " + controllerType.getSimpleName() + " action: " + methodName);
         }
     }
 

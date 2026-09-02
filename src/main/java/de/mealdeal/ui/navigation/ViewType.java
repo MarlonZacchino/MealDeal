@@ -8,6 +8,7 @@ public enum ViewType {
     CREATE_RECIPE("/de/mealdeal/ui/create-recipe-view.fxml"),
     SEARCH("/de/mealdeal/ui/search-view.fxml"),
     WEEK_PLAN("/de/mealdeal/ui/week-plan-view.fxml"),
+    INGREDIENTS("/de/mealdeal/ui/ingredients-view.fxml"),
     INVENTORY("/de/mealdeal/ui/inventory-view.fxml"),
     SHOPPING("/de/mealdeal/ui/shopping-view.fxml");
 

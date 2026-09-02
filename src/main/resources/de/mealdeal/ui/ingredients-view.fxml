@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="de.mealdeal.ui.controller.IngredientsController"
+            fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
+    <content>
+        <StackPane alignment="TOP_CENTER" styleClass="page-shell">
+            <VBox maxWidth="1.7976931348623157E308" spacing="28.0" styleClass="page-container">
+                <VBox spacing="6.0" styleClass="page-header">
+                    <Label text="Zutaten" styleClass="page-title"/>
+                    <Label text="Verwalte zentrale Zutaten und ihre Kategorien."
+                           wrapText="true" styleClass="page-subtitle"/>
+                </VBox>
+
+                <VBox fx:id="managementContent" spacing="14.0">
+                    <TitledPane fx:id="ingredientManagementSection"
+                                text="Zentrale Zutaten bearbeiten"
+                                collapsible="true" expanded="true"
+                                maxWidth="1.7976931348623157E308"
+                                styleClass="expandable-pane, ingredient-management-pane">
+                        <content>
+                            <VBox spacing="14.0" styleClass="inventory-category-management-content">
+                                <Label text="Name und Kategorie ändern" styleClass="card-title"/>
+                                <Label text="Rezepte und Inventareinträge behalten dabei dieselbe zentrale Zutat."
+                                       wrapText="true" styleClass="card-text"/>
+                                <Label fx:id="ingredientManagementError" managed="false"
+                                       visible="false" wrapText="true" styleClass="form-error"/>
+                                <VBox fx:id="ingredientManagementContainer" spacing="8.0"/>
+                            </VBox>
+                        </content>
+                    </TitledPane>
+
+                    <TitledPane fx:id="categoryManagementSection"
+                                text="Zutatenkategorien verwalten"
+                                collapsible="true" expanded="false"
+                                maxWidth="1.7976931348623157E308"
+                                styleClass="expandable-pane, ingredient-management-pane">
+                        <content>
+                            <VBox spacing="14.0" styleClass="inventory-category-management-content">
+                                <Label text="Kategorien" styleClass="card-title"/>
+                                <Label text="Lege Kategorien an, benenne sie um oder ändere ihre Reihenfolge. Sonstiges bleibt als geschützter Fallback erhalten."
+                                       wrapText="true" styleClass="card-text"/>
+                                <FlowPane alignment="CENTER_LEFT" hgap="10.0" vgap="10.0">
+                                    <TextField fx:id="categoryNameField"
+                                               promptText="Neue Kategorie"
+                                               styleClass="inventory-category-name-input"/>
+                                    <Button text="Kategorie hinzufügen" onAction="#addCategory"
+                                            styleClass="primary-button"/>
+                                </FlowPane>
+                                <Label fx:id="categoryFormError" managed="false" visible="false"
+                                       wrapText="true" styleClass="form-error"/>
+                                <VBox fx:id="categoryManagementContainer" spacing="8.0"/>
+                            </VBox>
+                        </content>
+                    </TitledPane>
+                </VBox>
+
+                <VBox fx:id="loadErrorState" alignment="CENTER" managed="false" visible="false"
+                      spacing="10.0" styleClass="card, inventory-state, error-state-card">
+                    <Label text="Zutaten konnten nicht geladen werden." styleClass="card-title"/>
+                    <Label fx:id="loadErrorMessage" textAlignment="CENTER"
+                           wrapText="true" styleClass="card-text"/>
+                    <Button text="Erneut versuchen" onAction="#refresh"
+                            styleClass="secondary-button"/>
+                </VBox>
+            </VBox>
+        </StackPane>
+    </content>
+</ScrollPane>
