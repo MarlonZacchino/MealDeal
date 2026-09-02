@@ -39,7 +39,7 @@ public final class ShoppingListController {
     private final Supplier<ShoppingList> todayListWithInventory;
     private final Supplier<ShoppingList> currentWeekListWithInventory;
     private ViewMode viewMode = ViewMode.TODAY;
-    private InventoryMode inventoryMode = InventoryMode.WITHOUT_INVENTORY;
+    private InventoryMode inventoryMode = InventoryMode.WITH_INVENTORY;
 
     @FXML
     private ToggleButton todayMode;
@@ -102,8 +102,8 @@ public final class ShoppingListController {
         ToggleGroup inventoryGroup = new ToggleGroup();
         withoutInventoryMode.setToggleGroup(inventoryGroup);
         withInventoryMode.setToggleGroup(inventoryGroup);
-        inventoryMode = InventoryMode.WITHOUT_INVENTORY;
-        withoutInventoryMode.setSelected(true);
+        inventoryMode = InventoryMode.WITH_INVENTORY;
+        withInventoryMode.setSelected(true);
         selectMode(ViewMode.TODAY);
     }
 

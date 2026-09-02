@@ -66,6 +66,34 @@
                     </VBox>
                 </VBox>
 
+                <VBox spacing="16.0" styleClass="card, form-section-card">
+                    <HBox alignment="CENTER_LEFT" spacing="12.0">
+                        <VBox spacing="4.0">
+                            <Label text="Zutaten" styleClass="card-title"/>
+                            <Label text="Pro Zutatengruppe kannst du Alternativen mit eigener Menge und Einheit ergänzen."
+                                   wrapText="true" styleClass="card-text"/>
+                        </VBox>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button text="Zutatengruppe hinzufügen" onAction="#addIngredientRow"
+                                styleClass="secondary-button"/>
+                    </HBox>
+                    <VBox fx:id="ingredientRowsContainer" spacing="12.0"/>
+                </VBox>
+
+                <VBox spacing="16.0" styleClass="card, form-section-card">
+                    <Label text="Geschmacksrichtung" styleClass="card-title"/>
+                    <Label text="Wähle mindestens eine Geschmacksrichtung aus."
+                           wrapText="true" styleClass="card-text"/>
+                    <FlowPane fx:id="tasteOptionsContainer" hgap="12.0" vgap="10.0"/>
+                    <HBox spacing="12.0">
+                        <TextField fx:id="newTasteField"
+                                   promptText="Neue Geschmacksrichtung"
+                                   maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS"/>
+                        <Button text="Hinzufügen" onAction="#addTaste"
+                                styleClass="secondary-button"/>
+                    </HBox>
+                </VBox>
+
                 <VBox spacing="12.0" styleClass="card, form-section-card">
                     <VBox spacing="4.0">
                         <Label text="Nährwerte pro Portion" styleClass="card-title"/>
@@ -95,34 +123,6 @@
                             <TextField fx:id="fatField" promptText="z. B. 18"
                                        maxWidth="1.7976931348623157E308"/>
                         </VBox>
-                    </HBox>
-                </VBox>
-
-                <VBox spacing="16.0" styleClass="card, form-section-card">
-                    <HBox alignment="CENTER_LEFT" spacing="12.0">
-                        <VBox spacing="4.0">
-                            <Label text="Zutaten" styleClass="card-title"/>
-                            <Label text="Pro Zutatengruppe kannst du Alternativen mit eigener Menge und Einheit ergänzen."
-                                   wrapText="true" styleClass="card-text"/>
-                        </VBox>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Button text="Zutatengruppe hinzufügen" onAction="#addIngredientRow"
-                                styleClass="secondary-button"/>
-                    </HBox>
-                    <VBox fx:id="ingredientRowsContainer" spacing="12.0"/>
-                </VBox>
-
-                <VBox spacing="16.0" styleClass="card, form-section-card">
-                    <Label text="Geschmacksrichtungen" styleClass="card-title"/>
-                    <Label text="Wähle mindestens eine Geschmacksrichtung aus."
-                           wrapText="true" styleClass="card-text"/>
-                    <FlowPane fx:id="tasteOptionsContainer" hgap="12.0" vgap="10.0"/>
-                    <HBox spacing="12.0">
-                        <TextField fx:id="newTasteField"
-                                   promptText="Neue Geschmacksrichtung"
-                                   maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS"/>
-                        <Button text="Hinzufügen" onAction="#addTaste"
-                                styleClass="secondary-button"/>
                     </HBox>
                 </VBox>
 

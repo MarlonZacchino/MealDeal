@@ -19,6 +19,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -69,6 +70,7 @@ public final class WeekPlanController implements NavigationAware {
     private final WeeklyMealPlanService mealPlanService;
     private final Map<LocalDate, MealPlanDay> loadedDays = new LinkedHashMap<>();
     private final Map<LocalDate, WeeklyMealPlanDayDraft> dayDrafts = new LinkedHashMap<>();
+    private final Map<LocalDate, WeekPlanDayViewState> dayViewStates = new LinkedHashMap<>();
     private Consumer<Recipe> detailNavigation;
     private List<Recipe> mainRecipes = List.of();
     private List<Recipe> sideRecipes = List.of();
@@ -145,9 +147,11 @@ public final class WeekPlanController implements NavigationAware {
         }
         loadedDays.clear();
         dayDrafts.clear();
+        dayViewStates.clear();
         for (MealPlanDay day : days) {
             loadedDays.put(day.date(), day);
             dayDrafts.put(day.date(), new WeeklyMealPlanDayDraft(day));
+            dayViewStates.put(day.date(), new WeekPlanDayViewState());
         }
         weekRangeLabel.setText(FULL_DATE.format(days.getFirst().date())
                 + " – " + FULL_DATE.format(days.getLast().date()));
@@ -155,24 +159,40 @@ public final class WeekPlanController implements NavigationAware {
         updateSaveButtonState();
     }
 
-    private VBox createDayCard(MealPlanDay day) {
+    private TitledPane createDayCard(MealPlanDay day) {
         WeeklyMealPlanDayDraft draft = dayDrafts.get(day.date());
-        VBox card = new VBox(16);
-        card.setMaxWidth(Double.MAX_VALUE);
-        card.getStyleClass().addAll("card", "meal-plan-day-card");
-        if (day.today()) {
-            card.getStyleClass().add("meal-plan-day-today");
-        }
-
+        WeekPlanDayViewState viewState = dayViewStates.get(day.date());
+        VBox content = new VBox(16);
+        content.setMaxWidth(Double.MAX_VALUE);
+        content.getStyleClass().add("meal-plan-day-content");
         Label localChangeNote = new Label(draft.isChanged()
                 ? "Ungespeicherte Änderungen." : "");
         localChangeNote.setManaged(draft.isChanged());
         localChangeNote.setVisible(draft.isChanged());
         localChangeNote.setWrapText(true);
         localChangeNote.getStyleClass().add("meal-plan-unsaved-note");
-        card.getChildren().addAll(dayHeader(day), mainSection(day.date(), draft),
-                sideSection(day.date(), draft), dessertSection(day.date(), draft),
-                localChangeNote);
+        content.getChildren().addAll(mainSection(day.date(), draft),
+                sideSection(day.date(), draft), dessertSection(day.date(), draft), localChangeNote);
+
+        Label summary = new Label(viewState.summary(draft));
+        summary.setWrapText(true);
+        summary.getStyleClass().add("meal-plan-day-summary");
+        VBox title = new VBox(5, dayHeader(day), summary);
+        title.setMaxWidth(Double.MAX_VALUE);
+        title.getStyleClass().add("meal-plan-day-title");
+
+        TitledPane card = new TitledPane();
+        card.setGraphic(title);
+        card.setContent(content);
+        card.setExpanded(viewState.isExpanded());
+        card.setAnimated(true);
+        card.setMaxWidth(Double.MAX_VALUE);
+        card.getStyleClass().addAll("card", "meal-plan-day-card");
+        if (day.today()) {
+            card.getStyleClass().add("meal-plan-day-today");
+        }
+        card.expandedProperty().addListener((ignored, previous, expanded) ->
+                viewState.setExpanded(expanded));
         return card;
     }
 

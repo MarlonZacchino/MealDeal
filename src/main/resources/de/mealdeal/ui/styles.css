@@ -345,12 +345,54 @@
 }
 
 .meal-plan-day-card {
-    -fx-padding: 28px 30px;
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+    -fx-text-fill: -md-text;
+}
+
+.meal-plan-day-card > .title {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 14px;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 14px;
+    -fx-cursor: hand;
+    -fx-padding: 16px 20px;
+}
+
+.meal-plan-day-card:expanded > .title {
+    -fx-background-radius: 14px 14px 0 0;
+    -fx-border-radius: 14px 14px 0 0;
+}
+
+.meal-plan-day-card > *.content {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 0 0 14px 14px;
+    -fx-border-color: transparent -md-border -md-border -md-border;
+    -fx-border-radius: 0 0 14px 14px;
+    -fx-padding: 0;
+}
+
+.meal-plan-day-content {
+    -fx-padding: 24px 28px 28px 28px;
+}
+
+.meal-plan-day-summary {
+    -fx-font-size: 15px;
+    -fx-text-fill: -md-text-muted;
+}
+
+.meal-plan-day-card > .title > .arrow-button .arrow {
+    -fx-background-color: -md-accent;
 }
 
 .meal-plan-save-bar {
     -fx-alignment: center-left;
     -fx-padding: 18px 22px;
+}
+
+.meal-plan-save-overlay {
+    -fx-effect: dropshadow(gaussian, rgba(31, 20, 23, 0.22), 18, 0.12, 0, 5);
 }
 
 .meal-plan-unsaved-note {
@@ -359,7 +401,7 @@
     -fx-text-fill: -md-accent;
 }
 
-.meal-plan-day-today {
+.meal-plan-day-card.meal-plan-day-today > .title {
     -fx-background-color: -md-accent-soft;
     -fx-border-color: -md-accent;
     -fx-border-width: 2px;
@@ -547,6 +589,62 @@
     -fx-padding: 24px 30px;
 }
 
+.inventory-category-management-content {
+    -fx-padding: 20px 22px 22px 22px;
+}
+
+.inventory-category-name-input {
+    -fx-pref-width: 320px;
+}
+
+.inventory-category-management-row {
+    -fx-alignment: center-left;
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 11px;
+    -fx-padding: 11px 13px;
+}
+
+.inventory-category-management-name {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.inventory-category-fallback-badge {
+    -fx-background-color: -md-accent-soft;
+    -fx-background-radius: 999px;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 9px;
+    -fx-text-fill: -md-accent;
+}
+
+.inventory-category-order-button {
+    -fx-min-width: 42px;
+    -fx-padding: 9px 11px;
+}
+
+.inventory-ingredient-management-row {
+    -fx-alignment: center-left;
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 11px;
+    -fx-padding: 11px 13px;
+}
+
+.inventory-ingredient-management-name {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.inventory-ingredient-category-badge {
+    -fx-background-color: -md-accent-soft;
+    -fx-background-radius: 999px;
+    -fx-font-size: 13px;
+    -fx-padding: 4px 9px;
+    -fx-text-fill: -md-accent;
+}
+
 .inventory-row {
     -fx-background-color: -md-surface-alt;
     -fx-background-radius: 11px;
@@ -636,6 +734,49 @@
     -fx-font-weight: bold;
     -fx-padding: 5px 10px;
     -fx-text-fill: -md-accent;
+}
+
+.recipe-group-pane {
+    -fx-background-color: transparent;
+    -fx-text-fill: -md-text;
+}
+
+.recipe-group-pane > .title {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 14px;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 14px;
+    -fx-cursor: hand;
+    -fx-font-size: 19px;
+    -fx-font-weight: bold;
+    -fx-padding: 16px 20px;
+}
+
+.recipe-group-pane:expanded > .title {
+    -fx-background-radius: 14px 14px 0 0;
+    -fx-border-radius: 14px 14px 0 0;
+}
+
+.recipe-group-pane > .title > .arrow-button .arrow {
+    -fx-background-color: -md-accent;
+}
+
+.recipe-group-pane > *.content {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 0 0 14px 14px;
+    -fx-border-color: transparent -md-border -md-border -md-border;
+    -fx-border-radius: 0 0 14px 14px;
+    -fx-padding: 0;
+}
+
+.recipe-group-content {
+    -fx-padding: 14px;
+}
+
+.recipe-group-empty {
+    -fx-padding: 16px 12px;
+    -fx-font-size: 15px;
+    -fx-text-fill: -md-text-muted;
 }
 
 .detail-time-name {
@@ -908,12 +1049,21 @@
     -fx-padding: 20px 22px 22px 22px;
 }
 
+.search-selection-content {
+    -fx-padding: 20px 22px 22px 22px;
+}
+
 .search-actions {
     -fx-background-color: -md-accent-soft;
     -fx-background-radius: 14px;
     -fx-border-color: -md-border;
     -fx-border-radius: 14px;
     -fx-padding: 20px 22px;
+}
+
+.search-reset-button {
+    -fx-border-color: -md-accent;
+    -fx-border-width: 1px;
 }
 
 .search-filter-name {

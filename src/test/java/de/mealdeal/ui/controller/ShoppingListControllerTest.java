@@ -89,18 +89,18 @@ class ShoppingListControllerTest {
     }
 
     @Test
-    void defaultInventoryModeKeepsExistingWithoutInventoryBehavior() {
+    void defaultInventoryModeUsesInventoryAwareCalculation() {
         ShoppingList expected = new ShoppingList(List.of());
         AtomicInteger withoutCalls = new AtomicInteger();
         AtomicInteger withCalls = new AtomicInteger();
         ShoppingListController controller = new ShoppingListController(
-                () -> { withoutCalls.incrementAndGet(); return expected; },
+                () -> { withoutCalls.incrementAndGet(); return new ShoppingList(List.of()); },
                 () -> new ShoppingList(List.of()),
-                () -> { withCalls.incrementAndGet(); return new ShoppingList(List.of()); },
+                () -> { withCalls.incrementAndGet(); return expected; },
                 () -> new ShoppingList(List.of()));
 
         assertSame(expected, controller.loadForMode(ShoppingListController.ViewMode.TODAY));
-        assertEquals(1, withoutCalls.get());
-        assertEquals(0, withCalls.get());
+        assertEquals(0, withoutCalls.get());
+        assertEquals(1, withCalls.get());
     }
 }

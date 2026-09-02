@@ -1,6 +1,7 @@
 package de.mealdeal.ui;
 
 import de.mealdeal.ui.navigation.ViewType;
+import de.mealdeal.ui.controller.InventoryController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -10,9 +11,11 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -63,6 +66,9 @@ class FxmlResourceTest {
             assertEquals(3, fxml.split("toggleGroup=\"\\$tasteModeGroup\"", -1).length - 1);
             assertTrue(fxml.contains("selected=\"true\" toggleGroup=\"$tasteModeGroup\""));
             assertTrue(fxml.contains("fx:id=\"searchOptionsPane\""));
+            assertTrue(fxml.contains("fx:id=\"ingredientSelectionPane\""));
+            assertTrue(fxml.contains("fx:id=\"tasteSelectionPane\""));
+            assertEquals(3, fxml.split("collapsible=\"true\" expanded=\"false\"", -1).length - 1);
             assertTrue(fxml.contains("text=\"Filter &amp; Suchoptionen\""));
             assertTrue(fxml.contains("collapsible=\"true\" expanded=\"false\""));
             assertTrue(fxml.contains("text=\"Geschmacksfilter\""));
@@ -72,6 +78,7 @@ class FxmlResourceTest {
             assertTrue(fxml.indexOf("fx:id=\"tasteRankingMode\"")
                     < fxml.indexOf("text=\"Gericht finden\""));
             assertTrue(fxml.contains("onAction=\"#resetFilters\""));
+            assertTrue(fxml.contains("styleClass=\"secondary-button, search-reset-button\""));
             assertTrue(fxml.contains("onAction=\"#search\""));
             assertTrue(fxml.contains("fx:id=\"resultsContainer\" alignment=\"TOP_LEFT\""));
             assertTrue(fxml.contains("VBox.vgrow=\"NEVER\""));
@@ -139,8 +146,31 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("text=\"Gerichtstyp\""));
         assertTrue(fxml.contains("Zutatengruppe hinzufügen"));
         assertTrue(fxml.contains("Alternativen mit eigener Menge und Einheit"));
+        assertTrue(fxml.indexOf("text=\"Allgemein\"") < fxml.indexOf("text=\"Zutaten\""));
+        assertTrue(fxml.indexOf("text=\"Zutaten\"")
+                < fxml.indexOf("text=\"Geschmacksrichtung\""));
+        assertTrue(fxml.indexOf("text=\"Geschmacksrichtung\"")
+                < fxml.indexOf("text=\"Nährwerte pro Portion\""));
+        assertTrue(fxml.indexOf("text=\"Nährwerte pro Portion\"")
+                < fxml.indexOf("text=\"Zubereitung\""));
         assertTrue(readResource("/de/mealdeal/ui/styles.css")
                 .contains(".ingredient-group-form"));
+    }
+
+    @Test
+    void recipesViewDefinesIndependentDishTypeGroups() throws Exception {
+        String fxml = readResource("/de/mealdeal/ui/recipes-view.fxml");
+        String css = readResource("/de/mealdeal/ui/styles.css");
+
+        assertTrue(fxml.contains("fx:id=\"mainRecipesPane\""));
+        assertTrue(fxml.contains("fx:id=\"sideRecipesPane\""));
+        assertTrue(fxml.contains("fx:id=\"dessertRecipesPane\""));
+        assertTrue(fxml.contains("fx:id=\"mainRecipesContainer\""));
+        assertTrue(fxml.contains("fx:id=\"sideRecipesContainer\""));
+        assertTrue(fxml.contains("fx:id=\"dessertRecipesContainer\""));
+        assertFalse(fxml.contains("<Accordion"));
+        assertTrue(css.contains(".recipe-group-pane > .title"));
+        assertTrue(css.contains(".recipe-group-empty"));
     }
 
     @Test
@@ -176,6 +206,9 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:id=\"weekRangeLabel\""));
         assertTrue(fxml.contains("fx:id=\"dayCardsContainer\""));
         assertTrue(fxml.contains("Änderungen speichern"));
+        assertTrue(fxml.contains("StackPane.alignment=\"BOTTOM_RIGHT\""));
+        assertTrue(fxml.contains("styleClass=\"card, meal-plan-save-bar, meal-plan-save-overlay\""));
+        assertTrue(fxml.contains("<Region minHeight=\"110.0\"/>"));
         assertTrue(fxml.contains("fx:id=\"errorState\""));
         assertTrue(fxml.contains("onAction=\"#refresh\""));
         assertTrue(css.contains(".meal-plan-day-today"));
@@ -183,6 +216,8 @@ class FxmlResourceTest {
         assertTrue(css.contains(".meal-plan-role-section"));
         assertTrue(css.contains(".meal-plan-side-row"));
         assertTrue(css.contains(".meal-plan-dessert-row"));
+        assertTrue(css.contains(".meal-plan-day-card > .title"));
+        assertTrue(css.contains(".meal-plan-day-summary"));
         assertTrue(css.contains(".home-plan-dessert-entry"));
     }
 
@@ -201,6 +236,7 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("onAction=\"#showWithoutInventory\""));
         assertTrue(fxml.contains("fx:id=\"withInventoryMode\""));
         assertTrue(fxml.contains("onAction=\"#showWithInventory\""));
+        assertTrue(fxml.contains("fx:id=\"withInventoryMode\" text=\"Mit Inventar\"\n                                      selected=\"true\""));
         assertTrue(fxml.contains("fx:id=\"itemsContainer\""));
         assertTrue(fxml.contains("fx:id=\"emptyState\""));
         assertTrue(fxml.contains("Für heute ist nichts einzukaufen."));
@@ -224,8 +260,36 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("onAction=\"#addItem\""));
         assertTrue(fxml.contains("fx:id=\"categoryContainer\""));
         assertTrue(fxml.contains("fx:id=\"emptyState\""));
+        assertTrue(fxml.contains("fx:id=\"categoryManagementSection\""));
+        assertTrue(fxml.contains("text=\"Zutatenkategorien verwalten\""));
+        assertTrue(fxml.contains("fx:id=\"categoryNameField\""));
+        assertTrue(fxml.contains("onAction=\"#addCategory\""));
+        assertTrue(fxml.contains("fx:id=\"categoryManagementContainer\""));
+        assertTrue(fxml.contains("fx:id=\"ingredientManagementSection\""));
+        assertTrue(fxml.contains("text=\"Zentrale Zutaten bearbeiten\""));
+        assertTrue(fxml.contains("fx:id=\"ingredientManagementContainer\""));
+        assertTrue(fxml.contains("fx:id=\"ingredientManagementError\""));
         assertTrue(css.contains(".inventory-category-card"));
         assertTrue(css.contains(".inventory-row"));
+        assertTrue(css.contains(".inventory-category-management-row"));
+        assertTrue(css.contains(".inventory-ingredient-management-row"));
+    }
+
+    @Test
+    void inventoryViewReferencesExistingControllerFieldsAndActions() throws Exception {
+        String fxml = readResource("/de/mealdeal/ui/inventory-view.fxml");
+        var idMatcher = Pattern.compile("fx:id=\\\"([^\\\"]+)\\\"").matcher(fxml);
+        while (idMatcher.find()) {
+            String fieldName = idMatcher.group(1);
+            assertDoesNotThrow(() -> InventoryController.class.getDeclaredField(fieldName),
+                    () -> "Missing InventoryController field: " + fieldName);
+        }
+        var actionMatcher = Pattern.compile("onAction=\\\"#([^\\\"]+)\\\"").matcher(fxml);
+        while (actionMatcher.find()) {
+            String methodName = actionMatcher.group(1);
+            assertDoesNotThrow(() -> InventoryController.class.getDeclaredMethod(methodName),
+                    () -> "Missing InventoryController action: " + methodName);
+        }
     }
 
     private static String readResource(String path) throws Exception {

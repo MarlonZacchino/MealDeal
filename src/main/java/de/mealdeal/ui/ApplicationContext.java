@@ -29,6 +29,8 @@ import de.mealdeal.ui.controller.WeekPlanController;
 import de.mealdeal.service.CombinedRecipeSearchService;
 import de.mealdeal.service.InventoryService;
 import de.mealdeal.service.InventoryConsumptionService;
+import de.mealdeal.service.IngredientCategoryService;
+import de.mealdeal.service.IngredientManagementService;
 import de.mealdeal.service.RecipeScaler;
 import de.mealdeal.service.RecipeSearchService;
 import de.mealdeal.service.ShoppingListService;
@@ -69,6 +71,8 @@ public final class ApplicationContext {
     private final WeeklyMealPlanService weeklyMealPlanService;
     private final ShoppingListService shoppingListService;
     private final InventoryService inventoryService;
+    private final IngredientCategoryService ingredientCategoryService;
+    private final IngredientManagementService ingredientManagementService;
     private final InventoryConsumptionService inventoryConsumptionService;
 
     /**
@@ -201,6 +205,10 @@ public final class ApplicationContext {
                 : null;
         this.inventoryService = new InventoryService(
                 this.inventoryRepository, this.ingredientRepository);
+        this.ingredientCategoryService = new IngredientCategoryService(
+                this.ingredientCategoryRepository);
+        this.ingredientManagementService = new IngredientManagementService(
+                this.ingredientRepository, this.ingredientCategoryService);
         this.shoppingListService = consumptionEnabled
                 ? new ShoppingListService(this.mealPlanRepository, this.inventoryRepository,
                         this.inventoryConsumptionService)
@@ -250,7 +258,8 @@ public final class ApplicationContext {
             return new ShoppingListController(shoppingListService);
         }
         if (controllerType == InventoryController.class) {
-            return new InventoryController(inventoryService, inventoryConsumptionService);
+            return new InventoryController(inventoryService, ingredientCategoryService,
+                    ingredientManagementService, inventoryConsumptionService);
         }
         try {
             return controllerType.getDeclaredConstructor().newInstance();
@@ -330,6 +339,22 @@ public final class ApplicationContext {
         @Override
         public List<de.mealdeal.domain.IngredientCategory> findAll() {
             return de.mealdeal.domain.IngredientCategories.all();
+        }
+
+        @Override
+        public void replaceAll(List<de.mealdeal.domain.IngredientCategory> categories) {
+            throw new UnsupportedOperationException("The built-in category catalog is read-only.");
+        }
+
+        @Override
+        public int countIngredients(UUID categoryId) {
+            return 0;
+        }
+
+        @Override
+        public void deleteAndReassign(UUID categoryId, UUID fallbackCategoryId,
+                                      List<de.mealdeal.domain.IngredientCategory> categories) {
+            throw new UnsupportedOperationException("The built-in category catalog is read-only.");
         }
     }
 

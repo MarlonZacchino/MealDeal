@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -38,6 +39,47 @@
                     <Label fx:id="formError" managed="false" visible="false"
                            wrapText="true" styleClass="form-error"/>
                 </VBox>
+
+                <TitledPane fx:id="categoryManagementSection"
+                            text="Zutatenkategorien verwalten"
+                            collapsible="true" expanded="false"
+                            maxWidth="1.7976931348623157E308"
+                            styleClass="search-options-pane, inventory-category-management">
+                    <content>
+                        <VBox spacing="14.0" styleClass="inventory-category-management-content">
+                            <Label text="Kategorien" styleClass="card-title"/>
+                            <Label text="Lege Kategorien an, benenne sie um oder ändere ihre Reihenfolge. Sonstiges bleibt als geschützter Fallback erhalten."
+                                   wrapText="true" styleClass="card-text"/>
+                            <FlowPane alignment="CENTER_LEFT" hgap="10.0" vgap="10.0">
+                                <TextField fx:id="categoryNameField"
+                                           promptText="Neue Kategorie"
+                                           styleClass="inventory-category-name-input"/>
+                                <Button text="Kategorie hinzufügen" onAction="#addCategory"
+                                        styleClass="primary-button"/>
+                            </FlowPane>
+                            <Label fx:id="categoryFormError" managed="false" visible="false"
+                                   wrapText="true" styleClass="form-error"/>
+                            <VBox fx:id="categoryManagementContainer" spacing="8.0"/>
+                        </VBox>
+                    </content>
+                </TitledPane>
+
+                <TitledPane fx:id="ingredientManagementSection"
+                            text="Zentrale Zutaten bearbeiten"
+                            collapsible="true" expanded="false"
+                            maxWidth="1.7976931348623157E308"
+                            styleClass="search-options-pane, inventory-ingredient-management">
+                    <content>
+                        <VBox spacing="14.0" styleClass="inventory-category-management-content">
+                            <Label text="Zutaten" styleClass="card-title"/>
+                            <Label text="Ändere Name oder Kategorie. Rezepte und Inventareinträge behalten dieselbe zentrale Zutat."
+                                   wrapText="true" styleClass="card-text"/>
+                            <Label fx:id="ingredientManagementError" managed="false"
+                                   visible="false" wrapText="true" styleClass="form-error"/>
+                            <VBox fx:id="ingredientManagementContainer" spacing="8.0"/>
+                        </VBox>
+                    </content>
+                </TitledPane>
 
                 <VBox fx:id="categoryContainer" spacing="16.0"/>
 

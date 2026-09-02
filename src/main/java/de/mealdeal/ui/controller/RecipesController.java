@@ -1,5 +1,6 @@
 package de.mealdeal.ui.controller;
 
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.repository.RecipeRepository;
@@ -9,6 +10,7 @@ import de.mealdeal.ui.navigation.ViewType;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
+import javafx.scene.control.TitledPane;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.Region;
@@ -17,8 +19,11 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /** Loads recipes through the repository and renders their compact list state. */
 public final class RecipesController implements NavigationAware {
@@ -32,12 +37,17 @@ public final class RecipesController implements NavigationAware {
 
     private final RecipeRepository recipeRepository;
     private final ToggleGroup selection = new ToggleGroup();
+    private Consumer<Recipe> detailNavigation;
     private ViewNavigator navigator;
 
     @FXML
-    private VBox recipeListContainer;
-    @FXML
-    private VBox emptyState;
+    private VBox recipeGroupsContainer;
+    @FXML private VBox mainRecipesContainer;
+    @FXML private VBox sideRecipesContainer;
+    @FXML private VBox dessertRecipesContainer;
+    @FXML private TitledPane mainRecipesPane;
+    @FXML private TitledPane sideRecipesPane;
+    @FXML private TitledPane dessertRecipesPane;
     @FXML
     private VBox errorState;
     @FXML
@@ -45,13 +55,22 @@ public final class RecipesController implements NavigationAware {
 
     /** Creates the controller with the repository used whenever the view is opened. */
     public RecipesController(RecipeRepository recipeRepository) {
+        this(recipeRepository, ignored -> {
+            throw new IllegalStateException("Navigator has not been set.");
+        });
+    }
+
+    RecipesController(RecipeRepository recipeRepository, Consumer<Recipe> detailNavigation) {
         this.recipeRepository = Objects.requireNonNull(
                 recipeRepository, "Recipe repository must not be null.");
+        this.detailNavigation = Objects.requireNonNull(
+                detailNavigation, "Detail navigation must not be null.");
     }
 
     @Override
     public void setNavigator(ViewNavigator navigator) {
         this.navigator = Objects.requireNonNull(navigator, "Navigator must not be null.");
+        detailNavigation = navigator::navigateToRecipeDetail;
     }
 
     @FXML
@@ -82,18 +101,43 @@ public final class RecipesController implements NavigationAware {
     }
 
     private void showRecipes(List<Recipe> recipes) {
-        recipeListContainer.getChildren().clear();
         selection.selectToggle(null);
+        Map<DishType, List<Recipe>> groups = groupByDishType(recipes);
+        renderGroup(mainRecipesContainer, groups.get(DishType.MAIN), "Hauptgerichte");
+        renderGroup(sideRecipesContainer, groups.get(DishType.SIDE), "Beilagen");
+        renderGroup(dessertRecipesContainer, groups.get(DishType.DESSERT), "Nachtische");
+        mainRecipesPane.setText(groupTitle("Hauptgerichte", groups.get(DishType.MAIN).size()));
+        sideRecipesPane.setText(groupTitle("Beilagen", groups.get(DishType.SIDE).size()));
+        dessertRecipesPane.setText(groupTitle("Nachtische", groups.get(DishType.DESSERT).size()));
+        setVisibleState(recipeGroupsContainer);
+    }
 
+    Map<DishType, List<Recipe>> groupByDishType(List<Recipe> recipes) {
+        EnumMap<DishType, List<Recipe>> groups = new EnumMap<>(DishType.class);
+        for (DishType dishType : DishType.values()) {
+            groups.put(dishType, recipes.stream()
+                    .filter(recipe -> recipe.getDishType() == dishType)
+                    .toList());
+        }
+        return Map.copyOf(groups);
+    }
+
+    private void renderGroup(VBox container, List<Recipe> recipes, String groupName) {
+        container.getChildren().clear();
         if (recipes.isEmpty()) {
-            setVisibleState(emptyState);
+            Label empty = new Label("Noch keine " + groupName.toLowerCase(java.util.Locale.GERMAN)
+                    + " gespeichert.");
+            empty.setWrapText(true);
+            empty.getStyleClass().add("recipe-group-empty");
+            container.getChildren().add(empty);
             return;
         }
+        recipes.stream().map(this::createRecipeEntry)
+                .forEach(container.getChildren()::add);
+    }
 
-        for (Recipe recipe : recipes) {
-            recipeListContainer.getChildren().add(createRecipeEntry(recipe));
-        }
-        setVisibleState(recipeListContainer);
+    private static String groupTitle(String name, int count) {
+        return name + " (" + count + ")";
     }
 
     private ToggleButton createRecipeEntry(Recipe recipe) {
@@ -129,8 +173,12 @@ public final class RecipesController implements NavigationAware {
         entry.setUserData(recipe.getId());
         entry.setAccessibleText("Gericht " + recipe.getName());
         entry.getStyleClass().add("recipe-list-item");
-        entry.setOnAction(ignored -> navigator.navigateToRecipeDetail(recipe));
+        entry.setOnAction(ignored -> openRecipe(recipe));
         return entry;
+    }
+
+    void openRecipe(Recipe recipe) {
+        detailNavigation.accept(Objects.requireNonNull(recipe, "Recipe must not be null."));
     }
 
     private void showLoadError() {
@@ -140,7 +188,7 @@ public final class RecipesController implements NavigationAware {
     }
 
     private void setVisibleState(VBox visibleState) {
-        for (VBox state : List.of(recipeListContainer, emptyState, errorState)) {
+        for (VBox state : List.of(recipeGroupsContainer, errorState)) {
             boolean visible = state == visibleState;
             state.setManaged(visible);
             state.setVisible(visible);

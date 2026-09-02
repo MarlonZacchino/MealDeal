@@ -34,10 +34,10 @@
                     </HBox>
                     <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="shopping-mode-switch">
                         <ToggleButton fx:id="withoutInventoryMode" text="Ohne Inventar"
-                                      selected="true" onAction="#showWithoutInventory"
+                                      onAction="#showWithoutInventory"
                                       styleClass="shopping-mode-button"/>
                         <ToggleButton fx:id="withInventoryMode" text="Mit Inventar"
-                                      onAction="#showWithInventory"
+                                      selected="true" onAction="#showWithInventory"
                                       styleClass="shopping-mode-button"/>
                     </HBox>
                     <Label fx:id="modeDescription" wrapText="true" styleClass="card-text"/>

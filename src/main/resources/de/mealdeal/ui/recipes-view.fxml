@@ -3,6 +3,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
@@ -25,17 +26,33 @@
                             styleClass="primary-button"/>
                 </HBox>
 
-                <VBox fx:id="recipeListContainer" managed="false" visible="false"
-                      maxWidth="1.7976931348623157E308" spacing="12.0"
-                      styleClass="recipe-list"/>
-
-                <VBox fx:id="emptyState" alignment="CENTER" maxWidth="1.7976931348623157E308"
-                      spacing="12.0" styleClass="card, recipe-state-card">
-                    <Label text="Noch keine Gerichte gespeichert." styleClass="card-title"/>
-                    <Label text="Sobald du dein erstes Gericht anlegst, erscheint es hier."
-                           wrapText="true" styleClass="card-text"/>
-                    <Button text="Erstes Gericht hinzufügen" onAction="#openCreateRecipe"
-                            styleClass="primary-button"/>
+                <VBox fx:id="recipeGroupsContainer" managed="false" visible="false"
+                      maxWidth="1.7976931348623157E308" spacing="14.0"
+                      styleClass="recipe-groups">
+                    <TitledPane fx:id="mainRecipesPane" text="Hauptgerichte" expanded="true"
+                                animated="true" maxWidth="1.7976931348623157E308"
+                                styleClass="recipe-group-pane">
+                        <content>
+                            <VBox fx:id="mainRecipesContainer" spacing="12.0"
+                                  styleClass="recipe-list, recipe-group-content"/>
+                        </content>
+                    </TitledPane>
+                    <TitledPane fx:id="sideRecipesPane" text="Beilagen" expanded="true"
+                                animated="true" maxWidth="1.7976931348623157E308"
+                                styleClass="recipe-group-pane">
+                        <content>
+                            <VBox fx:id="sideRecipesContainer" spacing="12.0"
+                                  styleClass="recipe-list, recipe-group-content"/>
+                        </content>
+                    </TitledPane>
+                    <TitledPane fx:id="dessertRecipesPane" text="Nachtische" expanded="true"
+                                animated="true" maxWidth="1.7976931348623157E308"
+                                styleClass="recipe-group-pane">
+                        <content>
+                            <VBox fx:id="dessertRecipesContainer" spacing="12.0"
+                                  styleClass="recipe-list, recipe-group-content"/>
+                        </content>
+                    </TitledPane>
                 </VBox>
 
                 <VBox fx:id="errorState" alignment="CENTER" managed="false" visible="false"

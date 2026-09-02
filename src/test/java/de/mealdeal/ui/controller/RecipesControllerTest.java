@@ -1,5 +1,6 @@
 package de.mealdeal.ui.controller;
 
+import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.Taste;
 import de.mealdeal.persistence.PersistenceException;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,6 +43,50 @@ class RecipesControllerTest {
     }
 
     @Test
+    void groupsMainSideAndDessertWhileKeepingSortedOrderInsideEachGroup() {
+        Recipe dessert = recipe("00000000-0000-0000-0000-000000000005",
+                "Eis", DishType.DESSERT);
+        Recipe laterMain = recipe("00000000-0000-0000-0000-000000000004",
+                "Suppe", DishType.MAIN);
+        Recipe side = recipe("00000000-0000-0000-0000-000000000003",
+                "Salat", DishType.SIDE);
+        Recipe earlierMain = recipe("00000000-0000-0000-0000-000000000002",
+                "Auflauf", DishType.MAIN);
+        RecipesController controller = new RecipesController(new StubRecipeRepository(
+                List.of(dessert, laterMain, side, earlierMain)));
+
+        var groups = controller.groupByDishType(controller.loadSortedRecipes());
+
+        assertEquals(List.of(earlierMain, laterMain), groups.get(DishType.MAIN));
+        assertEquals(List.of(side), groups.get(DishType.SIDE));
+        assertEquals(List.of(dessert), groups.get(DishType.DESSERT));
+    }
+
+    @Test
+    void keepsEmptyDishTypeGroupsVisibleInTheGroupedModel() {
+        RecipesController controller = new RecipesController(new StubRecipeRepository(List.of()));
+
+        var groups = controller.groupByDishType(List.of());
+
+        assertEquals(List.of(), groups.get(DishType.MAIN));
+        assertEquals(List.of(), groups.get(DishType.SIDE));
+        assertEquals(List.of(), groups.get(DishType.DESSERT));
+    }
+
+    @Test
+    void groupedRecipeEntryKeepsExistingDetailNavigation() {
+        Recipe recipe = recipe("00000000-0000-0000-0000-000000000007",
+                "Suppe", DishType.MAIN);
+        AtomicReference<Recipe> opened = new AtomicReference<>();
+        RecipesController controller = new RecipesController(
+                new StubRecipeRepository(List.of(recipe)), opened::set);
+
+        controller.openRecipe(recipe);
+
+        assertEquals(recipe, opened.get());
+    }
+
+    @Test
     void doesNotSwallowRepositoryFailure() {
         PersistenceException failure = new PersistenceException("Database unavailable.");
         RecipesController controller = new RecipesController(new StubRecipeRepository(failure));
@@ -51,6 +97,11 @@ class RecipesControllerTest {
 
     private static Recipe recipe(String id, String name) {
         return new Recipe(UUID.fromString(id), name, 2, List.of(), List.of(), List.of(SAVORY));
+    }
+
+    private static Recipe recipe(String id, String name, DishType dishType) {
+        return new Recipe(UUID.fromString(id), name, 2, List.of(), List.of(),
+                List.of(SAVORY), null, null, null, dishType);
     }
 
     private static final class StubRecipeRepository implements RecipeRepository {

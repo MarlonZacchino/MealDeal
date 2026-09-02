@@ -31,44 +31,53 @@
                 <Label fx:id="searchMessage" managed="false" visible="false"
                        wrapText="true" styleClass="form-message"/>
 
-                <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
-                      styleClass="card, wide-card, search-selection-card">
-                    <HBox alignment="CENTER_LEFT" spacing="12.0">
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label text="Zutaten auswählen" styleClass="card-title"/>
-                            <Label text="Wähle mindestens eine und höchstens zehn Zutaten."
-                                   wrapText="true" styleClass="card-text"/>
+                <TitledPane fx:id="ingredientSelectionPane" text="Zutaten auswählen"
+                            animated="true" collapsible="true" expanded="false"
+                            maxWidth="1.7976931348623157E308"
+                            styleClass="search-options-pane, search-selection-pane">
+                    <content>
+                        <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
+                              styleClass="search-selection-content">
+                            <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                <Label text="Wähle mindestens eine und höchstens zehn Zutaten."
+                                       wrapText="true" styleClass="card-text"
+                                       HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="selectionCountLabel" styleClass="selection-count"/>
+                            </HBox>
+                            <TextField fx:id="ingredientFilterField"
+                                       promptText="Zutaten durchsuchen …"/>
+                            <FlowPane fx:id="availableIngredientsContainer" hgap="10.0" vgap="10.0"/>
+                            <VBox spacing="10.0" styleClass="selected-ingredients-box">
+                                <Label text="Deine Auswahl" styleClass="form-label"/>
+                                <FlowPane fx:id="selectedIngredientsContainer" hgap="10.0" vgap="10.0"/>
+                            </VBox>
                         </VBox>
-                        <Label fx:id="selectionCountLabel" styleClass="selection-count"/>
-                    </HBox>
-                    <TextField fx:id="ingredientFilterField"
-                               promptText="Zutaten durchsuchen …"/>
-                    <FlowPane fx:id="availableIngredientsContainer" hgap="10.0" vgap="10.0"/>
-                    <VBox spacing="10.0" styleClass="selected-ingredients-box">
-                        <Label text="Deine Auswahl" styleClass="form-label"/>
-                        <FlowPane fx:id="selectedIngredientsContainer" hgap="10.0" vgap="10.0"/>
-                    </VBox>
-                </VBox>
+                    </content>
+                </TitledPane>
 
-                <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
-                      styleClass="card, wide-card, search-selection-card">
-                    <HBox alignment="CENTER_LEFT" spacing="12.0">
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label text="Geschmack auswählen" styleClass="card-title"/>
+                <TitledPane fx:id="tasteSelectionPane" text="Geschmacksrichtungen auswählen"
+                            animated="true" collapsible="true" expanded="false"
+                            maxWidth="1.7976931348623157E308"
+                            styleClass="search-options-pane, search-selection-pane">
+                    <content>
+                        <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
+                              styleClass="search-selection-content">
+                            <HBox alignment="CENTER_LEFT" spacing="12.0">
                             <Label text="Wähle eine oder mehrere passende Geschmacksrichtungen."
-                                   wrapText="true" styleClass="card-text"/>
+                                       wrapText="true" styleClass="card-text"
+                                       HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="tasteSelectionCountLabel" styleClass="selection-count"/>
+                            </HBox>
+                            <TextField fx:id="tasteFilterField"
+                                       promptText="Geschmacksrichtungen durchsuchen …"/>
+                            <FlowPane fx:id="availableTastesContainer" hgap="10.0" vgap="10.0"/>
+                            <VBox spacing="10.0" styleClass="selected-ingredients-box">
+                                <Label text="Deine Auswahl" styleClass="form-label"/>
+                                <FlowPane fx:id="selectedTastesContainer" hgap="10.0" vgap="10.0"/>
+                            </VBox>
                         </VBox>
-                        <Label fx:id="tasteSelectionCountLabel" styleClass="selection-count"/>
-                    </HBox>
-                    <TextField fx:id="tasteFilterField"
-                               promptText="Geschmacksrichtungen durchsuchen …"/>
-                    <FlowPane fx:id="availableTastesContainer" hgap="10.0" vgap="10.0"/>
-                    <VBox spacing="10.0" styleClass="selected-ingredients-box">
-                        <Label text="Deine Auswahl" styleClass="form-label"/>
-                        <FlowPane fx:id="selectedTastesContainer" hgap="10.0" vgap="10.0"/>
-                    </VBox>
-
-                </VBox>
+                    </content>
+                </TitledPane>
 
                 <TitledPane fx:id="searchOptionsPane" text="Filter &amp; Suchoptionen"
                             animated="true" collapsible="true" expanded="false"
@@ -107,12 +116,11 @@
                     </content>
                 </TitledPane>
 
-                <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="search-actions">
-                    <Button text="Alle Filter zurücksetzen" onAction="#resetFilters"
-                            styleClass="secondary-button"/>
-                    <Region HBox.hgrow="ALWAYS"/>
+                <HBox alignment="CENTER_RIGHT" spacing="12.0" styleClass="search-actions">
                     <Button text="Gericht finden" onAction="#search"
                             styleClass="primary-button"/>
+                    <Button text="Alle Filter zurücksetzen" onAction="#resetFilters"
+                            styleClass="secondary-button, search-reset-button"/>
                 </HBox>
 
                 <VBox spacing="14.0">
