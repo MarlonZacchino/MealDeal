@@ -5,6 +5,7 @@
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
@@ -18,6 +19,9 @@
     <content>
         <StackPane alignment="TOP_CENTER" styleClass="page-shell">
             <VBox maxWidth="1.7976931348623157E308" spacing="28.0" styleClass="page-container">
+                <fx:define>
+                    <ToggleGroup fx:id="tasteModeGroup"/>
+                </fx:define>
                 <VBox spacing="6.0" styleClass="page-header">
                     <Label text="Was essen?" styleClass="page-title"/>
                     <Label text="Finde passende Gerichte nach Zutaten oder Geschmack."
@@ -48,13 +52,10 @@
 
                 <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
                       styleClass="card, wide-card, search-selection-card">
-                    <fx:define>
-                        <ToggleGroup fx:id="tasteModeGroup"/>
-                    </fx:define>
                     <HBox alignment="CENTER_LEFT" spacing="12.0">
                         <VBox spacing="5.0" HBox.hgrow="ALWAYS">
                             <Label text="Geschmack auswählen" styleClass="card-title"/>
-                            <Label text="Wähle Geschmacksrichtungen und entscheide, wie genau sie passen sollen."
+                            <Label text="Wähle eine oder mehrere passende Geschmacksrichtungen."
                                    wrapText="true" styleClass="card-text"/>
                         </VBox>
                         <Label fx:id="tasteSelectionCountLabel" styleClass="selection-count"/>
@@ -67,40 +68,50 @@
                         <FlowPane fx:id="selectedTastesContainer" hgap="10.0" vgap="10.0"/>
                     </VBox>
 
-                    <VBox spacing="10.0">
-                        <Label text="Suchmodus" styleClass="form-label"/>
-                        <HBox spacing="10.0">
-                            <VBox minWidth="0.0" spacing="5.0" HBox.hgrow="ALWAYS"
-                                  styleClass="taste-mode-card">
-                                <RadioButton fx:id="tasteAndMode" text="Alle (AND)"
-                                             toggleGroup="$tasteModeGroup"/>
-                                <Label text="Das Gericht enthält jede ausgewählte Geschmacksrichtung."
-                                       wrapText="true" styleClass="mode-description"/>
-                            </VBox>
-                            <VBox minWidth="0.0" spacing="5.0" HBox.hgrow="ALWAYS"
-                                  styleClass="taste-mode-card">
-                                <RadioButton fx:id="tasteOrMode" text="Mindestens eine (OR)"
-                                             toggleGroup="$tasteModeGroup"/>
-                                <Label text="Das Gericht enthält mindestens eine der ausgewählten Richtungen."
-                                       wrapText="true" styleClass="mode-description"/>
-                            </VBox>
-                            <VBox minWidth="0.0" spacing="5.0" HBox.hgrow="ALWAYS"
-                                  styleClass="taste-mode-card">
-                                <RadioButton fx:id="tasteRankingMode" text="Beste Treffer (RANKING)"
-                                             selected="true" toggleGroup="$tasteModeGroup"/>
-                                <Label text="Alle Treffer werden nach ihrer Übereinstimmung sortiert."
-                                       wrapText="true" styleClass="mode-description"/>
-                            </VBox>
-                        </HBox>
-                    </VBox>
-
                 </VBox>
+
+                <TitledPane fx:id="searchOptionsPane" text="Filter &amp; Suchoptionen"
+                            animated="true" collapsible="true" expanded="false"
+                            maxWidth="1.7976931348623157E308"
+                            styleClass="search-options-pane">
+                    <content>
+                        <VBox spacing="12.0" styleClass="search-options-content">
+                            <Label text="Geschmacksfilter" styleClass="form-label"/>
+                            <Label text="Diese Einstellung gilt nur für ausgewählte Geschmacksrichtungen. Die Zutatenbewertung bleibt PERFECT / GOOD / PARTIAL."
+                                   wrapText="true" styleClass="mode-description"/>
+                            <HBox spacing="10.0">
+                                <VBox minWidth="0.0" spacing="5.0" HBox.hgrow="ALWAYS"
+                                      styleClass="taste-mode-card">
+                                    <RadioButton fx:id="tasteAndMode" text="Alle (AND)"
+                                                 toggleGroup="$tasteModeGroup"/>
+                                    <Label text="Das Gericht enthält jede ausgewählte Geschmacksrichtung."
+                                           wrapText="true" styleClass="mode-description"/>
+                                </VBox>
+                                <VBox minWidth="0.0" spacing="5.0" HBox.hgrow="ALWAYS"
+                                      styleClass="taste-mode-card">
+                                    <RadioButton fx:id="tasteOrMode" text="Mindestens eine (OR)"
+                                                 toggleGroup="$tasteModeGroup"/>
+                                    <Label text="Das Gericht enthält mindestens eine der ausgewählten Richtungen."
+                                           wrapText="true" styleClass="mode-description"/>
+                                </VBox>
+                                <VBox minWidth="0.0" spacing="5.0" HBox.hgrow="ALWAYS"
+                                      styleClass="taste-mode-card">
+                                    <RadioButton fx:id="tasteRankingMode"
+                                                 text="Beste Treffer (RANKING)"
+                                                 selected="true" toggleGroup="$tasteModeGroup"/>
+                                    <Label text="Alle Treffer werden nach ihrer Übereinstimmung sortiert."
+                                           wrapText="true" styleClass="mode-description"/>
+                                </VBox>
+                            </HBox>
+                        </VBox>
+                    </content>
+                </TitledPane>
 
                 <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="search-actions">
                     <Button text="Alle Filter zurücksetzen" onAction="#resetFilters"
                             styleClass="secondary-button"/>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Button text="Passende Gerichte anzeigen" onAction="#search"
+                    <Button text="Gericht finden" onAction="#search"
                             styleClass="primary-button"/>
                 </HBox>
 

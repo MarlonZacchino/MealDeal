@@ -871,6 +871,43 @@
     -fx-text-fill: -md-text-muted;
 }
 
+.search-options-pane {
+    -fx-background-color: transparent;
+    -fx-text-fill: -md-text;
+}
+
+.search-options-pane > .title {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 14px;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 14px;
+    -fx-cursor: hand;
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-padding: 15px 18px;
+}
+
+.search-options-pane:expanded > .title {
+    -fx-background-radius: 14px 14px 0 0;
+    -fx-border-radius: 14px 14px 0 0;
+}
+
+.search-options-pane > .title > .arrow-button .arrow {
+    -fx-background-color: -md-accent;
+}
+
+.search-options-pane > *.content {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 0 0 14px 14px;
+    -fx-border-color: transparent -md-border -md-border -md-border;
+    -fx-border-radius: 0 0 14px 14px;
+    -fx-padding: 0;
+}
+
+.search-options-content {
+    -fx-padding: 20px 22px 22px 22px;
+}
+
 .search-actions {
     -fx-background-color: -md-accent-soft;
     -fx-background-radius: 14px;

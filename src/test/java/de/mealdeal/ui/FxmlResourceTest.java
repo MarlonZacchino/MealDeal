@@ -60,12 +60,25 @@ class FxmlResourceTest {
             assertTrue(fxml.contains("fx:id=\"tasteAndMode\""));
             assertTrue(fxml.contains("fx:id=\"tasteOrMode\""));
             assertTrue(fxml.contains("fx:id=\"tasteRankingMode\""));
+            assertEquals(3, fxml.split("toggleGroup=\"\\$tasteModeGroup\"", -1).length - 1);
+            assertTrue(fxml.contains("selected=\"true\" toggleGroup=\"$tasteModeGroup\""));
+            assertTrue(fxml.contains("fx:id=\"searchOptionsPane\""));
+            assertTrue(fxml.contains("text=\"Filter &amp; Suchoptionen\""));
+            assertTrue(fxml.contains("collapsible=\"true\" expanded=\"false\""));
+            assertTrue(fxml.contains("text=\"Geschmacksfilter\""));
+            assertTrue(fxml.contains("gilt nur für ausgewählte Geschmacksrichtungen"));
+            assertTrue(fxml.indexOf("fx:id=\"searchOptionsPane\"")
+                    < fxml.indexOf("fx:id=\"tasteAndMode\""));
+            assertTrue(fxml.indexOf("fx:id=\"tasteRankingMode\"")
+                    < fxml.indexOf("text=\"Gericht finden\""));
             assertTrue(fxml.contains("onAction=\"#resetFilters\""));
             assertTrue(fxml.contains("onAction=\"#search\""));
             assertTrue(fxml.contains("fx:id=\"resultsContainer\" alignment=\"TOP_LEFT\""));
             assertTrue(fxml.contains("VBox.vgrow=\"NEVER\""));
             assertTrue(css.contains(".search-result-item {"));
             assertTrue(css.contains("-fx-max-height: -1"));
+            assertTrue(css.contains(".search-options-pane > .title"));
+            assertTrue(css.contains(".search-options-pane:expanded > .title"));
         }
     }
 
