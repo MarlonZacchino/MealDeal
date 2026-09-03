@@ -17,7 +17,7 @@
                 <VBox maxWidth="1.7976931348623157E308"
                       styleClass="content-card, home-card">
                     <HBox alignment="CENTER_LEFT" styleClass="content-card-header">
-                        <Label text="Was möchtest du essen?" wrapText="true"
+                        <Label text="Gericht finden" wrapText="true"
                                styleClass="content-card-header-title"/>
                     </HBox>
                     <VBox spacing="16.0" styleClass="content-card-body">
@@ -69,7 +69,7 @@
                     </VBox>
                 </VBox>
 
-                <TitledPane text="Wochenplan" collapsible="true" expanded="false"
+                <TitledPane text="Wochenplan Übersicht" collapsible="true" expanded="false"
                             maxWidth="1.7976931348623157E308"
                             styleClass="expandable-card, home-week-pane">
                     <content>

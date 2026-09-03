@@ -52,10 +52,6 @@
     -fx-font-weight: bold;
 }
 
-.search-options-content {
-    -fx-padding: 20px 22px 22px 22px;
-}
-
 .search-selection-content {
     -fx-padding: 20px 22px 22px 22px;
 }

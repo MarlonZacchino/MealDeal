@@ -28,9 +28,11 @@ public final class SearchableComboBoxSupport<T> {
                                       Collection<? extends T> options,
                                       Function<T, String> displayText,
                                       boolean customTextAllowed,
-                                      StringConverter<T> customTextConverter) {
+                                      StringConverter<T> customTextConverter,
+                                      boolean preserveSourceOrder) {
         this.comboBox = Objects.requireNonNull(comboBox, "ComboBox must not be null.");
-        this.model = new SearchableSelectionModel<>(options, displayText);
+        this.model = new SearchableSelectionModel<>(
+                options, displayText, preserveSourceOrder);
         this.customTextAllowed = customTextAllowed;
         this.customTextConverter = customTextConverter;
         T initialValue = comboBox.getValue();
@@ -53,7 +55,15 @@ public final class SearchableComboBoxSupport<T> {
             ComboBox<T> comboBox, Collection<? extends T> options,
             Function<T, String> displayText) {
         return new SearchableComboBoxSupport<>(comboBox, options, displayText,
-                false, null);
+                false, null, false);
+    }
+
+    /** Installs filtering while retaining the caller's intentional source ordering. */
+    public static <T> SearchableComboBoxSupport<T> forValidValuesInSourceOrder(
+            ComboBox<T> comboBox, Collection<? extends T> options,
+            Function<T, String> displayText) {
+        return new SearchableComboBoxSupport<>(comboBox, options, displayText,
+                false, null, true);
     }
 
     /** Installs filtering while preserving an existing intentional custom-text workflow. */
@@ -62,7 +72,7 @@ public final class SearchableComboBoxSupport<T> {
             StringConverter<T> converter) {
         Objects.requireNonNull(converter, "Custom text converter must not be null.");
         return new SearchableComboBoxSupport<>(comboBox, options, converter::toString,
-                true, converter);
+                true, converter, false);
     }
 
     /** Replaces the source catalog without sharing filtered state with another control. */
@@ -79,6 +89,13 @@ public final class SearchableComboBoxSupport<T> {
         if (!customTextAllowed) {
             restoreValue(committedValue);
         }
+    }
+
+    /** Clears both the visible value and the last committed catalog selection. */
+    public void clearSelection() {
+        committedValue = null;
+        model.clearSelection();
+        restoreValue(null);
     }
 
     private void installListeners() {

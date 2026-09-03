@@ -41,6 +41,18 @@ public final class IngredientManagementService {
         return categoryService.loadCategories();
     }
 
+    /** Creates a central ingredient in an existing category. */
+    public Ingredient create(String name, UUID categoryId) {
+        if (categoryId == null) {
+            throw new IllegalArgumentException("Bitte eine Kategorie auswählen.");
+        }
+        String validatedName = validatedName(name);
+        rejectDuplicateName(validatedName, null);
+        Ingredient ingredient = new Ingredient(validatedName, findCategory(categoryId));
+        ingredientRepository.save(ingredient);
+        return ingredient;
+    }
+
     /** Renames and/or recategorizes one ingredient without changing its UUID. */
     public Ingredient update(UUID ingredientId, String name, UUID categoryId) {
         Objects.requireNonNull(ingredientId, "Ingredient ID must not be null.");
@@ -49,14 +61,18 @@ public final class IngredientManagementService {
         Ingredient current = ingredientRepository.findById(ingredientId)
                 .orElseThrow(() -> new PersistenceException("Die Zutat existiert nicht mehr."));
         rejectDuplicateName(validatedName, ingredientId);
-        IngredientCategory category = categoryService.loadCategories().stream()
+        Ingredient updated = new Ingredient(current.getId(), validatedName,
+                findCategory(categoryId));
+        ingredientRepository.save(updated);
+        return updated;
+    }
+
+    private IngredientCategory findCategory(UUID categoryId) {
+        return categoryService.loadCategories().stream()
                 .filter(candidate -> candidate.getId().equals(categoryId))
                 .findFirst()
                 .orElseThrow(() -> new PersistenceException(
                         "Die ausgewählte Kategorie existiert nicht mehr."));
-        Ingredient updated = new Ingredient(current.getId(), validatedName, category);
-        ingredientRepository.save(updated);
-        return updated;
     }
 
     private void rejectDuplicateName(String name, UUID ignoredId) {

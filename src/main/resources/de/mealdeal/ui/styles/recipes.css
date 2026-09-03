@@ -11,6 +11,11 @@
     -fx-padding: 14px;
 }
 
+.recipe-grid {
+    -fx-hgap: 14px;
+    -fx-vgap: 14px;
+}
+
 .recipe-group-empty {
     -fx-padding: 16px 12px;
     -fx-font-size: 15px;
@@ -101,7 +106,7 @@
     -fx-orientation: horizontal;
 }
 
-.detail-time-list {
+.detail-time-grid {
     -fx-padding: 4px 0 0 0;
 }
 

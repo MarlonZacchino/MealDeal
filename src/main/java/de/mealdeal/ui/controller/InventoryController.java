@@ -8,6 +8,7 @@ import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.service.InventoryCategoryGroup;
 import de.mealdeal.service.InventoryConsumptionService;
 import de.mealdeal.service.InventoryService;
+import de.mealdeal.ui.IngredientCategoryGrouping;
 import de.mealdeal.ui.control.SearchableComboBoxSupport;
 import de.mealdeal.ui.form.DecimalInputParser;
 import javafx.collections.FXCollections;
@@ -18,6 +19,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.FlowPane;
@@ -78,9 +80,10 @@ public final class InventoryController {
             }
             layoutInventoryGrids();
         });
-        ingredientSearch = SearchableComboBoxSupport.forValidValues(
+        ingredientSearch = SearchableComboBoxSupport.forValidValuesInSourceOrder(
                 ingredientBox, List.of(), ingredient -> ingredient.getName() + " · "
                         + ingredient.getCategory().getName());
+        ingredientBox.setCellFactory(ignored -> new InventoryIngredientCell(ingredientBox));
         unitBox.setConverter(new GermanUnitStringConverter());
         unitBox.setItems(FXCollections.observableArrayList(Unit.values()));
         unitBox.setValue(Unit.GRAM);
@@ -94,7 +97,8 @@ public final class InventoryController {
             if (consumptionService != null) {
                 consumptionService.consumePastEntries();
             }
-            List<Ingredient> ingredients = inventoryService.loadAvailableIngredients();
+            List<Ingredient> ingredients = inventoryPickerOrder(
+                    inventoryService.loadAvailableIngredients());
             Ingredient selected = ingredientBox.getValue();
             ingredientSearch.setOptions(ingredients);
             ingredientBox.setValue(selected != null && ingredients.contains(selected)
@@ -254,6 +258,12 @@ public final class InventoryController {
         return 2;
     }
 
+    static List<Ingredient> inventoryPickerOrder(List<Ingredient> ingredients) {
+        return IngredientCategoryGrouping.group(ingredients, "", List.of()).stream()
+                .flatMap(group -> group.ingredients().stream())
+                .toList();
+    }
+
     private static void layoutInventoryGrid(InventoryGrid inventoryGrid, int columns) {
         GridPane grid = inventoryGrid.grid();
         grid.getChildren().clear();
@@ -325,6 +335,44 @@ public final class InventoryController {
     private record InventoryGrid(GridPane grid, List<VBox> items) {
         private InventoryGrid {
             items = List.copyOf(items);
+        }
+    }
+
+    private static final class InventoryIngredientCell extends ListCell<Ingredient> {
+        private final ComboBox<Ingredient> owner;
+        private final Label category = new Label();
+        private final Label ingredient = new Label();
+        private final VBox content = new VBox(2, category, ingredient);
+
+        private InventoryIngredientCell(ComboBox<Ingredient> owner) {
+            this.owner = owner;
+            category.getStyleClass().add("inventory-picker-category");
+        }
+
+        @Override
+        protected void updateItem(Ingredient item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+                return;
+            }
+            boolean categoryStart = startsCategory(item);
+            category.setText(item.getCategory().getName());
+            category.setManaged(categoryStart);
+            category.setVisible(categoryStart);
+            ingredient.setText(item.getName());
+            setText(null);
+            setGraphic(content);
+        }
+
+        private boolean startsCategory(Ingredient item) {
+            int index = getIndex();
+            if (index <= 0 || index > owner.getItems().size() - 1) {
+                return true;
+            }
+            Ingredient previous = owner.getItems().get(index - 1);
+            return !previous.getCategory().getId().equals(item.getCategory().getId());
         }
     }
 }

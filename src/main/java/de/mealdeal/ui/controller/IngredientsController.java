@@ -7,8 +7,10 @@ import de.mealdeal.service.IngredientCategoryService;
 import de.mealdeal.service.IngredientManagementService;
 import de.mealdeal.ui.IngredientCategoryGrouping;
 import de.mealdeal.ui.control.SearchableComboBoxSupport;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -16,12 +18,16 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /** Displays and edits central ingredients and their shared category catalog. */
 public final class IngredientsController {
@@ -31,15 +37,33 @@ public final class IngredientsController {
 
     private final IngredientCategoryService categoryService;
     private final IngredientManagementService ingredientService;
+    private final IngredientManagementViewState ingredientViewState =
+            new IngredientManagementViewState();
+    private final List<Button> ingredientCategoryTiles = new ArrayList<>();
+    private final ListChangeListener<String> viewportListener = ignored ->
+            layoutIngredientCategoryGrid();
+    private SearchableComboBoxSupport<IngredientCategory> ingredientCategorySearch;
+    private List<IngredientCategory> availableCategories = List.of();
+    private Scene observedScene;
 
     @FXML private VBox managementContent;
     @FXML private TitledPane ingredientManagementSection;
     @FXML private TitledPane categoryManagementSection;
+    @FXML private Button showAddIngredientButton;
+    @FXML private VBox addIngredientForm;
+    @FXML private TextField ingredientNameField;
+    @FXML private ComboBox<IngredientCategory> ingredientCategoryBox;
+    @FXML private Label addIngredientError;
     @FXML private TextField categoryNameField;
     @FXML private Label categoryFormError;
     @FXML private VBox categoryManagementContainer;
     @FXML private Label ingredientManagementError;
     @FXML private VBox ingredientManagementContainer;
+    @FXML private Label ingredientManagementEmptyState;
+    @FXML private GridPane ingredientCategoryGrid;
+    @FXML private VBox selectedIngredientCategoryContent;
+    @FXML private Label selectedIngredientCategoryTitle;
+    @FXML private VBox selectedIngredientRows;
     @FXML private VBox loadErrorState;
     @FXML private Label loadErrorMessage;
 
@@ -53,6 +77,18 @@ public final class IngredientsController {
 
     @FXML
     private void initialize() {
+        ingredientCategorySearch = SearchableComboBoxSupport.forValidValues(
+                ingredientCategoryBox, List.of(), IngredientCategory::getName);
+        ingredientCategoryGrid.sceneProperty().addListener((ignored, previous, current) -> {
+            if (previous != null) {
+                previous.getRoot().getStyleClass().removeListener(viewportListener);
+            }
+            observedScene = current;
+            if (current != null) {
+                current.getRoot().getStyleClass().addListener(viewportListener);
+            }
+            layoutIngredientCategoryGrid();
+        });
         refresh();
     }
 
@@ -61,6 +97,7 @@ public final class IngredientsController {
     public void refresh() {
         try {
             List<IngredientCategory> categories = categoryService.loadCategories();
+            ingredientCategorySearch.setOptions(categories);
             renderIngredients(ingredientService.loadIngredients(), categories);
             renderCategories(categories);
             managementContent.setManaged(true);
@@ -89,6 +126,55 @@ public final class IngredientsController {
         } catch (IllegalArgumentException | PersistenceException exception) {
             showCategoryError(messageOf(exception));
         }
+    }
+
+    @FXML
+    private void showAddIngredientForm() {
+        ingredientNameField.clear();
+        ingredientCategorySearch.clearSelection();
+        clearError(addIngredientError);
+        addIngredientForm.setManaged(true);
+        addIngredientForm.setVisible(true);
+        showAddIngredientButton.setDisable(true);
+        ingredientNameField.requestFocus();
+    }
+
+    @FXML
+    private void addIngredient() {
+        try {
+            IngredientCategory category = ingredientCategoryBox.getValue();
+            Ingredient created = ingredientService.create(
+                    ingredientNameField.getText(), category == null ? null : category.getId());
+            hideAddIngredientForm();
+            refresh();
+            selectIngredientCategoryIfPresent(created.getCategory().getId());
+        } catch (IllegalArgumentException | PersistenceException exception) {
+            showError(addIngredientError, messageOf(exception));
+        }
+    }
+
+    @FXML
+    private void cancelAddIngredient() {
+        hideAddIngredientForm();
+    }
+
+    private void hideAddIngredientForm() {
+        ingredientNameField.clear();
+        ingredientCategorySearch.clearSelection();
+        clearError(addIngredientError);
+        addIngredientForm.setManaged(false);
+        addIngredientForm.setVisible(false);
+        showAddIngredientButton.setDisable(false);
+    }
+
+    private void selectIngredientCategoryIfPresent(UUID categoryId) {
+        if (ingredientViewState.groups().stream()
+                .noneMatch(group -> group.category().getId().equals(categoryId))) {
+            return;
+        }
+        ingredientViewState.selectCategory(categoryId);
+        renderIngredientCategoryTiles();
+        renderSelectedIngredientCategory();
     }
 
     private void renderCategories(List<IngredientCategory> categories) {
@@ -202,27 +288,84 @@ public final class IngredientsController {
 
     private void renderIngredients(List<Ingredient> ingredients,
                                    List<IngredientCategory> categories) {
-        ingredientManagementContainer.getChildren().clear();
-        if (ingredients.isEmpty()) {
-            Label empty = new Label("Noch keine zentralen Zutaten vorhanden.");
-            empty.getStyleClass().add("card-text");
-            ingredientManagementContainer.getChildren().add(empty);
+        availableCategories = List.copyOf(categories);
+        ingredientViewState.updateIngredients(ingredients);
+        ingredientManagementEmptyState.setManaged(ingredients.isEmpty());
+        ingredientManagementEmptyState.setVisible(ingredients.isEmpty());
+        ingredientCategoryGrid.setManaged(!ingredients.isEmpty());
+        ingredientCategoryGrid.setVisible(!ingredients.isEmpty());
+        renderIngredientCategoryTiles();
+        renderSelectedIngredientCategory();
+    }
+
+    private void renderIngredientCategoryTiles() {
+        ingredientCategoryTiles.clear();
+        for (IngredientCategoryGrouping.Group group : ingredientViewState.groups()) {
+            Button tile = new Button(group.category().getName());
+            tile.setMinWidth(0);
+            tile.setMaxWidth(Double.MAX_VALUE);
+            tile.setWrapText(true);
+            tile.getStyleClass().addAll("secondary-button", "ingredient-category-tile");
+            if (ingredientViewState.isSelected(group.category().getId())) {
+                tile.getStyleClass().add("ingredient-category-tile-active");
+            }
+            tile.setOnAction(ignored -> {
+                ingredientViewState.selectCategory(group.category().getId());
+                renderIngredientCategoryTiles();
+                renderSelectedIngredientCategory();
+            });
+            ingredientCategoryTiles.add(tile);
+        }
+        layoutIngredientCategoryGrid();
+    }
+
+    private void renderSelectedIngredientCategory() {
+        var selectedGroup = ingredientViewState.selectedGroup();
+        if (selectedGroup.isEmpty()) {
+            selectedIngredientRows.getChildren().clear();
+            selectedIngredientCategoryContent.setManaged(false);
+            selectedIngredientCategoryContent.setVisible(false);
             return;
         }
-        IngredientCategoryGrouping.group(ingredients, "", List.of()).forEach(group -> {
-            VBox rows = new VBox(8);
-            rows.getStyleClass().add("ingredient-category-content");
-            group.ingredients().stream().map(ingredient -> ingredientRow(ingredient, categories))
-                    .forEach(rows.getChildren()::add);
-            TitledPane categoryPane = new TitledPane(group.category().getName(), rows);
-            categoryPane.setAnimated(true);
-            categoryPane.setCollapsible(true);
-            categoryPane.setExpanded(false);
-            categoryPane.setMaxWidth(Double.MAX_VALUE);
-            categoryPane.getStyleClass().addAll(
-                    "expandable-card", "ingredient-category-pane");
-            ingredientManagementContainer.getChildren().add(categoryPane);
-        });
+        IngredientCategoryGrouping.Group group = selectedGroup.orElseThrow();
+        selectedIngredientCategoryTitle.setText(group.category().getName());
+        selectedIngredientRows.getChildren().setAll(group.ingredients().stream()
+                .map(ingredient -> ingredientRow(ingredient, availableCategories))
+                .toList());
+        selectedIngredientCategoryContent.setManaged(true);
+        selectedIngredientCategoryContent.setVisible(true);
+    }
+
+    private void layoutIngredientCategoryGrid() {
+        int columns = ingredientCategoryColumnsFor(observedScene == null
+                ? List.of() : observedScene.getRoot().getStyleClass());
+        ingredientCategoryGrid.getChildren().clear();
+        ingredientCategoryGrid.getColumnConstraints().clear();
+        for (int columnIndex = 0; columnIndex < columns; columnIndex++) {
+            ColumnConstraints column = new ColumnConstraints();
+            column.setPercentWidth(100.0 / columns);
+            column.setHgrow(Priority.ALWAYS);
+            ingredientCategoryGrid.getColumnConstraints().add(column);
+        }
+        for (int index = 0; index < ingredientCategoryTiles.size(); index++) {
+            Button tile = ingredientCategoryTiles.get(index);
+            ingredientCategoryGrid.add(tile, index % columns, index / columns);
+            GridPane.setHgrow(tile, Priority.ALWAYS);
+            GridPane.setFillWidth(tile, true);
+        }
+    }
+
+    static int ingredientCategoryColumnsFor(List<String> viewportStyleClasses) {
+        if (viewportStyleClasses.contains("viewport-compact")) {
+            return 2;
+        }
+        if (viewportStyleClasses.contains("viewport-extra-wide")) {
+            return 6;
+        }
+        if (viewportStyleClasses.contains("viewport-wide")) {
+            return 5;
+        }
+        return 4;
     }
 
     private HBox ingredientRow(Ingredient ingredient, List<IngredientCategory> categories) {

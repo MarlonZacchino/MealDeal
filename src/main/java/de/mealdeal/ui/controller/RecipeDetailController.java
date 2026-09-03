@@ -60,6 +60,12 @@ public final class RecipeDetailController implements NavigationAware {
     @FXML private VBox servingSection;
     @FXML private VBox tasteSection;
     @FXML private VBox timeSection;
+    @FXML private GridPane detailTimeGrid;
+    @FXML private HBox preparationTimeBlock;
+    @FXML private HBox cookingTimeBlock;
+    @FXML private HBox bakingTimeBlock;
+    @FXML private HBox restingTimeBlock;
+    @FXML private HBox totalTimeBlock;
     @FXML private Label preparationTimeValue;
     @FXML private Label cookingTimeValue;
     @FXML private Label bakingTimeValue;
@@ -351,6 +357,30 @@ public final class RecipeDetailController implements NavigationAware {
             place(stepsSection, 1, 1);
         }
         GridPane.setColumnSpan(timeSection, !compact && !nutritionSection.isManaged() ? 2 : 1);
+        configureTimeLayout(compact);
+    }
+
+    private void configureTimeLayout(boolean compact) {
+        int columns = compact ? 1 : 2;
+        detailTimeGrid.getColumnConstraints().clear();
+        for (int index = 0; index < columns; index++) {
+            ColumnConstraints column = new ColumnConstraints();
+            column.setPercentWidth(100.0 / columns);
+            detailTimeGrid.getColumnConstraints().add(column);
+        }
+        placeTimeBlock(preparationTimeBlock, 0, 0);
+        placeTimeBlock(cookingTimeBlock, compact ? 0 : 1, compact ? 1 : 0);
+        placeTimeBlock(bakingTimeBlock, 0, compact ? 2 : 1);
+        placeTimeBlock(restingTimeBlock, compact ? 0 : 1, compact ? 3 : 1);
+        placeTimeBlock(totalTimeBlock, 0, compact ? 4 : 2);
+        GridPane.setColumnSpan(totalTimeBlock, compact ? 1 : 2);
+    }
+
+    private static void placeTimeBlock(HBox block, int column, int row) {
+        GridPane.setColumnIndex(block, column);
+        GridPane.setRowIndex(block, row);
+        GridPane.setHgrow(block, Priority.ALWAYS);
+        block.setMaxWidth(Double.MAX_VALUE);
     }
 
     private static void configureColumns(GridPane grid, boolean compact) {

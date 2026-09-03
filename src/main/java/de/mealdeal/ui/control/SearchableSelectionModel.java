@@ -16,13 +16,21 @@ final class SearchableSelectionModel<T> {
     private static final int NO_MATCH = Integer.MAX_VALUE;
 
     private final Function<T, String> displayText;
+    private final boolean preserveSourceOrder;
     private List<T> options = List.of();
     private T committedValue;
 
     SearchableSelectionModel(Collection<? extends T> options,
                              Function<T, String> displayText) {
+        this(options, displayText, false);
+    }
+
+    SearchableSelectionModel(Collection<? extends T> options,
+                             Function<T, String> displayText,
+                             boolean preserveSourceOrder) {
         this.displayText = Objects.requireNonNull(displayText,
                 "Display text function must not be null.");
+        this.preserveSourceOrder = preserveSourceOrder;
         setOptions(options);
     }
 
@@ -45,10 +53,16 @@ final class SearchableSelectionModel<T> {
                 ranked.add(new RankedOption<>(option, text, normalize(text), rank, index));
             }
         }
-        ranked.sort(Comparator.comparingInt(RankedOption<T>::rank)
-                .thenComparing(RankedOption<T>::normalizedText)
-                .thenComparing(RankedOption<T>::text)
-                .thenComparingInt(RankedOption<T>::sourceIndex));
+        Comparator<RankedOption<T>> order;
+        if (preserveSourceOrder) {
+            order = Comparator.comparingInt(RankedOption<T>::sourceIndex);
+        } else {
+            order = Comparator.comparingInt(RankedOption<T>::rank)
+                    .thenComparing(RankedOption<T>::normalizedText)
+                    .thenComparing(RankedOption<T>::text)
+                    .thenComparingInt(RankedOption<T>::sourceIndex);
+        }
+        ranked.sort(order);
         return ranked.stream().map(RankedOption::option).toList();
     }
 
@@ -85,6 +99,10 @@ final class SearchableSelectionModel<T> {
 
     Optional<T> committedValue() {
         return Optional.ofNullable(committedValue);
+    }
+
+    void clearSelection() {
+        committedValue = null;
     }
 
     String display(T value) {

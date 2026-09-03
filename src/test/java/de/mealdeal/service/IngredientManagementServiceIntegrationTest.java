@@ -28,6 +28,24 @@ class IngredientManagementServiceIntegrationTest {
     Path temporaryDirectory;
 
     @Test
+    void createdIngredientRoundTripsWithStableIdentityAndCategory() {
+        SqliteDatabase database = new SqliteDatabase(
+                temporaryDirectory.resolve("ingredient-create.db"));
+        var ingredientRepository = new SqliteIngredientRepository(database);
+        var categoryRepository = new SqliteIngredientCategoryRepository(database);
+        IngredientManagementService service = new IngredientManagementService(
+                ingredientRepository, new IngredientCategoryService(categoryRepository));
+
+        Ingredient created = service.create(
+                "  Pfirsich  ", IngredientCategories.FRUIT.getId());
+
+        Ingredient loaded = ingredientRepository.findById(created.getId()).orElseThrow();
+        assertEquals(created.getId(), loaded.getId());
+        assertEquals("Pfirsich", loaded.getName());
+        assertEquals(IngredientCategories.FRUIT.getId(), loaded.getCategory().getId());
+    }
+
+    @Test
     void renameAndCategoryChangeKeepRecipeAndInventoryReferencesValid() {
         SqliteDatabase database = new SqliteDatabase(
                 temporaryDirectory.resolve("ingredient-management.db"));

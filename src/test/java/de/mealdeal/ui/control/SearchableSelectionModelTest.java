@@ -66,6 +66,26 @@ class SearchableSelectionModelTest {
         assertEquals(List.of("Omelett", "Omelett mit Gemüse"), first.suggestions("ome"));
     }
 
+    @Test
+    void optionalSourceOrderIsPreservedWithinTheSameMatchRank() {
+        SearchableSelectionModel<String> model = new SearchableSelectionModel<>(
+                List.of("Zweite", "Erste", "Dritte"), value -> value, true);
+
+        assertEquals(List.of("Zweite", "Erste", "Dritte"), model.suggestions(""));
+        assertEquals(List.of("Zweite", "Erste", "Dritte"), model.suggestions("e"));
+    }
+
+    @Test
+    void clearingSelectionRemovesTheCommittedFallback() {
+        SearchableSelectionModel<String> model = model();
+        model.commit("Omelett");
+
+        model.clearSelection();
+
+        assertEquals(List.of(), model.committedValue().stream().toList());
+        assertEquals(List.of(), model.resolveExactOrKeep("ungültig").stream().toList());
+    }
+
     private static SearchableSelectionModel<String> model() {
         return new SearchableSelectionModel<>(OPTIONS, value -> value);
     }

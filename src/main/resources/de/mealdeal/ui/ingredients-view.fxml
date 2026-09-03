@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -23,18 +26,69 @@
 
                 <VBox fx:id="managementContent" spacing="14.0">
                     <TitledPane fx:id="ingredientManagementSection"
-                                text="Zentrale Zutaten bearbeiten"
+                                text="Zentrale Zutaten verwalten"
                                 collapsible="true" expanded="true"
                                 maxWidth="1.7976931348623157E308"
                                 styleClass="expandable-card, ingredient-management-pane">
                         <content>
                             <VBox spacing="14.0" styleClass="content-card-body">
-                                <Label text="Name und Kategorie ändern" styleClass="card-title"/>
+                                <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                    <Label text="Name und Kategorie ändern"
+                                           maxWidth="1.7976931348623157E308"
+                                           HBox.hgrow="ALWAYS" styleClass="card-title"/>
+                                    <Button fx:id="showAddIngredientButton"
+                                            text="Zutat hinzufügen"
+                                            onAction="#showAddIngredientForm"
+                                            styleClass="primary-button"/>
+                                </HBox>
                                 <Label text="Rezepte und Inventareinträge behalten dabei dieselbe zentrale Zutat."
                                        wrapText="true" styleClass="card-text"/>
+                                <VBox fx:id="addIngredientForm" managed="false" visible="false"
+                                      maxWidth="1.7976931348623157E308"
+                                      spacing="12.0" styleClass="sub-card">
+                                    <FlowPane alignment="CENTER_LEFT" hgap="12.0" vgap="10.0">
+                                        <VBox spacing="6.0">
+                                            <Label text="Name" styleClass="form-label"/>
+                                            <TextField fx:id="ingredientNameField"
+                                                       promptText="Zutatname"
+                                                       prefWidth="320.0"/>
+                                        </VBox>
+                                        <VBox spacing="6.0">
+                                            <Label text="Kategorie" styleClass="form-label"/>
+                                            <ComboBox fx:id="ingredientCategoryBox"
+                                                      promptText="Kategorie auswählen"
+                                                      prefWidth="320.0"/>
+                                        </VBox>
+                                    </FlowPane>
+                                    <Label fx:id="addIngredientError" managed="false"
+                                           visible="false" wrapText="true"
+                                           styleClass="form-error"/>
+                                    <HBox alignment="CENTER_RIGHT" spacing="10.0">
+                                        <Button text="Hinzufügen" onAction="#addIngredient"
+                                                styleClass="primary-button"/>
+                                        <Button text="Abbrechen" onAction="#cancelAddIngredient"
+                                                styleClass="secondary-button"/>
+                                    </HBox>
+                                </VBox>
                                 <Label fx:id="ingredientManagementError" managed="false"
                                        visible="false" wrapText="true" styleClass="form-error"/>
-                                <VBox fx:id="ingredientManagementContainer" spacing="8.0"/>
+                                <VBox fx:id="ingredientManagementContainer" spacing="14.0">
+                                    <Label fx:id="ingredientManagementEmptyState"
+                                           text="Noch keine zentralen Zutaten vorhanden."
+                                           managed="false" visible="false"
+                                           wrapText="true" styleClass="card-text"/>
+                                    <GridPane fx:id="ingredientCategoryGrid"
+                                              maxWidth="1.7976931348623157E308"
+                                              styleClass="ingredient-management-grid"/>
+                                    <VBox fx:id="selectedIngredientCategoryContent"
+                                          managed="false" visible="false"
+                                          maxWidth="1.7976931348623157E308"
+                                          spacing="12.0" styleClass="sub-card">
+                                        <Label fx:id="selectedIngredientCategoryTitle"
+                                               wrapText="true" styleClass="section-title"/>
+                                        <VBox fx:id="selectedIngredientRows" spacing="8.0"/>
+                                    </VBox>
+                                </VBox>
                             </VBox>
                         </content>
                     </TitledPane>

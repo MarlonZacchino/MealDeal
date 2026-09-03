@@ -83,6 +83,11 @@
     -fx-pref-width: 340px;
 }
 
+.inventory-picker-category {
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-accent;
+}
+
 .inventory-quantity-input,
 .inventory-edit-quantity {
     -fx-pref-width: 180px;
@@ -104,6 +109,25 @@
 
 .inventory-category-name-input {
     -fx-pref-width: 320px;
+}
+
+.ingredient-management-pane > .title {
+    -fx-font-weight: bold;
+}
+
+.ingredient-management-grid {
+    -fx-hgap: 10px;
+    -fx-vgap: 10px;
+}
+
+.ingredient-category-tile {
+    -fx-alignment: center-left;
+}
+
+.ingredient-category-tile-active,
+.ingredient-category-tile-active:hover {
+    -fx-background-color: -md-accent;
+    -fx-text-fill: -md-on-accent;
 }
 
 .inventory-category-management-row {

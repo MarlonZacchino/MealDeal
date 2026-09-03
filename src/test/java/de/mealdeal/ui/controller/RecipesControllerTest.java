@@ -74,6 +74,15 @@ class RecipesControllerTest {
     }
 
     @Test
+    void usesOneTwoOrAtMostThreeRecipeColumnsForExistingViewports() {
+        assertEquals(1, RecipesController.recipeColumnsFor(List.of("viewport-compact")));
+        assertEquals(2, RecipesController.recipeColumnsFor(List.of()));
+        assertEquals(3, RecipesController.recipeColumnsFor(List.of("viewport-wide")));
+        assertEquals(3, RecipesController.recipeColumnsFor(
+                List.of("viewport-wide", "viewport-extra-wide")));
+    }
+
+    @Test
     void groupedRecipeEntryKeepsExistingDetailNavigation() {
         Recipe recipe = recipe("00000000-0000-0000-0000-000000000007",
                 "Suppe", DishType.MAIN);

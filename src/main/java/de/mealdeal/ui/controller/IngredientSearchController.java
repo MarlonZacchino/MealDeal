@@ -18,6 +18,7 @@ import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
@@ -56,6 +57,10 @@ public final class IngredientSearchController implements NavigationAware {
     private TitledPane ingredientSelectionPane;
     @FXML
     private TitledPane tasteSelectionPane;
+    @FXML
+    private Button searchOptionsButton;
+    @FXML
+    private VBox searchOptionsContent;
 
     @FXML
     private TextField ingredientFilterField;
@@ -202,6 +207,16 @@ public final class IngredientSearchController implements NavigationAware {
             LOGGER.log(System.Logger.Level.ERROR, "Could not search recipes.", exception);
             resultsView.showError();
         }
+    }
+
+    @FXML
+    private void toggleSearchOptions() {
+        boolean show = !searchOptionsContent.isVisible();
+        searchOptionsContent.setManaged(show);
+        searchOptionsContent.setVisible(show);
+        searchOptionsButton.setAccessibleText(show
+                ? "Filter und Suchoptionen schließen"
+                : "Filter und Suchoptionen öffnen");
     }
 
     @FXML

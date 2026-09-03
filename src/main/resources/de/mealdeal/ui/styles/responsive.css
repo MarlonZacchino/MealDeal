@@ -32,6 +32,16 @@
     -fx-vgap: 10px;
 }
 
+.root-shell.viewport-compact .recipe-grid {
+    -fx-hgap: 0;
+    -fx-vgap: 12px;
+}
+
+.root-shell.viewport-compact .ingredient-management-grid {
+    -fx-hgap: 8px;
+    -fx-vgap: 8px;
+}
+
 .root-shell.viewport-compact .meal-plan-day-content {
     -fx-padding: 18px 18px 22px 18px;
 }
@@ -59,6 +69,16 @@
 
 .root-shell.viewport-wide .page-shell {
     -fx-padding: 46px;
+}
+
+.root-shell.viewport-wide .ingredient-management-grid {
+    -fx-hgap: 12px;
+    -fx-vgap: 12px;
+}
+
+.root-shell.viewport-wide .recipe-grid {
+    -fx-hgap: 16px;
+    -fx-vgap: 16px;
 }
 
 .root-shell.viewport-wide .page-container {
@@ -115,6 +135,11 @@
 
 .root-shell.viewport-extra-wide .page-shell {
     -fx-padding: 54px;
+}
+
+.root-shell.viewport-extra-wide .ingredient-management-grid {
+    -fx-hgap: 14px;
+    -fx-vgap: 14px;
 }
 
 .root-shell.viewport-extra-wide .page-container {

@@ -88,27 +88,29 @@ class FxmlResourceTest {
             assertTrue(fxml.contains("fx:id=\"tasteRankingMode\""));
             assertEquals(3, fxml.split("toggleGroup=\"\\$tasteModeGroup\"", -1).length - 1);
             assertTrue(fxml.contains("selected=\"true\" toggleGroup=\"$tasteModeGroup\""));
-            assertTrue(fxml.contains("fx:id=\"searchOptionsPane\""));
+            assertFalse(fxml.contains("fx:id=\"searchOptionsPane\""));
+            assertTrue(fxml.contains("fx:id=\"searchOptionsButton\""));
+            assertTrue(fxml.contains("fx:id=\"searchOptionsContent\" managed=\"false\" visible=\"false\""));
             assertTrue(fxml.contains("fx:id=\"ingredientSelectionPane\""));
             assertTrue(fxml.contains("fx:id=\"tasteSelectionPane\""));
             assertTrue(fxml.contains("fx:id=\"searchSelectionGrid\""));
             assertEquals(2, fxml.split("<ColumnConstraints percentWidth=\"50.0\"/>", -1)
                     .length - 1);
-            assertEquals(3, fxml.split("collapsible=\"true\" expanded=\"false\"", -1).length - 1);
+            assertEquals(2, fxml.split("collapsible=\"true\" expanded=\"false\"", -1).length - 1);
             assertTrue(fxml.contains("text=\"Filter &amp; Suchoptionen\""));
-            assertTrue(fxml.contains("collapsible=\"true\" expanded=\"false\""));
             assertTrue(fxml.contains("text=\"Geschmacksfilter\""));
             assertTrue(fxml.contains("gilt nur für ausgewählte Geschmacksrichtungen"));
-            assertTrue(fxml.indexOf("fx:id=\"searchOptionsPane\"")
+            assertTrue(fxml.indexOf("fx:id=\"searchOptionsContent\"")
                     < fxml.indexOf("fx:id=\"tasteAndMode\""));
-            assertTrue(fxml.indexOf("fx:id=\"tasteRankingMode\"")
-                    < fxml.indexOf("<Button text=\"Gericht finden\""));
             assertTrue(fxml.indexOf("<Button text=\"Gericht finden\"")
+                    < fxml.indexOf("fx:id=\"searchOptionsButton\""));
+            assertTrue(fxml.indexOf("fx:id=\"searchOptionsButton\"")
                     < fxml.indexOf("text=\"Alle Filter zurücksetzen\""));
             assertTrue(fxml.contains("<HBox alignment=\"CENTER_RIGHT\" spacing=\"12.0\">"));
             assertFalse(fxml.contains("styleClass=\"search-actions\""));
             assertFalse(css.contains(".search-actions"));
             assertTrue(fxml.contains("onAction=\"#resetFilters\""));
+            assertTrue(fxml.contains("onAction=\"#toggleSearchOptions\""));
             assertTrue(fxml.contains("styleClass=\"secondary-button, search-reset-button\""));
             assertTrue(fxml.contains("onAction=\"#search\""));
             assertTrue(fxml.contains("fx:id=\"resultsContainer\" alignment=\"TOP_LEFT\""));
@@ -121,6 +123,7 @@ class FxmlResourceTest {
             assertTrue(css.contains(".ingredient-category-options .ingredient-option"));
             assertTrue(css.contains(".ingredient-category-options .ingredient-option:hover"));
             assertTrue(css.contains(".selected-ingredient-chip"));
+            assertFalse(css.contains(".search-options-content"));
             assertTrue(readResource("/de/mealdeal/ui/styles/responsive.css").contains(
                     ".root-shell.viewport-compact .search-selection-grid"));
         }
@@ -149,6 +152,13 @@ class FxmlResourceTest {
             assertTrue(fxml.contains("styleClass=\"content-card, detail-section-card\""));
             assertTrue(fxml.contains("fx:id=\"preparationTimeValue\""));
             assertTrue(fxml.contains("fx:id=\"totalTimeValue\""));
+            assertTrue(fxml.contains("fx:id=\"detailTimeGrid\""));
+            assertTrue(fxml.contains("fx:id=\"preparationTimeBlock\""));
+            assertTrue(fxml.contains("fx:id=\"cookingTimeBlock\""));
+            assertTrue(fxml.contains("fx:id=\"bakingTimeBlock\""));
+            assertTrue(fxml.contains("fx:id=\"restingTimeBlock\""));
+            assertTrue(fxml.contains("fx:id=\"totalTimeBlock\""));
+            assertTrue(fxml.contains("GridPane.columnSpan=\"2\""));
             assertEquals(5, fxml.split(
                     "styleClass=\"detail-item-block, detail-time-row\"", -1).length - 1);
             assertTrue(css.contains(".detail-item-block"));
@@ -177,7 +187,7 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:id=\"todayEmptyState\""));
         assertTrue(fxml.contains("fx:id=\"weekOverviewContainer\""));
         assertTrue(fxml.contains("fx:id=\"weekErrorState\""));
-        int weekPaneStart = fxml.indexOf("<TitledPane text=\"Wochenplan\"");
+        int weekPaneStart = fxml.indexOf("<TitledPane text=\"Wochenplan Übersicht\"");
         int weekPaneEnd = fxml.indexOf("</TitledPane>", weekPaneStart);
         assertTrue(weekPaneStart >= 0);
         assertTrue(weekPaneEnd > weekPaneStart);
@@ -189,7 +199,7 @@ class FxmlResourceTest {
         int searchTitle = fxml.indexOf("text=\"Was möchtest du essen?\"");
         int recipesTitle = fxml.indexOf("text=\"Meine Gerichte\"");
         int todayTitle = fxml.indexOf("text=\"Heute\"");
-        int weekTitle = fxml.indexOf("<TitledPane text=\"Wochenplan\"");
+        int weekTitle = fxml.indexOf("<TitledPane text=\"Wochenplan Übersicht\"");
         assertTrue(searchTitle < recipesTitle);
         assertTrue(recipesTitle < todayTitle);
         assertTrue(todayTitle < weekTitle);
@@ -264,9 +274,15 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:id=\"mainRecipesContainer\""));
         assertTrue(fxml.contains("fx:id=\"sideRecipesContainer\""));
         assertTrue(fxml.contains("fx:id=\"dessertRecipesContainer\""));
+        assertEquals(3, fxml.split("styleClass=\"recipe-grid, recipe-group-content\"", -1)
+                .length - 1);
+        assertFalse(fxml.contains("styleClass=\"recipe-list, recipe-group-content\""));
         assertFalse(fxml.contains("<Accordion"));
         assertTrue(css.contains(".recipe-group-pane > .title"));
         assertTrue(css.contains(".recipe-group-empty"));
+        assertTrue(css.contains(".recipe-grid"));
+        assertTrue(css.contains(".root-shell.viewport-compact .recipe-grid"));
+        assertTrue(css.contains(".root-shell.viewport-wide .recipe-grid"));
     }
 
     @Test
@@ -494,6 +510,7 @@ class FxmlResourceTest {
         assertTrue(css.contains(".inventory-category-card"));
         assertTrue(css.contains(".inventory-grid"));
         assertTrue(css.contains(".inventory-row"));
+        assertTrue(css.contains(".inventory-picker-category"));
         assertTrue(css.contains(".inventory-category-management-row"));
         assertTrue(css.contains(".inventory-ingredient-management-row"));
     }
@@ -515,8 +532,23 @@ class FxmlResourceTest {
         assertTrue(fxml.contains(
                 "fx:controller=\"de.mealdeal.ui.controller.IngredientsController\""));
         assertTrue(fxml.contains("fx:id=\"ingredientManagementSection\""));
+        assertTrue(fxml.contains("text=\"Zentrale Zutaten verwalten\""));
+        assertTrue(fxml.contains("fx:id=\"showAddIngredientButton\""));
+        assertTrue(fxml.contains("text=\"Zutat hinzufügen\""));
+        assertTrue(fxml.contains("onAction=\"#showAddIngredientForm\""));
+        assertTrue(fxml.contains(
+                "fx:id=\"addIngredientForm\" managed=\"false\" visible=\"false\""));
+        assertTrue(fxml.contains("fx:id=\"ingredientNameField\""));
+        assertTrue(fxml.contains("fx:id=\"ingredientCategoryBox\""));
+        assertTrue(fxml.contains("onAction=\"#addIngredient\""));
+        assertTrue(fxml.contains("onAction=\"#cancelAddIngredient\""));
         assertTrue(fxml.contains("fx:id=\"ingredientManagementContainer\""));
+        assertTrue(fxml.contains("fx:id=\"ingredientCategoryGrid\""));
+        assertTrue(fxml.contains("fx:id=\"selectedIngredientCategoryContent\""));
+        assertTrue(fxml.contains("fx:id=\"selectedIngredientCategoryTitle\""));
+        assertTrue(fxml.contains("fx:id=\"selectedIngredientRows\""));
         assertTrue(fxml.contains("fx:id=\"categoryManagementSection\""));
+        assertTrue(fxml.contains("text=\"Zutatenkategorien verwalten\""));
         assertTrue(fxml.contains("fx:id=\"categoryNameField\""));
         assertTrue(fxml.contains("onAction=\"#addCategory\""));
         assertTrue(fxml.contains("fx:id=\"categoryManagementContainer\""));
@@ -526,6 +558,15 @@ class FxmlResourceTest {
         String css = readResource("/de/mealdeal/ui/styles.css");
         assertTrue(css.contains(".ingredient-category-pane > .title"));
         assertTrue(css.contains(".ingredient-category-content"));
+        assertTrue(css.contains(".ingredient-management-pane > .title"));
+        assertTrue(css.contains(".ingredient-management-grid"));
+        assertTrue(css.contains(".ingredient-category-tile-active"));
+        assertTrue(css.contains(
+                ".root-shell.viewport-compact .ingredient-management-grid"));
+        assertTrue(css.contains(
+                ".root-shell.viewport-wide .ingredient-management-grid"));
+        assertTrue(css.contains(
+                ".root-shell.viewport-extra-wide .ingredient-management-grid"));
         assertFalse(css.contains(".inventory-ingredient-category-badge"));
         assertControllerWiring(fxml, IngredientsController.class);
     }

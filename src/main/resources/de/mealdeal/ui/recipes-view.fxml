@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
@@ -33,24 +34,24 @@
                                 animated="true" maxWidth="1.7976931348623157E308"
                                 styleClass="expandable-card, recipe-group-pane">
                         <content>
-                            <VBox fx:id="mainRecipesContainer" spacing="12.0"
-                                  styleClass="recipe-list, recipe-group-content"/>
+                            <GridPane fx:id="mainRecipesContainer"
+                                      styleClass="recipe-grid, recipe-group-content"/>
                         </content>
                     </TitledPane>
                     <TitledPane fx:id="sideRecipesPane" text="Beilagen" expanded="true"
                                 animated="true" maxWidth="1.7976931348623157E308"
                                 styleClass="expandable-card, recipe-group-pane">
                         <content>
-                            <VBox fx:id="sideRecipesContainer" spacing="12.0"
-                                  styleClass="recipe-list, recipe-group-content"/>
+                            <GridPane fx:id="sideRecipesContainer"
+                                      styleClass="recipe-grid, recipe-group-content"/>
                         </content>
                     </TitledPane>
                     <TitledPane fx:id="dessertRecipesPane" text="Nachtische" expanded="true"
                                 animated="true" maxWidth="1.7976931348623157E308"
                                 styleClass="expandable-card, recipe-group-pane">
                         <content>
-                            <VBox fx:id="dessertRecipesContainer" spacing="12.0"
-                                  styleClass="recipe-list, recipe-group-content"/>
+                            <GridPane fx:id="dessertRecipesContainer"
+                                      styleClass="recipe-grid, recipe-group-content"/>
                         </content>
                     </TitledPane>
                 </VBox>

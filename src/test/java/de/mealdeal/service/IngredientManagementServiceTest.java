@@ -13,9 +13,39 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class IngredientManagementServiceTest {
+
+    @Test
+    void createsTrimmedCentralIngredientWithStableIdentityAndSelectedCategory() {
+        MemoryIngredientRepository ingredients = new MemoryIngredientRepository();
+        IngredientManagementService service = service(ingredients);
+
+        Ingredient created = service.create(
+                "  Pfirsich  ", IngredientCategories.FRUIT.getId());
+
+        assertNotNull(created.getId());
+        assertEquals("Pfirsich", created.getName());
+        assertEquals(IngredientCategories.FRUIT, created.getCategory());
+        assertEquals(created, ingredients.findById(created.getId()).orElseThrow());
+    }
+
+    @Test
+    void createRejectsBlankNameMissingCategoryAndCaseInsensitiveDuplicate() {
+        MemoryIngredientRepository ingredients = new MemoryIngredientRepository();
+        ingredients.save(new Ingredient("Pfirsich", IngredientCategories.FRUIT));
+        IngredientManagementService service = service(ingredients);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.create("  ", IngredientCategories.FRUIT.getId()));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.create("Apfel", null));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.create("pFiRsIcH", IngredientCategories.FRUIT.getId()));
+        assertEquals(1, ingredients.findAll().size());
+    }
 
     @Test
     void renamesAndRecategorizesIngredientWithoutChangingItsIdentity() {
