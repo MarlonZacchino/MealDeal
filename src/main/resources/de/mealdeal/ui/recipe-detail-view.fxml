@@ -4,7 +4,10 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Spinner?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -14,59 +17,106 @@
             fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
     <content>
         <StackPane alignment="TOP_CENTER" styleClass="page-shell">
-            <VBox maxWidth="1.7976931348623157E308" spacing="24.0"
+            <VBox maxWidth="1.7976931348623157E308" spacing="22.0"
                   styleClass="page-container, page-container-detail">
-                <HBox alignment="CENTER_LEFT" spacing="18.0" styleClass="page-header">
-                    <Button text="Zurück" onAction="#backToRecipes" styleClass="secondary-button"/>
-                    <VBox spacing="5.0">
-                        <Label fx:id="nameLabel" styleClass="page-title"/>
-                        <Label fx:id="standardServingLabel" styleClass="page-subtitle"/>
+                <HBox alignment="CENTER_LEFT" spacing="18.0"
+                      styleClass="page-header, recipe-detail-header">
+                    <VBox spacing="6.0" styleClass="recipe-detail-title-block">
+                        <Label fx:id="nameLabel" wrapText="true" styleClass="page-title"/>
                         <Label fx:id="dishTypeLabel" styleClass="recipe-type-badge"/>
                     </VBox>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Button text="Löschen" onAction="#deleteRecipe" styleClass="danger-button"/>
-                    <Button text="Bearbeiten" onAction="#editRecipe" styleClass="primary-button"/>
+                    <FlowPane alignment="CENTER_RIGHT" hgap="10.0" vgap="10.0"
+                              styleClass="recipe-detail-actions">
+                        <Button text="Zurück" onAction="#backToRecipes"
+                                styleClass="secondary-button"/>
+                        <Button text="Bearbeiten" onAction="#editRecipe"
+                                styleClass="primary-button"/>
+                        <Button text="Löschen" onAction="#deleteRecipe"
+                                styleClass="danger-button"/>
+                    </FlowPane>
                 </HBox>
 
-                <HBox alignment="CENTER_LEFT" spacing="18.0" styleClass="content-card">
-                    <VBox spacing="4.0">
-                        <Label text="Personenanzahl" styleClass="section-title"/>
-                        <Label text="Die Zutatenmengen passen sich automatisch an."
-                               wrapText="true" styleClass="card-text"/>
+                <GridPane fx:id="detailMetaGrid" hgap="18.0" vgap="18.0"
+                          styleClass="recipe-detail-meta-grid">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="45.0"/>
+                        <ColumnConstraints percentWidth="55.0"/>
+                    </columnConstraints>
+                    <VBox fx:id="servingSection" spacing="9.0" GridPane.columnIndex="0">
+                        <Label text="Personen" styleClass="section-title"/>
+                        <HBox alignment="CENTER_LEFT" spacing="12.0">
+                            <Spinner fx:id="servingSpinner" editable="false" prefWidth="110.0"
+                                     styleClass="serving-spinner"/>
+                            <Label fx:id="standardServingLabel" styleClass="card-text"/>
+                        </HBox>
                     </VBox>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Spinner fx:id="servingSpinner" editable="false" prefWidth="110.0"
-                             styleClass="serving-spinner"/>
-                </HBox>
+                    <VBox fx:id="tasteSection" spacing="9.0" GridPane.columnIndex="1">
+                        <Label text="Geschmacksrichtungen" styleClass="section-title"/>
+                        <FlowPane fx:id="tastesContainer" hgap="8.0" vgap="8.0"
+                                  styleClass="detail-tastes"/>
+                    </VBox>
+                </GridPane>
 
-                <VBox fx:id="timeSection" spacing="10.0" managed="false" visible="false"
-                      styleClass="content-card, detail-section-card">
-                    <Label text="Zeitangaben" styleClass="section-title"/>
-                    <VBox fx:id="timesContainer" spacing="8.0"/>
-                </VBox>
+                <GridPane fx:id="detailSectionsGrid" hgap="18.0" vgap="18.0"
+                          styleClass="recipe-detail-grid">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="45.0"/>
+                        <ColumnConstraints percentWidth="55.0"/>
+                    </columnConstraints>
+                    <VBox fx:id="timeSection" spacing="10.0" GridPane.columnIndex="0"
+                          GridPane.rowIndex="0"
+                          styleClass="content-card, detail-section-card">
+                        <Label text="Zeitangaben" styleClass="section-title"/>
+                        <GridPane hgap="16.0" vgap="8.0" styleClass="detail-time-grid">
+                            <Label text="Vorbereitung" GridPane.rowIndex="0"
+                                   styleClass="detail-time-name"/>
+                            <Label fx:id="preparationTimeValue" GridPane.columnIndex="1"
+                                   GridPane.rowIndex="0" styleClass="detail-time-value"/>
+                            <Label text="Kochen" GridPane.rowIndex="1"
+                                   styleClass="detail-time-name"/>
+                            <Label fx:id="cookingTimeValue" GridPane.columnIndex="1"
+                                   GridPane.rowIndex="1" styleClass="detail-time-value"/>
+                            <Label text="Backen" GridPane.rowIndex="2"
+                                   styleClass="detail-time-name"/>
+                            <Label fx:id="bakingTimeValue" GridPane.columnIndex="1"
+                                   GridPane.rowIndex="2" styleClass="detail-time-value"/>
+                            <Label text="Ruhezeit" GridPane.rowIndex="3"
+                                   styleClass="detail-time-name"/>
+                            <Label fx:id="restingTimeValue" GridPane.columnIndex="1"
+                                   GridPane.rowIndex="3" styleClass="detail-time-value"/>
+                            <Label text="Gesamt" GridPane.rowIndex="4"
+                                   styleClass="detail-time-name, detail-time-total"/>
+                            <Label fx:id="totalTimeValue" GridPane.columnIndex="1"
+                                   GridPane.rowIndex="4"
+                                   styleClass="detail-time-value, detail-time-total"/>
+                        </GridPane>
+                    </VBox>
 
-                <VBox fx:id="nutritionSection" spacing="10.0" managed="false" visible="false"
-                      styleClass="content-card, detail-section-card">
-                    <Label text="Nährwerte pro Portion" styleClass="section-title"/>
-                    <VBox fx:id="nutritionContainer" spacing="8.0"/>
-                </VBox>
+                    <VBox fx:id="nutritionSection" spacing="10.0" managed="false" visible="false"
+                          GridPane.columnIndex="1" GridPane.rowIndex="0"
+                          styleClass="content-card, detail-section-card">
+                        <Label text="Nährwerte pro Portion" styleClass="section-title"/>
+                        <GridPane fx:id="nutritionContainer" hgap="10.0" vgap="10.0"
+                                  styleClass="detail-nutrition-grid"/>
+                    </VBox>
 
-                <VBox spacing="10.0" styleClass="content-card, detail-section-card">
-                    <Label text="Geschmacksrichtungen" styleClass="section-title"/>
-                    <Label fx:id="tastesLabel" wrapText="true" styleClass="detail-row-text"/>
-                </VBox>
+                    <VBox fx:id="ingredientsSection" spacing="12.0" GridPane.columnIndex="0"
+                          GridPane.rowIndex="1"
+                          styleClass="content-card, detail-section-card">
+                        <Label text="Zutaten" styleClass="section-title"/>
+                        <VBox fx:id="ingredientsContainer" spacing="2.0"/>
+                    </VBox>
 
-                <VBox spacing="14.0" styleClass="content-card, detail-section-card">
-                    <Label text="Zutaten" styleClass="section-title"/>
-                    <VBox fx:id="ingredientsContainer" spacing="8.0"/>
-                </VBox>
-
-                <VBox spacing="14.0" styleClass="content-card, detail-section-card">
-                    <Label text="Zubereitung" styleClass="section-title"/>
-                    <Label fx:id="emptyStepsLabel" text="Noch keine Zubereitung hinterlegt."
-                           managed="false" visible="false" styleClass="card-text"/>
-                    <VBox fx:id="stepsContainer" spacing="8.0"/>
-                </VBox>
+                    <VBox fx:id="stepsSection" spacing="12.0" GridPane.columnIndex="1"
+                          GridPane.rowIndex="1"
+                          styleClass="content-card, detail-section-card">
+                        <Label text="Zubereitung" styleClass="section-title"/>
+                        <Label fx:id="emptyStepsLabel" text="Noch keine Zubereitung hinterlegt."
+                               managed="false" visible="false" styleClass="card-text"/>
+                        <VBox fx:id="stepsContainer" spacing="4.0"/>
+                    </VBox>
+                </GridPane>
             </VBox>
         </StackPane>
     </content>

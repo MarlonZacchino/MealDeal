@@ -2,6 +2,26 @@
     -fx-padding: 28px;
 }
 
+.root-shell.viewport-compact .recipe-detail-header {
+    -fx-alignment: top-left;
+    -fx-spacing: 12px;
+}
+
+.root-shell.viewport-compact .recipe-detail-actions {
+    -fx-hgap: 8px;
+    -fx-vgap: 8px;
+}
+
+.root-shell.viewport-compact .recipe-detail-meta-grid,
+.root-shell.viewport-compact .recipe-detail-grid {
+    -fx-hgap: 0;
+    -fx-vgap: 18px;
+}
+
+.root-shell.viewport-compact .detail-ingredient-row {
+    -fx-spacing: 8px;
+}
+
 .root-shell.viewport-compact .meal-plan-day-content {
     -fx-padding: 18px 18px 22px 18px;
 }

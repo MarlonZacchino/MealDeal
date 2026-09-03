@@ -133,12 +133,24 @@ class FxmlResourceTest {
             assertTrue(fxml.contains("page-container, page-container-detail"));
             assertTrue(fxml.contains("Noch keine Zubereitung hinterlegt."));
             assertTrue(fxml.contains("fx:id=\"timeSection\""));
-            assertTrue(fxml.contains("fx:id=\"timesContainer\""));
+            assertTrue(fxml.contains("fx:id=\"detailMetaGrid\""));
+            assertTrue(fxml.contains("fx:id=\"detailSectionsGrid\""));
+            assertEquals(2, fxml.split("<ColumnConstraints percentWidth=\"45.0\"/>", -1).length - 1);
+            assertEquals(2, fxml.split("<ColumnConstraints percentWidth=\"55.0\"/>", -1).length - 1);
             assertTrue(fxml.contains("fx:id=\"nutritionSection\""));
             assertTrue(fxml.contains("fx:id=\"nutritionContainer\""));
             assertTrue(fxml.contains("fx:id=\"dishTypeLabel\""));
+            assertTrue(fxml.contains("fx:id=\"tastesContainer\""));
+            assertTrue(fxml.contains("styleClass=\"content-card, detail-section-card\""));
+            assertTrue(fxml.contains("fx:id=\"preparationTimeValue\""));
+            assertTrue(fxml.contains("fx:id=\"totalTimeValue\""));
+            assertTrue(fxml.indexOf("text=\"Zurück\"") < fxml.indexOf("text=\"Bearbeiten\""));
+            assertTrue(fxml.indexOf("text=\"Bearbeiten\"") < fxml.indexOf("text=\"Löschen\""));
             assertTrue(css.contains(".page-container-detail"));
             assertTrue(css.contains("-fx-max-width: 1760px"));
+            String responsive = readResource("/de/mealdeal/ui/styles/responsive.css");
+            assertTrue(responsive.contains(
+                    ".root-shell.viewport-compact .recipe-detail-grid"));
         }
     }
 
@@ -204,7 +216,11 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:id=\"bakingTimeField\""));
         assertTrue(fxml.contains("fx:id=\"restingTimeField\""));
         assertFalse(fxml.contains("totalTimeField"));
-        assertTrue(fxml.contains("Zeitangaben (optional, in Minuten)"));
+        assertTrue(fxml.contains("Zeitangaben (optional)"));
+        assertTrue(fxml.contains("fx:id=\"preparationTimeUnitBox\""));
+        assertTrue(fxml.contains("fx:id=\"cookingTimeUnitBox\""));
+        assertTrue(fxml.contains("fx:id=\"bakingTimeUnitBox\""));
+        assertTrue(fxml.contains("fx:id=\"restingTimeUnitBox\""));
         assertTrue(fxml.contains("fx:id=\"caloriesField\""));
         assertTrue(fxml.contains("fx:id=\"proteinField\""));
         assertTrue(fxml.contains("fx:id=\"carbohydratesField\""));

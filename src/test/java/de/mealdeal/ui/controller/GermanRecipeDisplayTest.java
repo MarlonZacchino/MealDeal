@@ -7,6 +7,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -60,6 +61,13 @@ class GermanRecipeDisplayTest {
         assertEquals("1 Std. 20 Min.", GermanRecipeDisplay.duration(80));
         assertEquals("2 Std.", GermanRecipeDisplay.duration(120));
         assertEquals("71,5", GermanRecipeDisplay.decimal(new BigDecimal("71.5")));
+    }
+
+    @Test
+    void formatsSecondPreciseDurationsWithoutLoss() {
+        assertEquals("2 Std. 5 Min. 30 Sek.",
+                GermanRecipeDisplay.duration(Duration.ofSeconds(7_530)));
+        assertEquals("30 Sek.", GermanRecipeDisplay.duration(Duration.ofSeconds(30)));
     }
 
     @Test

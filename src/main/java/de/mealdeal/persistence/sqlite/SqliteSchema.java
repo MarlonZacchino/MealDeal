@@ -8,7 +8,7 @@ import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 13;
+    static final int CURRENT_VERSION = 14;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -137,6 +137,10 @@ final class SqliteSchema {
         }
         if (version == 12) {
             createVersion13(connection);
+            version = 13;
+        }
+        if (version == 13) {
+            createVersion14(connection);
         }
     }
 
@@ -606,6 +610,20 @@ final class SqliteSchema {
             statement.execute("ALTER TABLE recipes ADD COLUMN resting_time_minutes INTEGER "
                     + "CHECK (resting_time_minutes > 0)");
             statement.execute("PRAGMA user_version = 13");
+        }
+    }
+
+    /** Migrates every optional recipe duration from minutes to canonical seconds. */
+    static void createVersion14(Connection connection) throws SQLException {
+        String[] columns = {"preparation_time", "cooking_time", "baking_time", "resting_time"};
+        try (Statement statement = connection.createStatement()) {
+            for (String column : columns) {
+                statement.execute("ALTER TABLE recipes RENAME COLUMN " + column
+                        + "_minutes TO " + column + "_seconds");
+                statement.execute("UPDATE recipes SET " + column + "_seconds = "
+                        + column + "_seconds * 60 WHERE " + column + "_seconds IS NOT NULL");
+            }
+            statement.execute("PRAGMA user_version = 14");
         }
     }
 }

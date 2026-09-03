@@ -18,7 +18,6 @@
 }
 
 .detail-time-name {
-    -fx-min-width: 180px;
     -fx-font-size: 16px;
     -fx-text-fill: -md-text-muted;
 }
@@ -43,6 +42,20 @@
 
 .form-field {
     -fx-max-width: infinity;
+}
+
+.recipe-time-fields {
+    -fx-hgap: 16px;
+    -fx-vgap: 12px;
+}
+
+.recipe-time-field {
+    -fx-min-width: 220px;
+    -fx-pref-width: 250px;
+}
+
+.recipe-time-unit {
+    -fx-pref-width: 118px;
 }
 
 .serving-field {
@@ -80,51 +93,58 @@
     -fx-padding: 0 0 24px 0;
 }
 
-.detail-row {
-    -fx-alignment: top-left;
-    -fx-background-color: -md-surface-alt;
-    -fx-background-radius: 10px;
-    -fx-padding: 15px 17px;
+.recipe-detail-title-block {
+    -fx-min-width: 0;
 }
 
-.detail-row-text,
+.recipe-detail-actions {
+    -fx-orientation: horizontal;
+}
+
+.detail-time-grid {
+    -fx-padding: 4px 0 0 0;
+}
+
+.detail-time-total {
+    -fx-padding: 10px 0 0 0;
+}
+
+.detail-nutrition-item {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 10px;
+    -fx-padding: 12px 14px;
+}
+
+.detail-nutrition-value,
+.detail-ingredient-quantity {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.detail-nutrition-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: -md-text-muted;
+}
+
+.detail-ingredient-row {
+    -fx-alignment: center-left;
+    -fx-padding: 10px 0;
+}
+
+.detail-ingredient-name,
 .detail-step-text {
     -fx-font-size: 16px;
     -fx-text-fill: -md-text;
 }
 
-.detail-quantity {
-    -fx-font-size: 16px;
-    -fx-font-weight: bold;
-    -fx-min-width: 125px;
-    -fx-text-fill: -md-text;
+.detail-alternative-picker {
+    -fx-pref-width: 180px;
 }
 
-.detail-ingredient-group {
-    -fx-background-color: -md-surface-alt;
-    -fx-background-radius: 10px;
-    -fx-padding: 10px;
-}
-
-.detail-ingredient-group > .detail-row {
-    -fx-background-color: transparent;
-    -fx-padding: 5px 7px;
-}
-
-.detail-alternative-separator {
-    -fx-font-size: 14px;
-    -fx-font-style: italic;
-    -fx-padding: 0 0 0 132px;
-    -fx-text-fill: -md-text-muted;
-}
-
-.detail-standard-badge {
-    -fx-background-color: -md-accent-soft;
-    -fx-background-radius: 999px;
-    -fx-font-size: 13px;
-    -fx-font-weight: bold;
-    -fx-padding: 4px 8px;
-    -fx-text-fill: -md-accent;
+.detail-step-row {
+    -fx-alignment: top-left;
+    -fx-padding: 8px 0;
 }
 
 .detail-step-position {

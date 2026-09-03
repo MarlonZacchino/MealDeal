@@ -1,5 +1,6 @@
 package de.mealdeal.domain;
 
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -26,11 +27,11 @@ public final class Recipe {
     private final List<RecipeIngredientGroup> ingredientGroups;
     private final List<RecipeStep> steps;
     private final List<Taste> tastes;
-    private final OptionalInt preparationTimeMinutes;
-    private final OptionalInt cookingTimeMinutes;
-    private final OptionalInt bakingTimeMinutes;
-    private final OptionalInt restingTimeMinutes;
-    private final OptionalInt totalTimeMinutes;
+    private final Optional<Duration> preparationTime;
+    private final Optional<Duration> cookingTime;
+    private final Optional<Duration> bakingTime;
+    private final Optional<Duration> restingTime;
+    private final Optional<Duration> totalTime;
     private final Optional<NutritionInfo> nutritionInfo;
     private final DishType dishType;
 
@@ -263,6 +264,19 @@ public final class Recipe {
                 nutritionInfo, dishType, IngredientGroupInput.INSTANCE);
     }
 
+    /** Recreates a recipe from canonical, whole-second durations. */
+    public static Recipe withIngredientGroupDurations(
+            UUID id, String name, int standardServingCount,
+            List<RecipeIngredientGroup> ingredientGroups,
+            List<RecipeStep> steps, List<Taste> tastes,
+            Duration preparationTime, Duration cookingTime,
+            Duration bakingTime, Duration restingTime,
+            NutritionInfo nutritionInfo, DishType dishType) {
+        return new Recipe(id, name, standardServingCount, ingredientGroups, steps, tastes,
+                preparationTime, cookingTime, bakingTime, restingTime,
+                nutritionInfo, dishType, DurationInput.INSTANCE);
+    }
+
     private Recipe(UUID id, String name, int standardServingCount,
                    List<RecipeIngredientGroup> ingredientGroups, List<RecipeStep> steps,
                    List<Taste> tastes, Integer preparationTimeMinutes,
@@ -270,6 +284,20 @@ public final class Recipe {
                    Integer restingTimeMinutes,
                    NutritionInfo nutritionInfo, DishType dishType,
                    IngredientGroupInput ignored) {
+        this(id, name, standardServingCount, ingredientGroups, steps, tastes,
+                durationFromMinutes(preparationTimeMinutes),
+                durationFromMinutes(cookingTimeMinutes),
+                durationFromMinutes(bakingTimeMinutes),
+                durationFromMinutes(restingTimeMinutes), nutritionInfo, dishType,
+                DurationInput.INSTANCE);
+    }
+
+    private Recipe(UUID id, String name, int standardServingCount,
+                   List<RecipeIngredientGroup> ingredientGroups, List<RecipeStep> steps,
+                   List<Taste> tastes, Duration preparationTime,
+                   Duration cookingTime, Duration bakingTime, Duration restingTime,
+                   NutritionInfo nutritionInfo, DishType dishType,
+                   DurationInput ignored) {
         this.id = java.util.Objects.requireNonNull(id, "Recipe ID must not be null.");
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Recipe name must not be blank.");
@@ -285,13 +313,12 @@ public final class Recipe {
                 .sorted(Comparator.comparingInt(RecipeStep::getPosition))
                 .toList();
         this.tastes = copyWithoutNulls(tastes, "Recipe tastes");
-        this.preparationTimeMinutes = optionalTime(preparationTimeMinutes, "Preparation time");
-        this.cookingTimeMinutes = optionalTime(cookingTimeMinutes, "Cooking time");
-        this.bakingTimeMinutes = optionalTime(bakingTimeMinutes, "Baking time");
-        this.restingTimeMinutes = optionalTime(restingTimeMinutes, "Resting time");
-        this.totalTimeMinutes = deriveTotalTime(
-                this.preparationTimeMinutes, this.cookingTimeMinutes, this.bakingTimeMinutes,
-                this.restingTimeMinutes);
+        this.preparationTime = optionalTime(preparationTime, "Preparation time");
+        this.cookingTime = optionalTime(cookingTime, "Cooking time");
+        this.bakingTime = optionalTime(bakingTime, "Baking time");
+        this.restingTime = optionalTime(restingTime, "Resting time");
+        this.totalTime = deriveTotalTime(
+                this.preparationTime, this.cookingTime, this.bakingTime, this.restingTime);
         this.nutritionInfo = Optional.ofNullable(nutritionInfo)
                 .filter(NutritionInfo::hasAnyValue);
         this.dishType = java.util.Objects.requireNonNull(dishType, "Dish type must not be null.");
@@ -344,29 +371,63 @@ public final class Recipe {
         return tastes;
     }
 
-    /** Returns the optional preparation time in minutes. */
+    /** Returns the optional preparation time in its canonical whole-second form. */
+    public Optional<Duration> getPreparationTime() {
+        return preparationTime;
+    }
+
+    /** Returns the optional cooking time in its canonical whole-second form. */
+    public Optional<Duration> getCookingTime() {
+        return cookingTime;
+    }
+
+    /** Returns the optional baking time in its canonical whole-second form. */
+    public Optional<Duration> getBakingTime() {
+        return bakingTime;
+    }
+
+    /** Returns the optional resting time in its canonical whole-second form. */
+    public Optional<Duration> getRestingTime() {
+        return restingTime;
+    }
+
+    /** Returns the optional total derived from all available individual durations. */
+    public Optional<Duration> getTotalTime() {
+        return totalTime;
+    }
+
+    /**
+     * Returns an exact legacy minute projection.
+     *
+     * @deprecated use {@link #getPreparationTime()}; sub-minute values have no minute projection
+     */
+    @Deprecated
     public OptionalInt getPreparationTimeMinutes() {
-        return preparationTimeMinutes;
+        return exactMinutes(preparationTime);
     }
 
-    /** Returns the optional cooking time in minutes. */
+    /** @deprecated use {@link #getCookingTime()} */
+    @Deprecated
     public OptionalInt getCookingTimeMinutes() {
-        return cookingTimeMinutes;
+        return exactMinutes(cookingTime);
     }
 
-    /** Returns the optional baking time in minutes. */
+    /** @deprecated use {@link #getBakingTime()} */
+    @Deprecated
     public OptionalInt getBakingTimeMinutes() {
-        return bakingTimeMinutes;
+        return exactMinutes(bakingTime);
     }
 
-    /** Returns the optional resting time in minutes. */
+    /** @deprecated use {@link #getRestingTime()} */
+    @Deprecated
     public OptionalInt getRestingTimeMinutes() {
-        return restingTimeMinutes;
+        return exactMinutes(restingTime);
     }
 
-    /** Returns the optional total time derived from all available individual times. */
+    /** @deprecated use {@link #getTotalTime()} */
+    @Deprecated
     public OptionalInt getTotalTimeMinutes() {
-        return totalTimeMinutes;
+        return exactMinutes(totalTime);
     }
 
     /** Returns optional nutrition values that always apply to one serving. */
@@ -405,32 +466,48 @@ public final class Recipe {
         return List.copyOf(values);
     }
 
-    private static OptionalInt optionalTime(Integer minutes, String fieldName) {
-        if (minutes == null) {
-            return OptionalInt.empty();
-        }
-        if (minutes <= 0) {
-            throw new IllegalArgumentException(fieldName + " must be greater than zero.");
-        }
-        return OptionalInt.of(minutes);
+    private static Duration durationFromMinutes(Integer minutes) {
+        return minutes == null ? null : Duration.ofMinutes(minutes);
     }
 
-    private static OptionalInt deriveTotalTime(OptionalInt... individualTimes) {
-        int total = 0;
+    private static Optional<Duration> optionalTime(Duration duration, String fieldName) {
+        if (duration == null) {
+            return Optional.empty();
+        }
+        if (duration.isZero() || duration.isNegative() || duration.getNano() != 0) {
+            throw new IllegalArgumentException(fieldName + " must be greater than zero.");
+        }
+        return Optional.of(duration);
+    }
+
+    @SafeVarargs
+    private static Optional<Duration> deriveTotalTime(Optional<Duration>... individualTimes) {
+        Duration total = Duration.ZERO;
         boolean hasTime = false;
         try {
-            for (OptionalInt time : individualTimes) {
+            for (Optional<Duration> time : individualTimes) {
                 if (time.isPresent()) {
-                    total = Math.addExact(total, time.getAsInt());
+                    total = total.plus(time.orElseThrow());
                     hasTime = true;
                 }
             }
-            return hasTime ? OptionalInt.of(total) : OptionalInt.empty();
+            return hasTime ? Optional.of(total) : Optional.empty();
         } catch (ArithmeticException exception) {
             throw new IllegalArgumentException(
-                    "Recipe times must fit into a positive total minute value.",
+                    "Recipe times must fit into a positive total duration.",
                     exception);
         }
+    }
+
+    private static OptionalInt exactMinutes(Optional<Duration> duration) {
+        if (duration.isEmpty()) {
+            return OptionalInt.empty();
+        }
+        long seconds = duration.orElseThrow().getSeconds();
+        if (seconds % 60 != 0) {
+            throw new IllegalStateException("Duration cannot be represented as exact minutes.");
+        }
+        return OptionalInt.of(Math.toIntExact(seconds / 60));
     }
 
     private static List<RecipeIngredientGroup> singleOptionGroups(
@@ -486,6 +563,10 @@ public final class Recipe {
     }
 
     private enum IngredientGroupInput {
+        INSTANCE
+    }
+
+    private enum DurationInput {
         INSTANCE
     }
 }

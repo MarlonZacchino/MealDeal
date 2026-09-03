@@ -12,10 +12,14 @@ public record RecipeFormInput(
         List<IngredientGroupFormInput> ingredientGroups,
         List<String> tasteNames,
         List<String> stepDescriptions,
-        String preparationTimeMinutes,
-        String cookingTimeMinutes,
-        String bakingTimeMinutes,
-        String restingTimeMinutes,
+        String preparationTimeValue,
+        RecipeTimeUnit preparationTimeUnit,
+        String cookingTimeValue,
+        RecipeTimeUnit cookingTimeUnit,
+        String bakingTimeValue,
+        RecipeTimeUnit bakingTimeUnit,
+        String restingTimeValue,
+        RecipeTimeUnit restingTimeUnit,
         String caloriesKcal,
         String proteinGrams,
         String carbohydrateGrams,
@@ -34,7 +38,9 @@ public record RecipeFormInput(
                            List<IngredientFormInput> ingredients, List<String> tasteNames,
                            List<String> stepDescriptions) {
         this(name, standardServingCount, ingredients, List.of(), tasteNames, stepDescriptions,
-                null, null, null, null, null, null, null, null, DishType.MAIN);
+                null, RecipeTimeUnit.MINUTES, null, RecipeTimeUnit.MINUTES,
+                null, RecipeTimeUnit.MINUTES, null, RecipeTimeUnit.MINUTES,
+                null, null, null, null, DishType.MAIN);
     }
 
     /** Creates an input with optional time values but without nutrition values. */
@@ -43,8 +49,10 @@ public record RecipeFormInput(
                            List<String> stepDescriptions, String preparationTimeMinutes,
                            String cookingTimeMinutes) {
         this(name, standardServingCount, ingredients, List.of(), tasteNames, stepDescriptions,
-                preparationTimeMinutes, cookingTimeMinutes, null, null, null, null, null, null,
-                DishType.MAIN);
+                preparationTimeMinutes, RecipeTimeUnit.MINUTES,
+                cookingTimeMinutes, RecipeTimeUnit.MINUTES,
+                null, RecipeTimeUnit.MINUTES, null, RecipeTimeUnit.MINUTES,
+                null, null, null, null, DishType.MAIN);
     }
 
     /** Creates an input with optional times and nutrition values, defaulting to MAIN. */
@@ -54,8 +62,10 @@ public record RecipeFormInput(
                            String cookingTimeMinutes, String caloriesKcal, String proteinGrams,
                            String carbohydrateGrams, String fatGrams) {
         this(name, standardServingCount, ingredients, List.of(), tasteNames, stepDescriptions,
-                preparationTimeMinutes, cookingTimeMinutes, null, null, caloriesKcal, proteinGrams,
-                carbohydrateGrams, fatGrams, DishType.MAIN);
+                preparationTimeMinutes, RecipeTimeUnit.MINUTES,
+                cookingTimeMinutes, RecipeTimeUnit.MINUTES,
+                null, RecipeTimeUnit.MINUTES, null, RecipeTimeUnit.MINUTES,
+                caloriesKcal, proteinGrams, carbohydrateGrams, fatGrams, DishType.MAIN);
     }
 
     /** Keeps the pre-baking-time complete form call source-compatible. */
@@ -65,8 +75,10 @@ public record RecipeFormInput(
                            String cookingTimeMinutes, String caloriesKcal, String proteinGrams,
                            String carbohydrateGrams, String fatGrams, DishType dishType) {
         this(name, standardServingCount, ingredients, List.of(), tasteNames, stepDescriptions,
-                preparationTimeMinutes, cookingTimeMinutes, null, null, caloriesKcal, proteinGrams,
-                carbohydrateGrams, fatGrams, dishType);
+                preparationTimeMinutes, RecipeTimeUnit.MINUTES,
+                cookingTimeMinutes, RecipeTimeUnit.MINUTES,
+                null, RecipeTimeUnit.MINUTES, null, RecipeTimeUnit.MINUTES,
+                caloriesKcal, proteinGrams, carbohydrateGrams, fatGrams, dishType);
     }
 
     /** Keeps the complete pre-group form call source-compatible. */
@@ -77,8 +89,28 @@ public record RecipeFormInput(
                            String caloriesKcal, String proteinGrams, String carbohydrateGrams,
                            String fatGrams, DishType dishType) {
         this(name, standardServingCount, ingredients, List.of(), tasteNames, stepDescriptions,
-                preparationTimeMinutes, cookingTimeMinutes, bakingTimeMinutes, null, caloriesKcal,
+                preparationTimeMinutes, RecipeTimeUnit.MINUTES,
+                cookingTimeMinutes, RecipeTimeUnit.MINUTES,
+                bakingTimeMinutes, RecipeTimeUnit.MINUTES,
+                null, RecipeTimeUnit.MINUTES, caloriesKcal,
                 proteinGrams, carbohydrateGrams, fatGrams, dishType);
+    }
+
+    /** Creates the complete form snapshot from ordered ingredient groups. */
+    public RecipeFormInput(String name, String standardServingCount,
+                           List<IngredientFormInput> ingredients,
+                           List<IngredientGroupFormInput> ingredientGroups,
+                           List<String> tasteNames, List<String> stepDescriptions,
+                           String preparationTimeMinutes, String cookingTimeMinutes,
+                           String bakingTimeMinutes, String restingTimeMinutes,
+                           String caloriesKcal, String proteinGrams,
+                           String carbohydrateGrams, String fatGrams, DishType dishType) {
+        this(name, standardServingCount, ingredients, ingredientGroups, tasteNames,
+                stepDescriptions, preparationTimeMinutes, RecipeTimeUnit.MINUTES,
+                cookingTimeMinutes, RecipeTimeUnit.MINUTES,
+                bakingTimeMinutes, RecipeTimeUnit.MINUTES,
+                restingTimeMinutes, RecipeTimeUnit.MINUTES,
+                caloriesKcal, proteinGrams, carbohydrateGrams, fatGrams, dishType);
     }
 
     /** Creates the complete form snapshot from ordered ingredient groups. */
@@ -104,9 +136,32 @@ public record RecipeFormInput(
             String bakingTimeMinutes, String restingTimeMinutes,
             String caloriesKcal, String proteinGrams,
             String carbohydrateGrams, String fatGrams, DishType dishType) {
+        return withIngredientGroupDurations(name, standardServingCount, ingredientGroups,
+                tasteNames, stepDescriptions,
+                preparationTimeMinutes, RecipeTimeUnit.MINUTES,
+                cookingTimeMinutes, RecipeTimeUnit.MINUTES,
+                bakingTimeMinutes, RecipeTimeUnit.MINUTES,
+                restingTimeMinutes, RecipeTimeUnit.MINUTES,
+                caloriesKcal, proteinGrams, carbohydrateGrams, fatGrams, dishType);
+    }
+
+    /** Creates the complete form snapshot with an explicit UI unit for every duration. */
+    public static RecipeFormInput withIngredientGroupDurations(
+            String name, String standardServingCount,
+            List<IngredientGroupFormInput> ingredientGroups,
+            List<String> tasteNames, List<String> stepDescriptions,
+            String preparationTimeValue, RecipeTimeUnit preparationTimeUnit,
+            String cookingTimeValue, RecipeTimeUnit cookingTimeUnit,
+            String bakingTimeValue, RecipeTimeUnit bakingTimeUnit,
+            String restingTimeValue, RecipeTimeUnit restingTimeUnit,
+            String caloriesKcal, String proteinGrams,
+            String carbohydrateGrams, String fatGrams, DishType dishType) {
         return new RecipeFormInput(name, standardServingCount, List.of(), ingredientGroups,
-                tasteNames, stepDescriptions, preparationTimeMinutes, cookingTimeMinutes,
-                bakingTimeMinutes, restingTimeMinutes, caloriesKcal, proteinGrams,
-                carbohydrateGrams, fatGrams, dishType);
+                tasteNames, stepDescriptions,
+                preparationTimeValue, preparationTimeUnit,
+                cookingTimeValue, cookingTimeUnit,
+                bakingTimeValue, bakingTimeUnit,
+                restingTimeValue, restingTimeUnit,
+                caloriesKcal, proteinGrams, carbohydrateGrams, fatGrams, dishType);
     }
 }

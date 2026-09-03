@@ -184,6 +184,38 @@ class RecipeFormServiceIntegrationTest {
     }
 
     @Test
+    void persistsSecondPreciseDurationThroughCreateAndEdit() {
+        SqliteDatabase database = new SqliteDatabase(
+                temporaryDirectory.resolve("duration-form.db"));
+        var ingredients = new SqliteIngredientRepository(database);
+        var tastes = new SqliteTasteRepository(database);
+        var recipes = new SqliteRecipeRepository(database);
+        RecipeFormService service = new RecipeFormService(recipes, ingredients, tastes);
+        UUID groupId = UUID.randomUUID();
+        UUID optionId = UUID.randomUUID();
+        var groups = List.of(new IngredientGroupFormInput(groupId,
+                List.of(option(optionId, "Brot", "2", Unit.SLICE, 0)), optionId));
+        Recipe created = service.createAndSave(RecipeFormInput.withIngredientGroupDurations(
+                "Brotzeit", "2", groups, List.of("Herzhaft"), List.of(),
+                "30", RecipeTimeUnit.SECONDS, "20", RecipeTimeUnit.MINUTES,
+                "2", RecipeTimeUnit.HOURS, "", RecipeTimeUnit.MINUTES,
+                "", "", "", "", DishType.MAIN));
+
+        Recipe loaded = recipes.findById(created.getId()).orElseThrow();
+        assertEquals(java.time.Duration.ofSeconds(30),
+                loaded.getPreparationTime().orElseThrow());
+
+        service.updateAndSave(created.getId(), RecipeFormInput.withIngredientGroupDurations(
+                "Brotzeit", "2", groups, List.of("Herzhaft"), List.of(),
+                "75", RecipeTimeUnit.SECONDS, "", RecipeTimeUnit.MINUTES,
+                "", RecipeTimeUnit.HOURS, "", RecipeTimeUnit.MINUTES,
+                "", "", "", "", DishType.MAIN));
+
+        assertEquals(java.time.Duration.ofSeconds(75), recipes.findById(created.getId())
+                .orElseThrow().getPreparationTime().orElseThrow());
+    }
+
+    @Test
     void createsAndEditsAlternativeGroupsWithStableExistingIds() {
         SqliteDatabase database = new SqliteDatabase(
                 temporaryDirectory.resolve("alternative-form.db"));

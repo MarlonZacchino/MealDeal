@@ -345,6 +345,33 @@ class RecipeFormServiceTest {
     }
 
     @Test
+    void convertsMixedTimeInputUnitsCentrallyWithoutPrecisionLoss() {
+        RecipeFormService service = new RecipeFormService(
+                new MemoryRecipeRepository(), new MemoryIngredientRepository(),
+                new MemoryTasteRepository());
+        UUID groupId = UUID.randomUUID();
+        UUID optionId = UUID.randomUUID();
+        RecipeFormInput input = RecipeFormInput.withIngredientGroupDurations(
+                "Zeitgericht", "2", List.of(new IngredientGroupFormInput(
+                        groupId, List.of(new IngredientOptionFormInput(
+                                optionId, "Brot", "2", Unit.SLICE, 0)), optionId)),
+                List.of("Herzhaft"), List.of(),
+                "30", RecipeTimeUnit.SECONDS,
+                "20", RecipeTimeUnit.MINUTES,
+                "2", RecipeTimeUnit.HOURS,
+                "", RecipeTimeUnit.SECONDS,
+                "", "", "", "", DishType.MAIN);
+
+        Recipe recipe = service.createAndSave(input);
+
+        assertEquals(java.time.Duration.ofSeconds(30), recipe.getPreparationTime().orElseThrow());
+        assertEquals(java.time.Duration.ofMinutes(20), recipe.getCookingTime().orElseThrow());
+        assertEquals(java.time.Duration.ofHours(2), recipe.getBakingTime().orElseThrow());
+        assertEquals(java.time.Duration.ofSeconds(8_430), recipe.getTotalTime().orElseThrow());
+        assertTrue(recipe.getRestingTime().isEmpty());
+    }
+
+    @Test
     void reportsAllImportantValidationErrorsBeforePersistence() {
         List<String> events = new ArrayList<>();
         RecipeFormService service = new RecipeFormService(

@@ -5,6 +5,7 @@ import de.mealdeal.domain.DishType;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.util.Objects;
 
 /** Formats recipe quantities and units for the German user interface. */
@@ -68,15 +69,35 @@ final class GermanRecipeDisplay {
         return unit(unit);
     }
 
-    static String duration(int minutes) {
-        if (minutes < 60) {
-            return minutes + " Min.";
+    static String duration(Duration duration) {
+        Objects.requireNonNull(duration, "Duration must not be null.");
+        if (duration.isZero() || duration.isNegative() || duration.getNano() != 0) {
+            throw new IllegalArgumentException("Duration must contain positive whole seconds.");
         }
-        int hours = minutes / 60;
-        int remainingMinutes = minutes % 60;
-        return remainingMinutes == 0
-                ? hours + " Std."
-                : hours + " Std. " + remainingMinutes + " Min.";
+        long seconds = duration.getSeconds();
+        long hours = seconds / 3_600;
+        long minutes = seconds % 3_600 / 60;
+        long remainingSeconds = seconds % 60;
+        StringBuilder result = new StringBuilder();
+        appendDurationPart(result, hours, "Std.");
+        appendDurationPart(result, minutes, "Min.");
+        appendDurationPart(result, remainingSeconds, "Sek.");
+        return result.toString();
+    }
+
+    /** Retains the former minute formatter for compatible callers and tests. */
+    static String duration(int minutes) {
+        return duration(Duration.ofMinutes(minutes));
+    }
+
+    private static void appendDurationPart(StringBuilder target, long value, String unit) {
+        if (value == 0) {
+            return;
+        }
+        if (!target.isEmpty()) {
+            target.append(' ');
+        }
+        target.append(value).append(' ').append(unit);
     }
 
     static String dishType(DishType dishType) {

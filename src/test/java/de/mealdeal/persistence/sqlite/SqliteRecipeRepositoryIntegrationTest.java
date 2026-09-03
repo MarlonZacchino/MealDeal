@@ -16,6 +16,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
@@ -127,9 +128,12 @@ class SqliteRecipeRepositoryIntegrationTest {
 
     @Test
     void savesAndLoadsOptionalTimesAndDerivesTotalTime() {
-        Recipe withTimes = new Recipe("Pasta", 2,
-                List.of(new RecipeIngredient(pasta, BigDecimal.ONE, Unit.PIECE)),
-                List.of(), List.of(savory), 15, 25, 30, 20, null, DishType.MAIN);
+        RecipeIngredientOption option = new RecipeIngredientOption(
+                pasta, BigDecimal.ONE, Unit.PIECE, 0);
+        Recipe withTimes = Recipe.withIngredientGroupDurations(UUID.randomUUID(), "Pasta", 2,
+                List.of(new RecipeIngredientGroup(List.of(option), option)),
+                List.of(), List.of(savory), Duration.ofSeconds(30), Duration.ofMinutes(25),
+                Duration.ofHours(2), Duration.ofSeconds(75), null, DishType.MAIN);
         Recipe withoutTimes = new Recipe("Plain pasta", 2,
                 List.of(new RecipeIngredient(pasta, BigDecimal.ONE, Unit.PIECE)),
                 List.of(), List.of(savory));
@@ -139,16 +143,16 @@ class SqliteRecipeRepositoryIntegrationTest {
 
         Recipe loadedWithTimes = recipeRepository.findById(withTimes.getId()).orElseThrow();
         Recipe loadedWithoutTimes = recipeRepository.findById(withoutTimes.getId()).orElseThrow();
-        assertEquals(15, loadedWithTimes.getPreparationTimeMinutes().orElseThrow());
-        assertEquals(25, loadedWithTimes.getCookingTimeMinutes().orElseThrow());
-        assertEquals(30, loadedWithTimes.getBakingTimeMinutes().orElseThrow());
-        assertEquals(20, loadedWithTimes.getRestingTimeMinutes().orElseThrow());
-        assertEquals(90, loadedWithTimes.getTotalTimeMinutes().orElseThrow());
-        assertTrue(loadedWithoutTimes.getPreparationTimeMinutes().isEmpty());
-        assertTrue(loadedWithoutTimes.getCookingTimeMinutes().isEmpty());
-        assertTrue(loadedWithoutTimes.getBakingTimeMinutes().isEmpty());
-        assertTrue(loadedWithoutTimes.getRestingTimeMinutes().isEmpty());
-        assertTrue(loadedWithoutTimes.getTotalTimeMinutes().isEmpty());
+        assertEquals(Duration.ofSeconds(30), loadedWithTimes.getPreparationTime().orElseThrow());
+        assertEquals(Duration.ofMinutes(25), loadedWithTimes.getCookingTime().orElseThrow());
+        assertEquals(Duration.ofHours(2), loadedWithTimes.getBakingTime().orElseThrow());
+        assertEquals(Duration.ofSeconds(75), loadedWithTimes.getRestingTime().orElseThrow());
+        assertEquals(Duration.ofSeconds(8_805), loadedWithTimes.getTotalTime().orElseThrow());
+        assertTrue(loadedWithoutTimes.getPreparationTime().isEmpty());
+        assertTrue(loadedWithoutTimes.getCookingTime().isEmpty());
+        assertTrue(loadedWithoutTimes.getBakingTime().isEmpty());
+        assertTrue(loadedWithoutTimes.getRestingTime().isEmpty());
+        assertTrue(loadedWithoutTimes.getTotalTime().isEmpty());
         assertTrue(loadedWithoutTimes.getNutritionInfo().isEmpty());
     }
 

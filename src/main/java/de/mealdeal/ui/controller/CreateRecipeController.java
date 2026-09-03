@@ -15,6 +15,7 @@ import de.mealdeal.persistence.repository.TasteRepository;
 import de.mealdeal.ui.form.RecipeFormInput;
 import de.mealdeal.ui.form.RecipeFormService;
 import de.mealdeal.ui.form.RecipeFormValidationException;
+import de.mealdeal.ui.form.RecipeTimeUnit;
 import de.mealdeal.ui.navigation.NavigationAware;
 import de.mealdeal.ui.navigation.ViewNavigator;
 import de.mealdeal.ui.navigation.ViewType;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Optional;
+import java.time.Duration;
 import java.util.stream.Collectors;
 
 /** Controls the shared form for creating or editing a recipe. */
@@ -64,11 +66,19 @@ public final class CreateRecipeController implements NavigationAware {
     @FXML
     private TextField preparationTimeField;
     @FXML
+    private ComboBox<RecipeTimeUnit> preparationTimeUnitBox;
+    @FXML
     private TextField cookingTimeField;
+    @FXML
+    private ComboBox<RecipeTimeUnit> cookingTimeUnitBox;
     @FXML
     private TextField bakingTimeField;
     @FXML
+    private ComboBox<RecipeTimeUnit> bakingTimeUnitBox;
+    @FXML
     private TextField restingTimeField;
+    @FXML
+    private ComboBox<RecipeTimeUnit> restingTimeUnitBox;
     @FXML
     private TextField caloriesField;
     @FXML
@@ -128,6 +138,10 @@ public final class CreateRecipeController implements NavigationAware {
         stepEditor = new RecipeStepEditor(stepRowsContainer);
         servingCountField.setText(RecipeFormService.DEFAULT_SERVING_COUNT);
         configureDishTypeBox();
+        configureTimeUnitBox(preparationTimeUnitBox);
+        configureTimeUnitBox(cookingTimeUnitBox);
+        configureTimeUnitBox(bakingTimeUnitBox);
+        configureTimeUnitBox(restingTimeUnitBox);
         ingredientEditor.addGroup();
         loadReferenceData();
     }
@@ -145,12 +159,12 @@ public final class CreateRecipeController implements NavigationAware {
         nameField.setText(recipe.getName());
         servingCountField.setText(Integer.toString(recipe.getStandardServingCount()));
         dishTypeBox.getSelectionModel().select(recipe.getDishType());
-        preparationTimeField.setText(timeText(recipe.getPreparationTimeMinutes()));
-        cookingTimeField.setText(timeText(recipe.getCookingTimeMinutes()));
-        bakingTimeField.setText(timeText(recipe.getBakingTimeMinutes()));
-        restingTimeField.setText(timeText(recipe.getRestingTimeMinutes()));
+        fillDuration(preparationTimeField, preparationTimeUnitBox, recipe.getPreparationTime());
+        fillDuration(cookingTimeField, cookingTimeUnitBox, recipe.getCookingTime());
+        fillDuration(bakingTimeField, bakingTimeUnitBox, recipe.getBakingTime());
+        fillDuration(restingTimeField, restingTimeUnitBox, recipe.getRestingTime());
         NutritionInfo nutrition = recipe.getNutritionInfo().orElse(null);
-        caloriesField.setText(nutrition == null ? "" : timeText(nutrition.getCaloriesKcal()));
+        caloriesField.setText(nutrition == null ? "" : integerText(nutrition.getCaloriesKcal()));
         proteinField.setText(nutrition == null ? "" : decimalText(nutrition.getProteinGrams()));
         carbohydratesField.setText(nutrition == null
                 ? "" : decimalText(nutrition.getCarbohydrateGrams()));
@@ -234,11 +248,13 @@ public final class CreateRecipeController implements NavigationAware {
     }
 
     private RecipeFormInput readFormInput() {
-        return RecipeFormInput.withIngredientGroups(nameField.getText(),
+        return RecipeFormInput.withIngredientGroupDurations(nameField.getText(),
                 servingCountField.getText(), ingredientEditor.inputs(),
                 tasteEditor.selectedNames(), stepEditor.descriptions(),
-                preparationTimeField.getText(), cookingTimeField.getText(),
-                bakingTimeField.getText(), restingTimeField.getText(), caloriesField.getText(),
+                preparationTimeField.getText(), preparationTimeUnitBox.getValue(),
+                cookingTimeField.getText(), cookingTimeUnitBox.getValue(),
+                bakingTimeField.getText(), bakingTimeUnitBox.getValue(),
+                restingTimeField.getText(), restingTimeUnitBox.getValue(), caloriesField.getText(),
                 proteinField.getText(), carbohydratesField.getText(), fatField.getText(),
                 dishTypeBox.getValue());
     }
@@ -259,6 +275,22 @@ public final class CreateRecipeController implements NavigationAware {
         dishTypeBox.getSelectionModel().select(DishType.MAIN);
     }
 
+    private static void configureTimeUnitBox(ComboBox<RecipeTimeUnit> unitBox) {
+        unitBox.getItems().setAll(RecipeTimeUnit.values());
+        unitBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(RecipeTimeUnit unit) {
+                return unit == null ? "" : unit.getDisplayName();
+            }
+
+            @Override
+            public RecipeTimeUnit fromString(String value) {
+                throw new UnsupportedOperationException("Recipe time units are selected.");
+            }
+        });
+        unitBox.getSelectionModel().select(RecipeTimeUnit.MINUTES);
+    }
+
     private void showMessage(String message) {
         formMessage.setText(message);
         formMessage.setManaged(true);
@@ -271,8 +303,20 @@ public final class CreateRecipeController implements NavigationAware {
         formMessage.setVisible(false);
     }
 
-    private static String timeText(OptionalInt minutes) {
-        return minutes.isPresent() ? Integer.toString(minutes.getAsInt()) : "";
+    private static void fillDuration(TextField field, ComboBox<RecipeTimeUnit> unitBox,
+                                     Optional<Duration> duration) {
+        if (duration.isEmpty()) {
+            field.clear();
+            unitBox.getSelectionModel().select(RecipeTimeUnit.MINUTES);
+            return;
+        }
+        RecipeTimeUnit.EditValue editValue = RecipeTimeUnit.forEditing(duration.orElseThrow());
+        field.setText(Integer.toString(editValue.value()));
+        unitBox.getSelectionModel().select(editValue.unit());
+    }
+
+    private static String integerText(OptionalInt value) {
+        return value.isPresent() ? Integer.toString(value.getAsInt()) : "";
     }
 
     private static String decimalText(Optional<java.math.BigDecimal> value) {

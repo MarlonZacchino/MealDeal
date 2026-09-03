@@ -17,6 +17,7 @@ import de.mealdeal.persistence.repository.RecipeRepository;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -117,18 +118,18 @@ public final class SqliteRecipeRepository implements RecipeRepository {
     private static void saveRecipeRow(Connection connection, Recipe recipe) throws SQLException {
         String sql = """
                 INSERT INTO recipes (
-                    id, name, standard_serving_count, preparation_time_minutes,
-                    cooking_time_minutes, baking_time_minutes, resting_time_minutes,
+                    id, name, standard_serving_count, preparation_time_seconds,
+                    cooking_time_seconds, baking_time_seconds, resting_time_seconds,
                     calories_kcal, protein_grams,
                     carbohydrate_grams, fat_grams, dish_type)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     name = excluded.name,
                     standard_serving_count = excluded.standard_serving_count,
-                    preparation_time_minutes = excluded.preparation_time_minutes,
-                    cooking_time_minutes = excluded.cooking_time_minutes,
-                    baking_time_minutes = excluded.baking_time_minutes,
-                    resting_time_minutes = excluded.resting_time_minutes,
+                    preparation_time_seconds = excluded.preparation_time_seconds,
+                    cooking_time_seconds = excluded.cooking_time_seconds,
+                    baking_time_seconds = excluded.baking_time_seconds,
+                    resting_time_seconds = excluded.resting_time_seconds,
                     calories_kcal = excluded.calories_kcal,
                     protein_grams = excluded.protein_grams,
                     carbohydrate_grams = excluded.carbohydrate_grams,
@@ -139,10 +140,10 @@ public final class SqliteRecipeRepository implements RecipeRepository {
             statement.setString(1, recipe.getId().toString());
             statement.setString(2, recipe.getName());
             statement.setInt(3, recipe.getStandardServingCount());
-            setOptionalTime(statement, 4, recipe.getPreparationTimeMinutes());
-            setOptionalTime(statement, 5, recipe.getCookingTimeMinutes());
-            setOptionalTime(statement, 6, recipe.getBakingTimeMinutes());
-            setOptionalTime(statement, 7, recipe.getRestingTimeMinutes());
+            setOptionalDuration(statement, 4, recipe.getPreparationTime());
+            setOptionalDuration(statement, 5, recipe.getCookingTime());
+            setOptionalDuration(statement, 6, recipe.getBakingTime());
+            setOptionalDuration(statement, 7, recipe.getRestingTime());
             setNutrition(statement, recipe.getNutritionInfo().orElse(null));
             statement.setString(12, recipe.getDishType().name());
             statement.executeUpdate();
@@ -271,8 +272,8 @@ public final class SqliteRecipeRepository implements RecipeRepository {
 
     private static Optional<Recipe> loadRecipe(Connection connection, UUID id) throws SQLException {
         String sql = """
-                SELECT name, standard_serving_count, preparation_time_minutes,
-                       cooking_time_minutes, baking_time_minutes, resting_time_minutes,
+                SELECT name, standard_serving_count, preparation_time_seconds,
+                       cooking_time_seconds, baking_time_seconds, resting_time_seconds,
                        calories_kcal, protein_grams,
                        carbohydrate_grams, fat_grams, dish_type
                 FROM recipes WHERE id = ?
@@ -285,13 +286,13 @@ public final class SqliteRecipeRepository implements RecipeRepository {
                 }
                 String name = resultSet.getString("name");
                 int servingCount = resultSet.getInt("standard_serving_count");
-                return Optional.of(Recipe.withIngredientGroups(id, name, servingCount,
+                return Optional.of(Recipe.withIngredientGroupDurations(id, name, servingCount,
                         loadIngredientGroups(connection, id), loadSteps(connection, id),
                         loadTastes(connection, id),
-                        nullableInteger(resultSet, "preparation_time_minutes"),
-                        nullableInteger(resultSet, "cooking_time_minutes"),
-                        nullableInteger(resultSet, "baking_time_minutes"),
-                        nullableInteger(resultSet, "resting_time_minutes"),
+                        nullableDuration(resultSet, "preparation_time_seconds"),
+                        nullableDuration(resultSet, "cooking_time_seconds"),
+                        nullableDuration(resultSet, "baking_time_seconds"),
+                        nullableDuration(resultSet, "resting_time_seconds"),
                         nutritionInfo(resultSet),
                         DishType.valueOf(resultSet.getString("dish_type"))));
             }
@@ -301,13 +302,19 @@ public final class SqliteRecipeRepository implements RecipeRepository {
     private record IngredientSelection(UUID groupId, UUID optionId) {
     }
 
-    private static void setOptionalTime(java.sql.PreparedStatement statement, int index,
-                                        java.util.OptionalInt minutes) throws SQLException {
-        if (minutes.isPresent()) {
-            statement.setInt(index, minutes.getAsInt());
+    private static void setOptionalDuration(java.sql.PreparedStatement statement, int index,
+                                            Optional<Duration> duration) throws SQLException {
+        if (duration.isPresent()) {
+            statement.setLong(index, duration.orElseThrow().getSeconds());
         } else {
             statement.setNull(index, java.sql.Types.INTEGER);
         }
+    }
+
+    private static Duration nullableDuration(java.sql.ResultSet resultSet, String column)
+            throws SQLException {
+        long value = resultSet.getLong(column);
+        return resultSet.wasNull() ? null : Duration.ofSeconds(value);
     }
 
     private static Integer nullableInteger(java.sql.ResultSet resultSet, String column)
@@ -325,7 +332,7 @@ public final class SqliteRecipeRepository implements RecipeRepository {
             }
             return;
         }
-        setOptionalTime(statement, 8, nutrition.getCaloriesKcal());
+        setOptionalInteger(statement, 8, nutrition.getCaloriesKcal());
         setOptionalDecimal(statement, 9, nutrition.getProteinGrams());
         setOptionalDecimal(statement, 10, nutrition.getCarbohydrateGrams());
         setOptionalDecimal(statement, 11, nutrition.getFatGrams());
@@ -337,6 +344,15 @@ public final class SqliteRecipeRepository implements RecipeRepository {
             statement.setString(index, value.get().toPlainString());
         } else {
             statement.setNull(index, java.sql.Types.VARCHAR);
+        }
+    }
+
+    private static void setOptionalInteger(java.sql.PreparedStatement statement, int index,
+                                           java.util.OptionalInt value) throws SQLException {
+        if (value.isPresent()) {
+            statement.setInt(index, value.getAsInt());
+        } else {
+            statement.setNull(index, java.sql.Types.INTEGER);
         }
     }
 

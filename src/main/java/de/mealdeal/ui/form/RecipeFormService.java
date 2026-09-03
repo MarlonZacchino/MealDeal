@@ -13,6 +13,7 @@ import de.mealdeal.persistence.repository.RecipeRepository;
 import de.mealdeal.persistence.repository.TasteRepository;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -93,10 +94,10 @@ public final class RecipeFormService {
         }
 
         UUID stableRecipeId = recipeId == null ? UUID.randomUUID() : recipeId;
-        Recipe recipe = Recipe.withIngredientGroups(stableRecipeId, validated.name(),
+        Recipe recipe = Recipe.withIngredientGroupDurations(stableRecipeId, validated.name(),
                 validated.servingCount(), ingredientGroups, steps, recipeTastes,
-                validated.preparationTimeMinutes(), validated.cookingTimeMinutes(),
-                validated.bakingTimeMinutes(), validated.restingTimeMinutes(),
+                validated.preparationTime(), validated.cookingTime(),
+                validated.bakingTime(), validated.restingTime(),
                 validated.nutritionInfo(), validated.dishType());
         recipeRepository.save(recipe);
         return recipe;
@@ -113,14 +114,14 @@ public final class RecipeFormService {
         List<ValidatedIngredientGroup> ingredientGroups = validateIngredientGroups(input, errors);
         List<String> tasteNames = validateTastes(input.tasteNames(), errors);
         List<String> steps = validateSteps(input.stepDescriptions());
-        Integer preparationTime = parseOptionalMinutes(
-                input.preparationTimeMinutes(), "Die Vorbereitungszeit", errors);
-        Integer cookingTime = parseOptionalMinutes(
-                input.cookingTimeMinutes(), "Die Kochzeit", errors);
-        Integer bakingTime = parseOptionalMinutes(
-                input.bakingTimeMinutes(), "Die Backzeit", errors);
-        Integer restingTime = parseOptionalMinutes(
-                input.restingTimeMinutes(), "Die Ruhezeit", errors);
+        Duration preparationTime = parseOptionalDuration(input.preparationTimeValue(),
+                input.preparationTimeUnit(), "Die Vorbereitungszeit", errors);
+        Duration cookingTime = parseOptionalDuration(input.cookingTimeValue(),
+                input.cookingTimeUnit(), "Die Kochzeit", errors);
+        Duration bakingTime = parseOptionalDuration(input.bakingTimeValue(),
+                input.bakingTimeUnit(), "Die Backzeit", errors);
+        Duration restingTime = parseOptionalDuration(input.restingTimeValue(),
+                input.restingTimeUnit(), "Die Ruhezeit", errors);
         Integer calories = parseOptionalNonNegativeInteger(
                 input.caloriesKcal(), "Die Kalorien", errors);
         BigDecimal protein = parseOptionalNonNegativeDecimal(
@@ -154,20 +155,20 @@ public final class RecipeFormService {
         }
     }
 
-    private static Integer parseOptionalMinutes(String input, String fieldName,
-                                                List<String> errors) {
+    private static Duration parseOptionalDuration(String input, RecipeTimeUnit unit,
+                                                  String fieldName, List<String> errors) {
         String value = stripped(input);
         if (value.isEmpty()) {
             return null;
         }
+        if (unit == null) {
+            errors.add(fieldName + " benötigt eine Einheit.");
+            return null;
+        }
         try {
-            int minutes = Integer.parseInt(value);
-            if (minutes <= 0) {
-                throw new NumberFormatException();
-            }
-            return minutes;
-        } catch (NumberFormatException exception) {
-            errors.add(fieldName + " muss eine positive ganze Minutenzahl sein.");
+            return unit.toDuration(Integer.parseInt(value));
+        } catch (IllegalArgumentException | ArithmeticException exception) {
+            errors.add(fieldName + " muss eine positive ganze Zahl sein.");
             return null;
         }
     }
@@ -356,10 +357,10 @@ public final class RecipeFormService {
                                  List<ValidatedIngredientGroup> ingredientGroups,
                                  List<String> tasteNames,
                                  List<String> stepDescriptions,
-                                 Integer preparationTimeMinutes,
-                                 Integer cookingTimeMinutes,
-                                 Integer bakingTimeMinutes,
-                                 Integer restingTimeMinutes,
+                                 Duration preparationTime,
+                                 Duration cookingTime,
+                                 Duration bakingTime,
+                                 Duration restingTime,
                                  NutritionInfo nutritionInfo,
                                  DishType dishType) {
     }

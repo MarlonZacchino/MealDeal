@@ -3,6 +3,7 @@ package de.mealdeal.domain;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -108,6 +109,20 @@ class RecipeTest {
 
         assertEquals(40, recipe.getRestingTimeMinutes().orElseThrow());
         assertEquals(100, recipe.getTotalTimeMinutes().orElseThrow());
+    }
+
+    @Test
+    void derivesSecondPreciseTotalFromCanonicalDurations() {
+        RecipeIngredientOption option = new RecipeIngredientOption(pasta,
+                recipeIngredient.getQuantity(), recipeIngredient.getUnit(), 0);
+        Recipe recipe = Recipe.withIngredientGroupDurations(UUID.randomUUID(), "Pasta", 2,
+                List.of(new RecipeIngredientGroup(List.of(option), option)),
+                List.of(recipeStep), List.of(savory), Duration.ofSeconds(30),
+                Duration.ofMinutes(20), Duration.ofHours(2), Duration.ofSeconds(75),
+                null, DishType.MAIN);
+
+        assertEquals(Duration.ofSeconds(30), recipe.getPreparationTime().orElseThrow());
+        assertEquals(Duration.ofSeconds(8_505), recipe.getTotalTime().orElseThrow());
     }
 
     @Test
