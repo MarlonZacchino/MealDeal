@@ -8,37 +8,23 @@ import de.mealdeal.persistence.repository.IngredientRepository;
 import de.mealdeal.persistence.repository.RecipeRepository;
 import de.mealdeal.persistence.repository.TasteRepository;
 import de.mealdeal.service.CombinedRecipeSearchService;
-import de.mealdeal.service.CombinedSearchResult;
-import de.mealdeal.service.IngredientSearchResult;
-import de.mealdeal.service.MatchQuality;
 import de.mealdeal.service.RecipeSearchService;
 import de.mealdeal.service.TasteFilterMode;
-import de.mealdeal.service.TasteSearchResult;
-import de.mealdeal.ui.IngredientCategoryGrouping;
 import de.mealdeal.ui.navigation.NavigationAware;
 import de.mealdeal.ui.navigation.ViewNavigator;
 import de.mealdeal.ui.search.IngredientSearchModel;
 import de.mealdeal.ui.search.TasteSearchModel;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TitledPane;
 import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-/** Controls ingredient and taste selection and renders existing search-service results. */
+/** Coordinates recipe-search state, services, navigation and UI presentation components. */
 public final class IngredientSearchController implements NavigationAware {
 
     private static final System.Logger LOGGER =
@@ -48,9 +34,10 @@ public final class IngredientSearchController implements NavigationAware {
     private final TasteSearchModel tasteSearchModel;
     private final RecipeRepository recipeRepository;
     private final CombinedRecipeSearchService combinedSearchService;
-    private final List<Ingredient> availableIngredients = new ArrayList<>();
-    private final List<Taste> availableTastes = new ArrayList<>();
     private Consumer<Recipe> detailNavigation;
+    private IngredientSelectionView ingredientSelectionView;
+    private TasteSelectionView tasteSelectionView;
+    private RecipeSearchResultsView resultsView;
 
     @FXML
     private TextField ingredientFilterField;
@@ -125,16 +112,22 @@ public final class IngredientSearchController implements NavigationAware {
 
     @FXML
     private void initialize() {
-        ingredientFilterField.textProperty().addListener(
-                (ignored, previous, current) -> renderAvailableIngredients());
-        tasteFilterField.textProperty().addListener(
-                (ignored, previous, current) -> renderAvailableTastes());
+        ingredientSelectionView = new IngredientSelectionView(
+                ingredientFilterField, availableIngredientsContainer,
+                selectedIngredientsContainer, selectionCountLabel,
+                IngredientSearchModel.MAX_SELECTED_INGREDIENTS,
+                this::selectIngredient, this::removeIngredient);
+        tasteSelectionView = new TasteSelectionView(
+                tasteFilterField, availableTastesContainer, selectedTastesContainer,
+                tasteSelectionCountLabel, this::selectTaste, this::removeTaste);
+        resultsView = new RecipeSearchResultsView(
+                resultsContainer, initialState, emptyState, errorState, this::openRecipe);
         boolean ingredientsLoaded = loadIngredients();
         boolean tastesLoaded = loadTastes();
-        renderSelection();
-        renderTasteSelection();
+        ingredientSelectionView.showSelection(searchModel.getSelectedIngredients());
+        tasteSelectionView.showSelection(tasteSearchModel.getSelectedTastes());
         if (ingredientsLoaded && tastesLoaded) {
-            setResultState(initialState);
+            resultsView.showInitial();
         }
     }
 
@@ -142,7 +135,7 @@ public final class IngredientSearchController implements NavigationAware {
     private void search() {
         clearMessage();
         try {
-            showResults(combinedSearchService.search(
+            resultsView.showResults(combinedSearchService.search(
                     recipeRepository.findAll(),
                     searchModel.getSelectedIngredients(),
                     tasteSearchModel.getSelectedTastes(),
@@ -151,7 +144,7 @@ public final class IngredientSearchController implements NavigationAware {
             showMessage("Wähle mindestens eine Zutat oder Geschmacksrichtung aus.");
         } catch (PersistenceException exception) {
             LOGGER.log(System.Logger.Level.ERROR, "Could not search recipes.", exception);
-            setResultState(errorState);
+            resultsView.showError();
         }
     }
 
@@ -159,15 +152,13 @@ public final class IngredientSearchController implements NavigationAware {
     private void resetFilters() {
         searchModel.clear();
         tasteSearchModel.clear();
-        ingredientFilterField.clear();
-        tasteFilterField.clear();
+        ingredientSelectionView.clearFilter();
+        tasteSelectionView.clearFilter();
         tasteRankingMode.setSelected(true);
         clearMessage();
-        renderSelection();
-        renderTasteSelection();
-        renderAvailableIngredients();
-        renderAvailableTastes();
-        setResultState(initialState);
+        ingredientSelectionView.showSelection(searchModel.getSelectedIngredients());
+        tasteSelectionView.showSelection(tasteSearchModel.getSelectedTastes());
+        resultsView.showInitial();
     }
 
     void openRecipe(Recipe recipe) {
@@ -176,15 +167,14 @@ public final class IngredientSearchController implements NavigationAware {
 
     private boolean loadIngredients() {
         try {
-            availableIngredients.clear();
-            availableIngredients.addAll(searchModel.loadAvailableIngredients());
-            renderAvailableIngredients();
+            ingredientSelectionView.setAvailableIngredients(
+                    searchModel.loadAvailableIngredients());
             return true;
         } catch (PersistenceException exception) {
             LOGGER.log(System.Logger.Level.ERROR, "Could not load ingredients.", exception);
-            ingredientFilterField.setDisable(true);
+            ingredientSelectionView.setFilterDisabled(true);
             showMessage("Die Zutaten konnten nicht geladen werden.");
-            setResultState(errorState);
+            resultsView.showError();
             return false;
         }
     }
@@ -196,22 +186,19 @@ public final class IngredientSearchController implements NavigationAware {
             return;
         }
         clearMessage();
-        renderSelection();
-        renderAvailableIngredients();
-        setResultState(initialState);
+        ingredientSelectionView.showSelection(searchModel.getSelectedIngredients());
+        resultsView.showInitial();
     }
 
     private boolean loadTastes() {
         try {
-            availableTastes.clear();
-            availableTastes.addAll(tasteSearchModel.loadAvailableTastes());
-            renderAvailableTastes();
+            tasteSelectionView.setAvailableTastes(tasteSearchModel.loadAvailableTastes());
             return true;
         } catch (PersistenceException exception) {
             LOGGER.log(System.Logger.Level.ERROR, "Could not load tastes.", exception);
-            tasteFilterField.setDisable(true);
+            tasteSelectionView.setFilterDisabled(true);
             showMessage("Die Geschmacksrichtungen konnten nicht geladen werden.");
-            setResultState(errorState);
+            resultsView.showError();
             return false;
         }
     }
@@ -219,193 +206,22 @@ public final class IngredientSearchController implements NavigationAware {
     private void selectTaste(Taste taste) {
         tasteSearchModel.select(taste);
         clearMessage();
-        renderTasteSelection();
-        renderAvailableTastes();
-        setResultState(initialState);
+        tasteSelectionView.showSelection(tasteSearchModel.getSelectedTastes());
+        resultsView.showInitial();
     }
 
     private void removeTaste(Taste taste) {
         tasteSearchModel.remove(taste);
         clearMessage();
-        renderTasteSelection();
-        renderAvailableTastes();
-        setResultState(initialState);
+        tasteSelectionView.showSelection(tasteSearchModel.getSelectedTastes());
+        resultsView.showInitial();
     }
 
     private void removeIngredient(Ingredient ingredient) {
         searchModel.remove(ingredient);
         clearMessage();
-        renderSelection();
-        renderAvailableIngredients();
-        setResultState(initialState);
-    }
-
-    private void renderAvailableIngredients() {
-        availableIngredientsContainer.getChildren().clear();
-        String filter = ingredientFilterField.getText();
-        List<IngredientCategoryGrouping.Group> groups =
-                searchModel.groupAvailableIngredients(availableIngredients, filter);
-        if (groups.isEmpty()) {
-            Label noIngredients = new Label(normalized(filter).isEmpty()
-                    ? "Keine weiteren Zutaten verfügbar."
-                    : "Keine passende Zutat gefunden.");
-            noIngredients.getStyleClass().add("card-text");
-            availableIngredientsContainer.getChildren().add(noIngredients);
-            return;
-        }
-        groups.forEach(group -> {
-            FlowPane ingredientOptions = new FlowPane(10, 10);
-            ingredientOptions.getStyleClass().add("ingredient-category-options");
-            group.ingredients().forEach(ingredient -> {
-                Button option = new Button(ingredient.getName());
-                option.setOnAction(ignored -> selectIngredient(ingredient));
-                option.getStyleClass().add("ingredient-option");
-                ingredientOptions.getChildren().add(option);
-            });
-            TitledPane categoryPane = new TitledPane(
-                    group.category().getName(), ingredientOptions);
-            categoryPane.setAnimated(true);
-            categoryPane.setCollapsible(true);
-            categoryPane.setExpanded(
-                    IngredientCategoryGrouping.shouldExpandForFilter(filter));
-            categoryPane.setMaxWidth(Double.MAX_VALUE);
-            categoryPane.getStyleClass().addAll(
-                    "expandable-card", "ingredient-category-pane");
-            availableIngredientsContainer.getChildren().add(categoryPane);
-        });
-    }
-
-    private void renderSelection() {
-        selectedIngredientsContainer.getChildren().clear();
-        List<Ingredient> selected = searchModel.getSelectedIngredients();
-        selectionCountLabel.setText(selected.size() + "/"
-                + IngredientSearchModel.MAX_SELECTED_INGREDIENTS + " ausgewählt");
-        if (selected.isEmpty()) {
-            Label instruction = new Label("Noch keine Zutaten ausgewählt.");
-            instruction.getStyleClass().add("card-text");
-            selectedIngredientsContainer.getChildren().add(instruction);
-            return;
-        }
-        selected.forEach(ingredient -> {
-            Button chip = new Button(ingredient.getName() + "  ×");
-            chip.setAccessibleText(ingredient.getName() + " aus Auswahl entfernen");
-            chip.setOnAction(ignored -> removeIngredient(ingredient));
-            chip.getStyleClass().add("selected-ingredient-chip");
-            selectedIngredientsContainer.getChildren().add(chip);
-        });
-    }
-
-    private void renderAvailableTastes() {
-        availableTastesContainer.getChildren().clear();
-        String filter = normalized(tasteFilterField.getText());
-        List<Taste> selected = tasteSearchModel.getSelectedTastes();
-        List<Taste> visible = availableTastes.stream()
-                .filter(taste -> !selected.contains(taste))
-                .filter(taste -> normalized(taste.getName()).contains(filter))
-                .toList();
-        if (visible.isEmpty()) {
-            Label noTastes = new Label(filter.isEmpty()
-                    ? "Keine weiteren Geschmacksrichtungen verfügbar."
-                    : "Keine passende Geschmacksrichtung gefunden.");
-            noTastes.getStyleClass().add("card-text");
-            availableTastesContainer.getChildren().add(noTastes);
-            return;
-        }
-        visible.forEach(taste -> {
-            Button option = new Button(taste.getName());
-            option.setOnAction(ignored -> selectTaste(taste));
-            option.getStyleClass().add("taste-search-option");
-            availableTastesContainer.getChildren().add(option);
-        });
-    }
-
-    private void renderTasteSelection() {
-        selectedTastesContainer.getChildren().clear();
-        List<Taste> selected = tasteSearchModel.getSelectedTastes();
-        tasteSelectionCountLabel.setText(selected.size() + " ausgewählt");
-        if (selected.isEmpty()) {
-            Label instruction = new Label("Noch keine Geschmacksrichtung ausgewählt.");
-            instruction.getStyleClass().add("card-text");
-            selectedTastesContainer.getChildren().add(instruction);
-            return;
-        }
-        selected.forEach(taste -> {
-            Button chip = new Button(taste.getName() + "  ×");
-            chip.setAccessibleText(taste.getName() + " aus Auswahl entfernen");
-            chip.setOnAction(ignored -> removeTaste(taste));
-            chip.getStyleClass().add("selected-taste-chip");
-            selectedTastesContainer.getChildren().add(chip);
-        });
-    }
-
-    private void showResults(List<CombinedSearchResult> results) {
-        resultsContainer.getChildren().clear();
-        resultsContainer.setAlignment(Pos.TOP_LEFT);
-        resultsContainer.setMaxHeight(Region.USE_PREF_SIZE);
-        VBox.setVgrow(resultsContainer, Priority.NEVER);
-        if (results.isEmpty()) {
-            setResultState(emptyState);
-            return;
-        }
-        results.forEach(result -> resultsContainer.getChildren().add(resultEntry(result)));
-        setResultState(resultsContainer);
-    }
-
-    private Button resultEntry(CombinedSearchResult result) {
-        Recipe recipe = result.getRecipe();
-        Label name = new Label(recipe.getName());
-        name.getStyleClass().add("recipe-name");
-
-        VBox content = new VBox(8, name);
-        result.getIngredientResult().ifPresent(ingredientResult -> {
-            content.getChildren().add(matchRow("Zutaten", ingredientResult.getMatchQuality(),
-                    ingredientResult.getMatchedCount(), ingredientResult.getSelectedCount()));
-            addMissingLabel(content, "Fehlende Zutaten", ingredientMissingText(ingredientResult));
-        });
-        result.getTasteResult().ifPresent(tasteResult -> {
-            content.getChildren().add(matchRow(
-                    "Geschmack", tasteResult.getMatchQuality(),
-                    tasteResult.getMatchedCount(), tasteResult.getSelectedCount()));
-            addMissingLabel(content, "Fehlende Geschmacksrichtungen",
-                    tasteMissingText(tasteResult));
-        });
-        content.setAlignment(Pos.CENTER_LEFT);
-        content.setMaxHeight(Region.USE_PREF_SIZE);
-
-        Button entry = new Button();
-        entry.setGraphic(content);
-        entry.setMaxWidth(Double.MAX_VALUE);
-        entry.prefHeightProperty().bind(content.heightProperty().add(44));
-        entry.maxHeightProperty().bind(entry.prefHeightProperty());
-        entry.setAlignment(Pos.CENTER_LEFT);
-        VBox.setVgrow(entry, Priority.NEVER);
-        entry.setAccessibleText("Gericht " + recipe.getName() + " öffnen");
-        entry.setOnAction(ignored -> openRecipe(recipe));
-        entry.getStyleClass().add("search-result-item");
-        return entry;
-    }
-
-    private static HBox matchRow(String filterName, MatchQuality quality,
-                                 int matchedCount, int selectedCount) {
-        Label filter = new Label(filterName + ":");
-        filter.getStyleClass().add("search-filter-name");
-        Label qualityLabel = new Label(quality.name());
-        qualityLabel.getStyleClass().addAll("match-quality", qualityStyle(quality));
-        Label count = new Label(matchedCount + "/" + selectedCount + " vorhanden");
-        count.getStyleClass().add("recipe-facts");
-        HBox row = new HBox(10, filter, qualityLabel, count);
-        row.setAlignment(Pos.CENTER_LEFT);
-        return row;
-    }
-
-    private static void addMissingLabel(VBox content, String label, String missingText) {
-        if (missingText.isEmpty()) {
-            return;
-        }
-        Label missing = new Label(label + ": " + missingText);
-        missing.setWrapText(true);
-        missing.getStyleClass().add("search-missing");
-        content.getChildren().add(missing);
+        ingredientSelectionView.showSelection(searchModel.getSelectedIngredients());
+        resultsView.showInitial();
     }
 
     private TasteFilterMode selectedTasteMode() {
@@ -421,31 +237,6 @@ public final class IngredientSearchController implements NavigationAware {
         throw new IllegalStateException("A taste filter mode must be selected.");
     }
 
-    static String ingredientMissingText(IngredientSearchResult result) {
-        return result.getMissingGroups().stream()
-                .map(group -> group.getOptions().stream()
-                        .map(option -> option.getIngredient().getName())
-                        .reduce((first, second) -> first + " oder " + second)
-                        .orElseThrow())
-                .reduce((first, second) -> first + ", " + second)
-                .orElse("");
-    }
-
-    private static String tasteMissingText(TasteSearchResult result) {
-        return result.getMissingTastes().stream()
-                .map(Taste::getName)
-                .reduce((first, second) -> first + ", " + second)
-                .orElse("");
-    }
-
-    private void setResultState(VBox visibleState) {
-        for (VBox state : List.of(resultsContainer, initialState, emptyState, errorState)) {
-            boolean visible = state == visibleState;
-            state.setManaged(visible);
-            state.setVisible(visible);
-        }
-    }
-
     private void showMessage(String message) {
         searchMessage.setText(message);
         searchMessage.setManaged(true);
@@ -458,15 +249,4 @@ public final class IngredientSearchController implements NavigationAware {
         searchMessage.setVisible(false);
     }
 
-    private static String qualityStyle(MatchQuality quality) {
-        return switch (quality) {
-            case PERFECT -> "match-perfect";
-            case GOOD -> "match-good";
-            case PARTIAL -> "match-partial";
-        };
-    }
-
-    private static String normalized(String value) {
-        return value == null ? "" : value.strip().toLowerCase(Locale.ROOT);
-    }
 }

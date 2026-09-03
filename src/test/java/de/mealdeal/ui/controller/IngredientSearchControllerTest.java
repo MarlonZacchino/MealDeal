@@ -61,7 +61,7 @@ class IngredientSearchControllerTest {
                 List.of(recipe), List.of(pasta)).getFirst();
 
         assertEquals("Kalb oder Hähnchen, Knoblauch",
-                IngredientSearchController.ingredientMissingText(result));
+                RecipeSearchResultsView.ingredientMissingText(result));
     }
 
     private static RecipeIngredientGroup group(Ingredient... ingredients) {
