@@ -178,12 +178,6 @@
     -fx-padding: 15px 17px;
 }
 
-.search-card {
-    -fx-background-color: -md-accent-soft;
-    -fx-border-color: -md-border;
-    -fx-padding: 34px;
-}
-
 .home-plan-content {
     -fx-padding: 2px 0;
 }
@@ -513,12 +507,6 @@
     -fx-font-weight: bold;
     -fx-padding: 7px 12px;
     -fx-text-fill: -md-on-accent;
-}
-
-.meal-plan-empty-title {
-    -fx-font-size: 18px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -md-text;
 }
 
 .meal-plan-recipe-link {
@@ -1306,10 +1294,6 @@
 
 .root-shell.viewport-extra-wide .content-card {
     -fx-padding: 30px 38px;
-}
-
-.root-shell.viewport-extra-wide .search-card {
-    -fx-padding: 38px;
 }
 
 .root-shell.viewport-extra-wide .card-title {
