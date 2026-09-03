@@ -22,6 +22,16 @@
     -fx-spacing: 8px;
 }
 
+.root-shell.viewport-compact .search-selection-grid {
+    -fx-hgap: 0;
+    -fx-vgap: 14px;
+}
+
+.root-shell.viewport-compact .inventory-grid {
+    -fx-hgap: 0;
+    -fx-vgap: 10px;
+}
+
 .root-shell.viewport-compact .meal-plan-day-content {
     -fx-padding: 18px 18px 22px 18px;
 }

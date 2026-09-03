@@ -3,6 +3,7 @@ package de.mealdeal.ui.controller;
 import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.NutritionInfo;
 import de.mealdeal.domain.RecipeIngredient;
 import de.mealdeal.domain.RecipeIngredientGroup;
 import de.mealdeal.domain.RecipeIngredientOption;
@@ -112,6 +113,19 @@ class RecipeDetailControllerTest {
 
         var reopened = new RecipeDetailIngredientModel(recipe, new RecipeScaler());
         assertEquals("Hähnchen", reopened.rows().getFirst().ingredientName());
+    }
+
+    @Test
+    void nutritionDisplaysKeepLabelsBeforeTheirFormattedValues() {
+        NutritionInfo nutrition = new NutritionInfo(374, new BigDecimal("19.5"),
+                new BigDecimal("42"), new BigDecimal("11.25"));
+
+        assertEquals(List.of(
+                new RecipeDetailController.NutritionDisplay("Kalorien", "374 kcal"),
+                new RecipeDetailController.NutritionDisplay("Protein", "19,5 g"),
+                new RecipeDetailController.NutritionDisplay("Kohlenhydrate", "42 g"),
+                new RecipeDetailController.NutritionDisplay("Fett", "11,25 g")),
+                RecipeDetailController.nutritionDisplays(nutrition));
     }
 
     private static Recipe recipe() {

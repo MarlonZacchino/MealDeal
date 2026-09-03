@@ -101,15 +101,11 @@
     -fx-orientation: horizontal;
 }
 
-.detail-time-grid {
+.detail-time-list {
     -fx-padding: 4px 0 0 0;
 }
 
-.detail-time-total {
-    -fx-padding: 10px 0 0 0;
-}
-
-.detail-nutrition-item {
+.detail-item-block {
     -fx-background-color: -md-surface-alt;
     -fx-background-radius: 10px;
     -fx-padding: 12px 14px;
@@ -129,7 +125,6 @@
 
 .detail-ingredient-row {
     -fx-alignment: center-left;
-    -fx-padding: 10px 0;
 }
 
 .detail-ingredient-name,
@@ -139,12 +134,12 @@
 }
 
 .detail-alternative-picker {
-    -fx-pref-width: 180px;
+    -fx-min-width: 0;
+    -fx-pref-width: 220px;
 }
 
 .detail-step-row {
     -fx-alignment: top-left;
-    -fx-padding: 8px 0;
 }
 
 .detail-step-position {

@@ -68,29 +68,38 @@
                           GridPane.rowIndex="0"
                           styleClass="content-card, detail-section-card">
                         <Label text="Zeitangaben" styleClass="section-title"/>
-                        <GridPane hgap="16.0" vgap="8.0" styleClass="detail-time-grid">
-                            <Label text="Vorbereitung" GridPane.rowIndex="0"
-                                   styleClass="detail-time-name"/>
-                            <Label fx:id="preparationTimeValue" GridPane.columnIndex="1"
-                                   GridPane.rowIndex="0" styleClass="detail-time-value"/>
-                            <Label text="Kochen" GridPane.rowIndex="1"
-                                   styleClass="detail-time-name"/>
-                            <Label fx:id="cookingTimeValue" GridPane.columnIndex="1"
-                                   GridPane.rowIndex="1" styleClass="detail-time-value"/>
-                            <Label text="Backen" GridPane.rowIndex="2"
-                                   styleClass="detail-time-name"/>
-                            <Label fx:id="bakingTimeValue" GridPane.columnIndex="1"
-                                   GridPane.rowIndex="2" styleClass="detail-time-value"/>
-                            <Label text="Ruhezeit" GridPane.rowIndex="3"
-                                   styleClass="detail-time-name"/>
-                            <Label fx:id="restingTimeValue" GridPane.columnIndex="1"
-                                   GridPane.rowIndex="3" styleClass="detail-time-value"/>
-                            <Label text="Gesamt" GridPane.rowIndex="4"
-                                   styleClass="detail-time-name, detail-time-total"/>
-                            <Label fx:id="totalTimeValue" GridPane.columnIndex="1"
-                                   GridPane.rowIndex="4"
-                                   styleClass="detail-time-value, detail-time-total"/>
-                        </GridPane>
+                        <VBox spacing="8.0" styleClass="detail-time-list">
+                            <HBox alignment="CENTER_LEFT" spacing="12.0"
+                                  styleClass="detail-item-block, detail-time-row">
+                                <Label text="Vorbereitung" styleClass="detail-time-name"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="preparationTimeValue" styleClass="detail-time-value"/>
+                            </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="12.0"
+                                  styleClass="detail-item-block, detail-time-row">
+                                <Label text="Kochen" styleClass="detail-time-name"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="cookingTimeValue" styleClass="detail-time-value"/>
+                            </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="12.0"
+                                  styleClass="detail-item-block, detail-time-row">
+                                <Label text="Backen" styleClass="detail-time-name"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="bakingTimeValue" styleClass="detail-time-value"/>
+                            </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="12.0"
+                                  styleClass="detail-item-block, detail-time-row">
+                                <Label text="Ruhezeit" styleClass="detail-time-name"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="restingTimeValue" styleClass="detail-time-value"/>
+                            </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="12.0"
+                                  styleClass="detail-item-block, detail-time-row">
+                                <Label text="Gesamt" styleClass="detail-time-name"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="totalTimeValue" styleClass="detail-time-value"/>
+                            </HBox>
+                        </VBox>
                     </VBox>
 
                     <VBox fx:id="nutritionSection" spacing="10.0" managed="false" visible="false"

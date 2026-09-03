@@ -8,8 +8,9 @@
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -31,53 +32,62 @@
                 <Label fx:id="searchMessage" managed="false" visible="false"
                        wrapText="true" styleClass="form-message"/>
 
-                <TitledPane fx:id="ingredientSelectionPane" text="Zutaten auswählen"
-                            animated="true" collapsible="true" expanded="false"
-                            maxWidth="1.7976931348623157E308"
-                             styleClass="expandable-card, search-options-pane, search-selection-pane">
-                    <content>
-                        <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
-                              styleClass="search-selection-content">
-                            <HBox alignment="CENTER_LEFT" spacing="12.0">
-                                <Label text="Wähle mindestens eine und höchstens zehn Zutaten."
-                                       wrapText="true" styleClass="card-text"
-                                       HBox.hgrow="ALWAYS"/>
-                                <Label fx:id="selectionCountLabel" styleClass="selection-count"/>
-                            </HBox>
-                            <TextField fx:id="ingredientFilterField"
-                                       promptText="Zutaten durchsuchen …"/>
-                            <VBox fx:id="availableIngredientsContainer" spacing="10.0"/>
-                            <VBox spacing="10.0" styleClass="sub-card, selected-ingredients-box">
-                                <Label text="Deine Auswahl" styleClass="form-label"/>
-                                <FlowPane fx:id="selectedIngredientsContainer" hgap="10.0" vgap="10.0"/>
+                <GridPane fx:id="searchSelectionGrid" hgap="18.0" vgap="18.0"
+                          styleClass="search-selection-grid">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="50.0"/>
+                        <ColumnConstraints percentWidth="50.0"/>
+                    </columnConstraints>
+                    <TitledPane fx:id="ingredientSelectionPane" text="Zutaten auswählen"
+                                animated="true" collapsible="true" expanded="false"
+                                minWidth="0.0" maxWidth="1.7976931348623157E308"
+                                GridPane.columnIndex="0"
+                                styleClass="expandable-card, search-options-pane, search-selection-pane">
+                        <content>
+                            <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
+                                  styleClass="search-selection-content">
+                                <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                    <Label text="Wähle mindestens eine und höchstens zehn Zutaten."
+                                           wrapText="true" styleClass="card-text"
+                                           HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="selectionCountLabel" styleClass="selection-count"/>
+                                </HBox>
+                                <TextField fx:id="ingredientFilterField"
+                                           promptText="Zutaten durchsuchen …"/>
+                                <VBox fx:id="availableIngredientsContainer" spacing="10.0"/>
+                                <VBox spacing="10.0" styleClass="sub-card, selected-ingredients-box">
+                                    <Label text="Deine Auswahl" styleClass="form-label"/>
+                                    <FlowPane fx:id="selectedIngredientsContainer" hgap="10.0" vgap="10.0"/>
+                                </VBox>
                             </VBox>
-                        </VBox>
-                    </content>
-                </TitledPane>
+                        </content>
+                    </TitledPane>
 
-                <TitledPane fx:id="tasteSelectionPane" text="Geschmacksrichtungen auswählen"
-                            animated="true" collapsible="true" expanded="false"
-                            maxWidth="1.7976931348623157E308"
-                             styleClass="expandable-card, search-options-pane, search-selection-pane">
-                    <content>
-                        <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
-                              styleClass="search-selection-content">
-                            <HBox alignment="CENTER_LEFT" spacing="12.0">
-                            <Label text="Wähle eine oder mehrere passende Geschmacksrichtungen."
-                                       wrapText="true" styleClass="card-text"
-                                       HBox.hgrow="ALWAYS"/>
-                                <Label fx:id="tasteSelectionCountLabel" styleClass="selection-count"/>
-                            </HBox>
-                            <TextField fx:id="tasteFilterField"
-                                       promptText="Geschmacksrichtungen durchsuchen …"/>
-                            <FlowPane fx:id="availableTastesContainer" hgap="10.0" vgap="10.0"/>
-                            <VBox spacing="10.0" styleClass="sub-card, selected-ingredients-box">
-                                <Label text="Deine Auswahl" styleClass="form-label"/>
-                                <FlowPane fx:id="selectedTastesContainer" hgap="10.0" vgap="10.0"/>
+                    <TitledPane fx:id="tasteSelectionPane" text="Geschmacksrichtungen auswählen"
+                                animated="true" collapsible="true" expanded="false"
+                                minWidth="0.0" maxWidth="1.7976931348623157E308"
+                                GridPane.columnIndex="1"
+                                styleClass="expandable-card, search-options-pane, search-selection-pane">
+                        <content>
+                            <VBox maxWidth="1.7976931348623157E308" spacing="18.0"
+                                  styleClass="search-selection-content">
+                                <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                    <Label text="Wähle eine oder mehrere passende Geschmacksrichtungen."
+                                           wrapText="true" styleClass="card-text"
+                                           HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="tasteSelectionCountLabel" styleClass="selection-count"/>
+                                </HBox>
+                                <TextField fx:id="tasteFilterField"
+                                           promptText="Geschmacksrichtungen durchsuchen …"/>
+                                <FlowPane fx:id="availableTastesContainer" hgap="10.0" vgap="10.0"/>
+                                <VBox spacing="10.0" styleClass="sub-card, selected-ingredients-box">
+                                    <Label text="Deine Auswahl" styleClass="form-label"/>
+                                    <FlowPane fx:id="selectedTastesContainer" hgap="10.0" vgap="10.0"/>
+                                </VBox>
                             </VBox>
-                        </VBox>
-                    </content>
-                </TitledPane>
+                        </content>
+                    </TitledPane>
+                </GridPane>
 
                 <TitledPane fx:id="searchOptionsPane" text="Filter &amp; Suchoptionen"
                             animated="true" collapsible="true" expanded="false"

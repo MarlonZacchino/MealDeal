@@ -97,8 +97,9 @@
     -fx-spacing: 12px;
 }
 
-.inventory-category-management-content {
-    -fx-padding: 20px 22px 22px 22px;
+.inventory-grid {
+    -fx-hgap: 12px;
+    -fx-vgap: 12px;
 }
 
 .inventory-category-name-input {
@@ -146,6 +147,7 @@
 }
 
 .inventory-row {
+    -fx-alignment: top-left;
     -fx-background-color: -md-surface-alt;
     -fx-background-radius: 11px;
     -fx-padding: 13px 17px;

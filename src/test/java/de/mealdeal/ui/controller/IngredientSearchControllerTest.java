@@ -64,6 +64,17 @@ class IngredientSearchControllerTest {
                 RecipeSearchResultsView.ingredientMissingText(result));
     }
 
+    @Test
+    void selectionAreasUseTwoColumnsExceptInCompactViewport() {
+        assertEquals(2, IngredientSearchController.searchSelectionColumnsFor(List.of()));
+        assertEquals(2, IngredientSearchController.searchSelectionColumnsFor(
+                List.of("viewport-wide")));
+        assertEquals(2, IngredientSearchController.searchSelectionColumnsFor(
+                List.of("viewport-wide", "viewport-extra-wide")));
+        assertEquals(1, IngredientSearchController.searchSelectionColumnsFor(
+                List.of("viewport-compact")));
+    }
+
     private static RecipeIngredientGroup group(Ingredient... ingredients) {
         List<RecipeIngredientOption> options = java.util.stream.IntStream
                 .range(0, ingredients.length)

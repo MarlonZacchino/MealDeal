@@ -91,6 +91,9 @@ class FxmlResourceTest {
             assertTrue(fxml.contains("fx:id=\"searchOptionsPane\""));
             assertTrue(fxml.contains("fx:id=\"ingredientSelectionPane\""));
             assertTrue(fxml.contains("fx:id=\"tasteSelectionPane\""));
+            assertTrue(fxml.contains("fx:id=\"searchSelectionGrid\""));
+            assertEquals(2, fxml.split("<ColumnConstraints percentWidth=\"50.0\"/>", -1)
+                    .length - 1);
             assertEquals(3, fxml.split("collapsible=\"true\" expanded=\"false\"", -1).length - 1);
             assertTrue(fxml.contains("text=\"Filter &amp; Suchoptionen\""));
             assertTrue(fxml.contains("collapsible=\"true\" expanded=\"false\""));
@@ -118,6 +121,8 @@ class FxmlResourceTest {
             assertTrue(css.contains(".ingredient-category-options .ingredient-option"));
             assertTrue(css.contains(".ingredient-category-options .ingredient-option:hover"));
             assertTrue(css.contains(".selected-ingredient-chip"));
+            assertTrue(readResource("/de/mealdeal/ui/styles/responsive.css").contains(
+                    ".root-shell.viewport-compact .search-selection-grid"));
         }
     }
 
@@ -144,6 +149,11 @@ class FxmlResourceTest {
             assertTrue(fxml.contains("styleClass=\"content-card, detail-section-card\""));
             assertTrue(fxml.contains("fx:id=\"preparationTimeValue\""));
             assertTrue(fxml.contains("fx:id=\"totalTimeValue\""));
+            assertEquals(5, fxml.split(
+                    "styleClass=\"detail-item-block, detail-time-row\"", -1).length - 1);
+            assertTrue(css.contains(".detail-item-block"));
+            assertTrue(css.contains(".detail-ingredient-row"));
+            assertTrue(css.contains(".detail-step-row"));
             assertTrue(fxml.indexOf("text=\"Zurück\"") < fxml.indexOf("text=\"Bearbeiten\""));
             assertTrue(fxml.indexOf("text=\"Bearbeiten\"") < fxml.indexOf("text=\"Löschen\""));
             assertTrue(css.contains(".page-container-detail"));
@@ -482,6 +492,7 @@ class FxmlResourceTest {
         assertFalse(fxml.contains("Zutatenkategorien verwalten"));
         assertFalse(fxml.contains("Zentrale Zutaten bearbeiten"));
         assertTrue(css.contains(".inventory-category-card"));
+        assertTrue(css.contains(".inventory-grid"));
         assertTrue(css.contains(".inventory-row"));
         assertTrue(css.contains(".inventory-category-management-row"));
         assertTrue(css.contains(".inventory-ingredient-management-row"));
@@ -510,6 +521,8 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("onAction=\"#addCategory\""));
         assertTrue(fxml.contains("fx:id=\"categoryManagementContainer\""));
         assertEquals(2, fxml.split("styleClass=\"expandable-card, ingredient-management-pane\"", -1).length - 1);
+        assertEquals(2, fxml.split("styleClass=\"content-card-body\"", -1).length - 1);
+        assertFalse(fxml.contains("inventory-category-management-content"));
         String css = readResource("/de/mealdeal/ui/styles.css");
         assertTrue(css.contains(".ingredient-category-pane > .title"));
         assertTrue(css.contains(".ingredient-category-content"));

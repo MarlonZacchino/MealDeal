@@ -28,7 +28,7 @@
                                 maxWidth="1.7976931348623157E308"
                                 styleClass="expandable-card, ingredient-management-pane">
                         <content>
-                            <VBox spacing="14.0" styleClass="inventory-category-management-content">
+                            <VBox spacing="14.0" styleClass="content-card-body">
                                 <Label text="Name und Kategorie ändern" styleClass="card-title"/>
                                 <Label text="Rezepte und Inventareinträge behalten dabei dieselbe zentrale Zutat."
                                        wrapText="true" styleClass="card-text"/>
@@ -45,7 +45,7 @@
                                 maxWidth="1.7976931348623157E308"
                                 styleClass="expandable-card, ingredient-management-pane">
                         <content>
-                            <VBox spacing="14.0" styleClass="inventory-category-management-content">
+                            <VBox spacing="14.0" styleClass="content-card-body">
                                 <Label text="Kategorien" styleClass="card-title"/>
                                 <Label text="Lege Kategorien an, benenne sie um oder ändere ihre Reihenfolge. Sonstiges bleibt als geschützter Fallback erhalten."
                                        wrapText="true" styleClass="card-text"/>

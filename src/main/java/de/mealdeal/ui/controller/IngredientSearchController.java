@@ -14,13 +14,21 @@ import de.mealdeal.ui.navigation.NavigationAware;
 import de.mealdeal.ui.navigation.ViewNavigator;
 import de.mealdeal.ui.search.IngredientSearchModel;
 import de.mealdeal.ui.search.TasteSearchModel;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
+import javafx.geometry.VPos;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -34,10 +42,20 @@ public final class IngredientSearchController implements NavigationAware {
     private final TasteSearchModel tasteSearchModel;
     private final RecipeRepository recipeRepository;
     private final CombinedRecipeSearchService combinedSearchService;
+    private final ListChangeListener<String> viewportListener = ignored ->
+            applyResponsiveSelectionLayout();
     private Consumer<Recipe> detailNavigation;
     private IngredientSelectionView ingredientSelectionView;
     private TasteSelectionView tasteSelectionView;
     private RecipeSearchResultsView resultsView;
+    private Scene observedScene;
+
+    @FXML
+    private GridPane searchSelectionGrid;
+    @FXML
+    private TitledPane ingredientSelectionPane;
+    @FXML
+    private TitledPane tasteSelectionPane;
 
     @FXML
     private TextField ingredientFilterField;
@@ -112,6 +130,16 @@ public final class IngredientSearchController implements NavigationAware {
 
     @FXML
     private void initialize() {
+        searchSelectionGrid.sceneProperty().addListener((ignored, previous, current) -> {
+            if (previous != null) {
+                previous.getRoot().getStyleClass().removeListener(viewportListener);
+            }
+            observedScene = current;
+            if (current != null) {
+                current.getRoot().getStyleClass().addListener(viewportListener);
+            }
+            applyResponsiveSelectionLayout();
+        });
         ingredientSelectionView = new IngredientSelectionView(
                 ingredientFilterField, availableIngredientsContainer,
                 selectedIngredientsContainer, selectionCountLabel,
@@ -129,6 +157,34 @@ public final class IngredientSearchController implements NavigationAware {
         if (ingredientsLoaded && tastesLoaded) {
             resultsView.showInitial();
         }
+    }
+
+    private void applyResponsiveSelectionLayout() {
+        if (searchSelectionGrid == null) {
+            return;
+        }
+        int columns = searchSelectionColumnsFor(observedScene == null
+                ? List.of() : observedScene.getRoot().getStyleClass());
+        searchSelectionGrid.getColumnConstraints().clear();
+        for (int index = 0; index < columns; index++) {
+            ColumnConstraints column = new ColumnConstraints();
+            column.setPercentWidth(100.0 / columns);
+            searchSelectionGrid.getColumnConstraints().add(column);
+        }
+        placeSelectionPane(ingredientSelectionPane, 0, 0);
+        placeSelectionPane(tasteSelectionPane, columns == 1 ? 0 : 1, columns == 1 ? 1 : 0);
+    }
+
+    private static void placeSelectionPane(TitledPane pane, int column, int row) {
+        GridPane.setColumnIndex(pane, column);
+        GridPane.setRowIndex(pane, row);
+        GridPane.setHgrow(pane, Priority.ALWAYS);
+        GridPane.setVgrow(pane, Priority.NEVER);
+        GridPane.setValignment(pane, VPos.TOP);
+    }
+
+    static int searchSelectionColumnsFor(List<String> viewportStyleClasses) {
+        return viewportStyleClasses.contains("viewport-compact") ? 1 : 2;
     }
 
     @FXML

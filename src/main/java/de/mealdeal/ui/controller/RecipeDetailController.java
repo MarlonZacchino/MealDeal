@@ -29,6 +29,7 @@ import javafx.scene.layout.VBox;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -201,32 +202,41 @@ public final class RecipeDetailController implements NavigationAware {
     }
 
     private HBox ingredientRow(RecipeDetailIngredientModel.IngredientRow row) {
-        Label name = new Label(row.ingredientName());
-        name.setWrapText(true);
+        Region name = row.hasAlternatives()
+                ? alternativePicker(row)
+                : ingredientName(row.ingredientName());
         name.setMaxWidth(Double.MAX_VALUE);
-        name.getStyleClass().add("detail-ingredient-name");
         HBox.setHgrow(name, Priority.ALWAYS);
         Label quantity = new Label(row.quantity());
         quantity.getStyleClass().add("detail-ingredient-quantity");
         HBox result = new HBox(12, name, quantity);
-        result.getStyleClass().add("detail-ingredient-row");
-        if (row.hasAlternatives()) {
-            ComboBox<RecipeDetailIngredientModel.Alternative> alternatives = new ComboBox<>();
-            alternatives.getItems().setAll(row.alternatives());
-            alternatives.setValue(row.alternatives().stream()
-                    .filter(option -> option.id().equals(row.selectedOptionId()))
-                    .findFirst().orElseThrow());
-            alternatives.getStyleClass().add("detail-alternative-picker");
-            alternatives.setOnAction(ignored -> {
-                var selected = alternatives.getValue();
-                if (selected != null) {
-                    ingredientModel.selectOption(row.groupId(), selected.id());
-                    renderIngredients();
-                }
-            });
-            result.getChildren().add(alternatives);
-        }
+        result.getStyleClass().addAll("detail-item-block", "detail-ingredient-row");
         return result;
+    }
+
+    private static Label ingredientName(String ingredientName) {
+        Label name = new Label(ingredientName);
+        name.setWrapText(true);
+        name.getStyleClass().add("detail-ingredient-name");
+        return name;
+    }
+
+    private ComboBox<RecipeDetailIngredientModel.Alternative> alternativePicker(
+            RecipeDetailIngredientModel.IngredientRow row) {
+        ComboBox<RecipeDetailIngredientModel.Alternative> alternatives = new ComboBox<>();
+        alternatives.getItems().setAll(row.alternatives());
+        alternatives.setValue(row.alternatives().stream()
+                .filter(option -> option.id().equals(row.selectedOptionId()))
+                .findFirst().orElseThrow());
+        alternatives.getStyleClass().add("detail-alternative-picker");
+        alternatives.setOnAction(ignored -> {
+            var selected = alternatives.getValue();
+            if (selected != null) {
+                ingredientModel.selectOption(row.groupId(), selected.id());
+                renderIngredients();
+            }
+        });
+        return alternatives;
     }
 
     private void renderSteps() {
@@ -246,7 +256,7 @@ public final class RecipeDetailController implements NavigationAware {
             description.getStyleClass().add("detail-step-text");
             HBox.setHgrow(description, Priority.ALWAYS);
             HBox row = new HBox(12, position, description);
-            row.getStyleClass().add("detail-step-row");
+            row.getStyleClass().addAll("detail-item-block", "detail-step-row");
             stepsContainer.getChildren().add(row);
         });
     }
@@ -279,33 +289,39 @@ public final class RecipeDetailController implements NavigationAware {
 
     private void renderNutrition() {
         nutritionContainer.getChildren().clear();
-        recipe.getNutritionInfo().ifPresent(this::addNutritionItems);
+        recipe.getNutritionInfo().stream()
+                .flatMap(nutrition -> nutritionDisplays(nutrition).stream())
+                .forEach(this::addNutritionItem);
         boolean hasNutrition = !nutritionContainer.getChildren().isEmpty();
         nutritionSection.setManaged(hasNutrition);
         nutritionSection.setVisible(hasNutrition);
     }
 
-    private void addNutritionItems(NutritionInfo nutrition) {
-        nutrition.getCaloriesKcal().ifPresent(value -> addNutritionItem("Kalorien",
-                value + " kcal"));
-        addNutritionItem("Protein", nutrition.getProteinGrams());
-        addNutritionItem("Kohlenhydrate", nutrition.getCarbohydrateGrams());
-        addNutritionItem("Fett", nutrition.getFatGrams());
+    static List<NutritionDisplay> nutritionDisplays(NutritionInfo nutrition) {
+        Objects.requireNonNull(nutrition, "Nutrition information must not be null.");
+        List<NutritionDisplay> displays = new ArrayList<>();
+        nutrition.getCaloriesKcal().ifPresent(value -> displays.add(
+                new NutritionDisplay("Kalorien", value + " kcal")));
+        addNutritionDisplay(displays, "Protein", nutrition.getProteinGrams());
+        addNutritionDisplay(displays, "Kohlenhydrate", nutrition.getCarbohydrateGrams());
+        addNutritionDisplay(displays, "Fett", nutrition.getFatGrams());
+        return List.copyOf(displays);
     }
 
-    private void addNutritionItem(String label, Optional<BigDecimal> grams) {
-        grams.ifPresent(value -> addNutritionItem(label,
-                GermanRecipeDisplay.decimal(value) + " g"));
+    private static void addNutritionDisplay(List<NutritionDisplay> displays, String label,
+                                            Optional<BigDecimal> grams) {
+        grams.ifPresent(value -> displays.add(new NutritionDisplay(label,
+                GermanRecipeDisplay.decimal(value) + " g")));
     }
 
-    private void addNutritionItem(String label, String value) {
+    private void addNutritionItem(NutritionDisplay display) {
         VBox item = new VBox(3);
-        item.getStyleClass().add("detail-nutrition-item");
-        Label displayedValue = new Label(value);
-        displayedValue.getStyleClass().add("detail-nutrition-value");
-        Label name = new Label(label);
+        item.getStyleClass().addAll("detail-item-block", "detail-nutrition-item");
+        Label name = new Label(display.label());
         name.getStyleClass().add("detail-nutrition-label");
-        item.getChildren().addAll(displayedValue, name);
+        Label displayedValue = new Label(display.value());
+        displayedValue.getStyleClass().add("detail-nutrition-value");
+        item.getChildren().addAll(name, displayedValue);
         int index = nutritionContainer.getChildren().size();
         nutritionContainer.add(item, index % 2, index / 2);
         GridPane.setHgrow(item, Priority.ALWAYS);
@@ -370,4 +386,6 @@ public final class RecipeDetailController implements NavigationAware {
     enum DeletionOutcome { CANCELLED, DELETED, NOT_FOUND }
 
     record TimeDisplay(String label, String value) { }
+
+    record NutritionDisplay(String label, String value) { }
 }
