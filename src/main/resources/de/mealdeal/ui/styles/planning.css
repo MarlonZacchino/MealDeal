@@ -72,6 +72,11 @@
     -fx-padding: 24px 28px 28px 28px;
 }
 
+.meal-plan-day-heading,
+.meal-plan-day-heading-row {
+    -fx-min-width: 0;
+}
+
 .meal-plan-day-name,
 .meal-plan-day-summary {
     -fx-font-size: 23px;
@@ -168,6 +173,10 @@
     -fx-min-height: 58px;
 }
 
+.meal-plan-view-actions {
+    -fx-alignment: center-left;
+}
+
 .meal-plan-serving-text {
     -fx-font-size: 16px;
     -fx-text-fill: -md-text;
@@ -179,7 +188,12 @@
 }
 
 .meal-plan-recipe-picker {
+    -fx-min-width: 0;
     -fx-pref-width: 340px;
+}
+
+.meal-plan-control-field {
+    -fx-min-width: 0;
 }
 
 .meal-plan-serving-spinner {

@@ -1,3 +1,26 @@
+.root-shell.viewport-compact .page-shell {
+    -fx-padding: 28px;
+}
+
+.root-shell.viewport-compact .meal-plan-day-content {
+    -fx-padding: 18px 18px 22px 18px;
+}
+
+.root-shell.viewport-compact .meal-plan-role-section {
+    -fx-padding: 14px 16px;
+}
+
+.root-shell.viewport-compact .meal-plan-main-row,
+.root-shell.viewport-compact .meal-plan-side-row,
+.root-shell.viewport-compact .meal-plan-dessert-row {
+    -fx-padding: 12px 14px;
+}
+
+.root-shell.viewport-compact .meal-plan-day-name,
+.root-shell.viewport-compact .meal-plan-day-summary {
+    -fx-font-size: 20px;
+}
+
 .root-shell.viewport-wide .sidebar {
     -fx-min-width: 250px;
     -fx-pref-width: 260px;

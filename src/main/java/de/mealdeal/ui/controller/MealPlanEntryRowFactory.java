@@ -5,6 +5,7 @@ import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.ui.control.SearchableComboBoxSupport;
 import javafx.geometry.Pos;
+import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -32,19 +33,33 @@ final class MealPlanEntryRowFactory {
         SearchableComboBoxSupport.forValidValues(selection, recipes, Recipe::getName);
         selection.setPromptText(recipes.isEmpty() ? "Keine Gerichte verfügbar" : promptText);
         selection.setDisable(recipes.isEmpty());
+        selection.setMinWidth(0);
+        selection.setMaxWidth(Double.MAX_VALUE);
         selection.getStyleClass().add("meal-plan-recipe-picker");
         return selection;
     }
 
     HBox viewRow(MealPlanEntry entry, String roleStyleClass, Runnable onRemove,
                  Consumer<Recipe> onOpenRecipe) {
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Button recipeLink = recipeLink(entry, onOpenRecipe);
+        recipeLink.setMinWidth(0);
+        recipeLink.setMaxWidth(Double.MAX_VALUE);
+        recipeLink.setWrapText(true);
+        HBox.setHgrow(recipeLink, Priority.ALWAYS);
+
         Label servings = new Label(servingCountText(entry.getServingCount()));
+        servings.setMinWidth(Region.USE_PREF_SIZE);
         servings.getStyleClass().add("meal-plan-serving-text");
-        HBox row = new HBox(16, recipeLink(entry, onOpenRecipe), spacer, servings,
-                removeButton(onRemove));
+        Button remove = removeButton(onRemove);
+        remove.setMinWidth(Region.USE_PREF_SIZE);
+        HBox actions = new HBox(12, servings, remove);
+        actions.setAlignment(Pos.CENTER_LEFT);
+        actions.setMinWidth(Region.USE_PREF_SIZE);
+        actions.getStyleClass().add("meal-plan-view-actions");
+
+        HBox row = new HBox(16, recipeLink, actions);
         row.setAlignment(Pos.CENTER_LEFT);
+        row.setMinWidth(0);
         row.setMaxWidth(Double.MAX_VALUE);
         row.getStyleClass().addAll(roleStyleClass, "meal-plan-view-row");
         return row;
@@ -64,15 +79,21 @@ final class MealPlanEntryRowFactory {
         servings.valueProperty().addListener((ignored, previous, selected) ->
                 actions.onServingChanged().accept(selected));
 
-        FlowPane controls = controls(labeledControl("Gericht", selection),
-                labeledControl("Personen", servings));
+        VBox recipeField = labeledControl("Gericht", selection);
+        recipeField.getStyleClass().add("meal-plan-recipe-field");
+        VBox servingField = labeledControl("Personen", servings);
+
+        FlowPane entryActions = controls(servingField);
+        entryActions.getStyleClass().add("meal-plan-entry-actions");
         if (reorder != null) {
-            controls.getChildren().addAll(orderButton("↑", reorder.upAccessibleText(),
+            entryActions.getChildren().addAll(orderButton("↑", reorder.upAccessibleText(),
                             reorder.upDisabled(), reorder.onMoveUp()),
                     orderButton("↓", reorder.downAccessibleText(),
                             reorder.downDisabled(), reorder.onMoveDown()));
         }
-        controls.getChildren().add(removeButton(actions.onRemove()));
+        entryActions.getChildren().add(removeButton(actions.onRemove()));
+
+        FlowPane controls = controls(recipeField, entryActions);
 
         VBox alternatives = alternativeSelections(entry, actions.onAlternativeSelected());
         VBox row = new VBox(7, controls);
@@ -140,6 +161,8 @@ final class MealPlanEntryRowFactory {
     private static FlowPane controls(Node... nodes) {
         FlowPane controls = new FlowPane(12, 10);
         controls.setAlignment(Pos.CENTER_LEFT);
+        controls.setRowValignment(VPos.BOTTOM);
+        controls.setMaxWidth(Double.MAX_VALUE);
         controls.getStyleClass().add("meal-plan-controls");
         controls.getChildren().addAll(nodes);
         return controls;
@@ -148,7 +171,11 @@ final class MealPlanEntryRowFactory {
     private static VBox labeledControl(String text, Node control) {
         Label label = new Label(text);
         label.getStyleClass().add("form-label");
-        return new VBox(6, label, control);
+        VBox field = new VBox(6, label, control);
+        field.setMinWidth(0);
+        field.setMaxWidth(Double.MAX_VALUE);
+        field.getStyleClass().add("meal-plan-control-field");
+        return field;
     }
 
     private static Button orderButton(String text, String accessibleText, boolean disabled,

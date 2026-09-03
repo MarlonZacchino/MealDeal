@@ -14,6 +14,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -22,8 +23,10 @@ public final class MainController {
 
     private static final String ACTIVE_STYLE_CLASS = "nav-button-active";
     private static final String DARK_THEME_STYLE_CLASS = "theme-dark";
+    private static final String COMPACT_VIEWPORT_STYLE_CLASS = "viewport-compact";
     private static final String WIDE_VIEWPORT_STYLE_CLASS = "viewport-wide";
     private static final String EXTRA_WIDE_VIEWPORT_STYLE_CLASS = "viewport-extra-wide";
+    private static final double COMPACT_VIEWPORT_MAX_WIDTH = 1100;
     private static final double WIDE_VIEWPORT_MIN_WIDTH = 1440;
     private static final double EXTRA_WIDE_VIEWPORT_MIN_WIDTH = 2100;
 
@@ -153,13 +156,22 @@ public final class MainController {
 
     private void updateViewportStyleClasses(double sceneWidth) {
         rootShell.getStyleClass().removeAll(
-                WIDE_VIEWPORT_STYLE_CLASS, EXTRA_WIDE_VIEWPORT_STYLE_CLASS);
-        if (sceneWidth >= EXTRA_WIDE_VIEWPORT_MIN_WIDTH) {
-            rootShell.getStyleClass().add(WIDE_VIEWPORT_STYLE_CLASS);
-            rootShell.getStyleClass().add(EXTRA_WIDE_VIEWPORT_STYLE_CLASS);
-        } else if (sceneWidth >= WIDE_VIEWPORT_MIN_WIDTH) {
-            rootShell.getStyleClass().add(WIDE_VIEWPORT_STYLE_CLASS);
+                COMPACT_VIEWPORT_STYLE_CLASS, WIDE_VIEWPORT_STYLE_CLASS,
+                EXTRA_WIDE_VIEWPORT_STYLE_CLASS);
+        rootShell.getStyleClass().addAll(viewportStyleClassesFor(sceneWidth));
+    }
+
+    static List<String> viewportStyleClassesFor(double sceneWidth) {
+        if (sceneWidth < COMPACT_VIEWPORT_MAX_WIDTH) {
+            return List.of(COMPACT_VIEWPORT_STYLE_CLASS);
         }
+        if (sceneWidth >= EXTRA_WIDE_VIEWPORT_MIN_WIDTH) {
+            return List.of(WIDE_VIEWPORT_STYLE_CLASS, EXTRA_WIDE_VIEWPORT_STYLE_CLASS);
+        }
+        if (sceneWidth >= WIDE_VIEWPORT_MIN_WIDTH) {
+            return List.of(WIDE_VIEWPORT_STYLE_CLASS);
+        }
+        return List.of();
     }
 
     private void markActiveView(ViewType activeView) {

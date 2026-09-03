@@ -99,8 +99,8 @@ class FxmlResourceTest {
             assertTrue(fxml.indexOf("fx:id=\"searchOptionsPane\"")
                     < fxml.indexOf("fx:id=\"tasteAndMode\""));
             assertTrue(fxml.indexOf("fx:id=\"tasteRankingMode\"")
-                    < fxml.indexOf("text=\"Gericht finden\""));
-            assertTrue(fxml.indexOf("text=\"Gericht finden\"")
+                    < fxml.indexOf("<Button text=\"Gericht finden\""));
+            assertTrue(fxml.indexOf("<Button text=\"Gericht finden\"")
                     < fxml.indexOf("text=\"Alle Filter zurücksetzen\""));
             assertTrue(fxml.contains("<HBox alignment=\"CENTER_RIGHT\" spacing=\"12.0\">"));
             assertFalse(fxml.contains("styleClass=\"search-actions\""));
@@ -384,8 +384,11 @@ class FxmlResourceTest {
         assertTrue(css.contains(".meal-plan-dessert-row"));
         assertTrue(css.contains(".meal-plan-role-header"));
         assertTrue(css.contains(".meal-plan-view-row"));
+        assertTrue(css.contains(".meal-plan-view-actions"));
         assertTrue(css.contains(".meal-plan-serving-text"));
         assertTrue(css.contains(".meal-plan-day-edit-button"));
+        assertTrue(css.contains(".meal-plan-day-heading-row"));
+        assertTrue(css.contains(".meal-plan-control-field"));
         assertTrue(Pattern.compile(
                 "\\.meal-plan-main-row,\\s*\\.meal-plan-side-row,\\s*"
                         + "\\.meal-plan-dessert-row\\s*\\{")
@@ -410,6 +413,11 @@ class FxmlResourceTest {
         assertTrue(css.contains("-fx-font-size: 23px"));
         assertFalse(css.contains("viewport-wide .meal-plan-days"));
         assertFalse(css.contains("viewport-extra-wide .meal-plan-days"));
+        String responsiveCss = readResource("/de/mealdeal/ui/styles/responsive.css");
+        assertTrue(responsiveCss.contains(
+                ".root-shell.viewport-compact .meal-plan-day-content"));
+        assertTrue(responsiveCss.contains(
+                ".root-shell.viewport-compact .meal-plan-role-section"));
         assertTrue(css.contains(".expandable-card > *.content"));
         assertTrue(css.contains(".home-plan-dessert-entry"));
     }

@@ -8,6 +8,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.time.format.DateTimeFormatter;
@@ -76,20 +77,35 @@ final class WeekPlanDayCardFactory {
         summary.getStyleClass().add("meal-plan-day-summary");
         HBox.setHgrow(summary, Priority.ALWAYS);
 
-        HBox topRow = new HBox(20, dayName, summary);
-        topRow.setAlignment(Pos.BASELINE_LEFT);
+        HBox headingRow = new HBox(12, dayName, summary);
+        headingRow.setAlignment(Pos.BASELINE_LEFT);
+        headingRow.setMinWidth(0);
+        headingRow.setMaxWidth(Double.MAX_VALUE);
+        headingRow.getStyleClass().add("meal-plan-day-heading-row");
+        if (day.today()) {
+            Label today = new Label("Heute");
+            today.setMinWidth(Region.USE_PREF_SIZE);
+            today.getStyleClass().add("meal-plan-today-badge");
+            headingRow.getChildren().add(1, today);
+        }
+
+        VBox heading = new VBox(3, headingRow, date);
+        heading.setMinWidth(0);
+        heading.setMaxWidth(Double.MAX_VALUE);
+        heading.getStyleClass().add("meal-plan-day-heading");
+        HBox.setHgrow(heading, Priority.ALWAYS);
+
+        Button edit = secondaryButton(editing ? "Fertig" : "Bearbeiten", onToggleEditing);
+        edit.setMinWidth(Region.USE_PREF_SIZE);
+        edit.setMaxWidth(Region.USE_PREF_SIZE);
+        edit.getStyleClass().add("meal-plan-day-edit-button");
+
+        HBox topRow = new HBox(16, heading, edit);
+        topRow.setAlignment(Pos.TOP_LEFT);
         topRow.setMinWidth(0);
         topRow.setMaxWidth(Double.MAX_VALUE);
         topRow.getStyleClass().add("meal-plan-day-top-row");
-        if (day.today()) {
-            Label today = new Label("Heute");
-            today.getStyleClass().add("meal-plan-today-badge");
-            topRow.getChildren().add(today);
-        }
-        Button edit = secondaryButton(editing ? "Fertig" : "Bearbeiten", onToggleEditing);
-        edit.getStyleClass().add("meal-plan-day-edit-button");
-        topRow.getChildren().add(edit);
-        return new VBox(3, topRow, date);
+        return new VBox(topRow);
     }
 
     private static Button secondaryButton(String text, Runnable action) {

@@ -40,6 +40,17 @@ class WeekPlanControllerTest {
         assertEquals("2 Personen", MealPlanEntryRowFactory.servingCountText(2));
     }
 
+    @Test
+    void selectsCompactAndWideViewportStylesAtTheirBoundaries() {
+        assertEquals(List.of("viewport-compact"),
+                MainController.viewportStyleClassesFor(1099));
+        assertEquals(List.of(), MainController.viewportStyleClassesFor(1100));
+        assertEquals(List.of("viewport-wide"),
+                MainController.viewportStyleClassesFor(1440));
+        assertEquals(List.of("viewport-wide", "viewport-extra-wide"),
+                MainController.viewportStyleClassesFor(2100));
+    }
+
     private static final class EmptyMealPlanRepository implements MealPlanRepository {
         @Override public void save(MealPlanEntry entry) { throw new UnsupportedOperationException(); }
         @Override public void applyChanges(List<MealPlanEntry> entriesToSave,
