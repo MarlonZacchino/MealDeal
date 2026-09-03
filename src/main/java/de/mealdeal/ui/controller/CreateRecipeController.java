@@ -20,7 +20,6 @@ import de.mealdeal.ui.navigation.ViewNavigator;
 import de.mealdeal.ui.navigation.ViewType;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -28,10 +27,8 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Optional;
@@ -47,14 +44,12 @@ public final class CreateRecipeController implements NavigationAware {
     private final TasteRepository tasteRepository;
     private final RecipeFormService formService;
     private final java.util.function.Supplier<List<IngredientCategory>> categoryLoader;
-    private final List<IngredientGroupFormRow> ingredientGroups = new ArrayList<>();
-    private final List<RecipeStepFormRow> stepRows = new ArrayList<>();
-    private final List<Ingredient> availableIngredients = new ArrayList<>();
-    private final List<IngredientCategory> availableCategories =
-            new ArrayList<>(IngredientCategories.all());
 
     private ViewNavigator navigator;
     private Recipe editingRecipe;
+    private RecipeIngredientEditor ingredientEditor;
+    private RecipeTasteEditor tasteEditor;
+    private RecipeStepEditor stepEditor;
 
     @FXML
     private Label titleLabel;
@@ -128,9 +123,12 @@ public final class CreateRecipeController implements NavigationAware {
 
     @FXML
     private void initialize() {
+        ingredientEditor = new RecipeIngredientEditor(ingredientRowsContainer);
+        tasteEditor = new RecipeTasteEditor(tasteOptionsContainer, newTasteField);
+        stepEditor = new RecipeStepEditor(stepRowsContainer);
         servingCountField.setText(RecipeFormService.DEFAULT_SERVING_COUNT);
         configureDishTypeBox();
-        addIngredientRow();
+        ingredientEditor.addGroup();
         loadReferenceData();
     }
 
@@ -157,43 +155,27 @@ public final class CreateRecipeController implements NavigationAware {
         carbohydratesField.setText(nutrition == null
                 ? "" : decimalText(nutrition.getCarbohydrateGrams()));
         fatField.setText(nutrition == null ? "" : decimalText(nutrition.getFatGrams()));
-        fillIngredients(recipe);
-        fillTastes(recipe);
-        fillSteps(recipe);
+        ingredientEditor.fill(recipe);
+        tasteEditor.fill(recipe);
+        stepEditor.fill(recipe);
     }
 
     @FXML
     private void addIngredientRow() {
-        IngredientGroupFormRow group = new IngredientGroupFormRow(
-                availableIngredients, availableCategories, this::removeIngredientGroup);
-        ingredientGroups.add(group);
-        ingredientRowsContainer.getChildren().add(group.container());
-        updateIngredientGroupRemoveButtons();
+        ingredientEditor.addGroup();
     }
 
     @FXML
     private void addStepRow() {
-        RecipeStepFormRow row = new RecipeStepFormRow(this::removeStepRow);
-        stepRows.add(row);
-        stepRowsContainer.getChildren().add(row.container());
-        renumberSteps();
+        stepEditor.addRow();
     }
 
     @FXML
     private void addTaste() {
-        String name = newTasteField.getText() == null ? "" : newTasteField.getText().strip();
-        if (name.isEmpty()) {
+        if (!tasteEditor.addEnteredTaste()) {
             showMessage("Bitte gib eine Geschmacksrichtung ein.");
             return;
         }
-
-        CheckBox existing = findTasteCheckBox(name);
-        if (existing != null) {
-            existing.setSelected(true);
-        } else {
-            addTasteOption(name, true);
-        }
-        newTasteField.clear();
         clearMessage();
     }
 
@@ -229,63 +211,21 @@ public final class CreateRecipeController implements NavigationAware {
         }
     }
 
-    private void fillIngredients(Recipe recipe) {
-        ingredientGroups.clear();
-        ingredientRowsContainer.getChildren().clear();
-        recipe.getIngredientGroups().forEach(recipeGroup -> {
-            IngredientGroupFormRow group = new IngredientGroupFormRow(
-                    availableIngredients, availableCategories,
-                    this::removeIngredientGroup, recipeGroup);
-            ingredientGroups.add(group);
-            ingredientRowsContainer.getChildren().add(group.container());
-        });
-        if (ingredientGroups.isEmpty()) {
-            addIngredientRow();
-        } else {
-            updateIngredientGroupRemoveButtons();
-        }
-    }
-
-    private void fillTastes(Recipe recipe) {
-        for (Taste taste : recipe.getTastes()) {
-            CheckBox option = findTasteCheckBox(taste.getName());
-            if (option == null) {
-                addTasteOption(taste.getName(), true);
-            } else {
-                option.setSelected(true);
-            }
-        }
-    }
-
-    private void fillSteps(Recipe recipe) {
-        stepRows.clear();
-        stepRowsContainer.getChildren().clear();
-        recipe.getSteps().forEach(step -> {
-            RecipeStepFormRow row = new RecipeStepFormRow(this::removeStepRow);
-            row.setDescription(step.getDescription());
-            stepRows.add(row);
-            stepRowsContainer.getChildren().add(row.container());
-        });
-        renumberSteps();
-    }
-
     private void loadReferenceData() {
         try {
-            availableIngredients.clear();
-            availableIngredients.addAll(ingredientRepository.findAll().stream()
+            List<Ingredient> ingredients = ingredientRepository.findAll().stream()
                     .sorted(Comparator.comparing(Ingredient::getName,
                             String.CASE_INSENSITIVE_ORDER))
-                    .toList());
-            availableCategories.clear();
-            availableCategories.addAll(categoryLoader.get().stream()
+                    .toList();
+            List<IngredientCategory> categories = categoryLoader.get().stream()
                     .sorted(Comparator.comparingInt(IngredientCategory::getPosition)
                             .thenComparing(IngredientCategory::getName))
-                    .toList());
-            ingredientGroups.forEach(IngredientGroupFormRow::refreshIngredients);
-            ingredientGroups.forEach(IngredientGroupFormRow::refreshCategories);
+                    .toList();
+            ingredientEditor.replaceReferenceData(ingredients, categories);
             tasteRepository.findAll().stream()
                     .sorted(Comparator.comparing(Taste::getName, String.CASE_INSENSITIVE_ORDER))
-                    .forEach(taste -> addTasteOption(taste.getName(), false));
+                    .map(Taste::getName)
+                    .forEach(tasteEditor::addAvailableTaste);
         } catch (PersistenceException exception) {
             LOGGER.log(System.Logger.Level.ERROR, "Could not load recipe form data.", exception);
             showMessage("Zutaten und Geschmacksrichtungen konnten nicht geladen werden.");
@@ -294,52 +234,13 @@ public final class CreateRecipeController implements NavigationAware {
     }
 
     private RecipeFormInput readFormInput() {
-        var groups = ingredientGroups.stream().map(IngredientGroupFormRow::toInput).toList();
-        List<String> tastes = tasteOptionsContainer.getChildren().stream()
-                .filter(CheckBox.class::isInstance)
-                .map(CheckBox.class::cast)
-                .filter(CheckBox::isSelected)
-                .map(CheckBox::getText)
-                .toList();
-        List<String> steps = stepRows.stream().map(RecipeStepFormRow::description).toList();
         return RecipeFormInput.withIngredientGroups(nameField.getText(),
-                servingCountField.getText(), groups, tastes, steps, preparationTimeField.getText(),
-                cookingTimeField.getText(), bakingTimeField.getText(), restingTimeField.getText(),
-                caloriesField.getText(), proteinField.getText(),
-                carbohydratesField.getText(), fatField.getText(), dishTypeBox.getValue());
-    }
-
-    private void removeIngredientGroup(IngredientGroupFormRow group) {
-        if (ingredientGroups.size() <= 1) {
-            return;
-        }
-        ingredientGroups.remove(group);
-        ingredientRowsContainer.getChildren().remove(group.container());
-        updateIngredientGroupRemoveButtons();
-    }
-
-    private void removeStepRow(RecipeStepFormRow row) {
-        stepRows.remove(row);
-        stepRowsContainer.getChildren().remove(row.container());
-        renumberSteps();
-    }
-
-    private void updateIngredientGroupRemoveButtons() {
-        boolean disable = ingredientGroups.size() == 1;
-        ingredientGroups.forEach(group -> group.setGroupRemovalDisabled(disable));
-    }
-
-    private void renumberSteps() {
-        for (int index = 0; index < stepRows.size(); index++) {
-            stepRows.get(index).setPosition(index + 1);
-        }
-    }
-
-    private void addTasteOption(String name, boolean selected) {
-        CheckBox checkBox = new CheckBox(name);
-        checkBox.setSelected(selected);
-        checkBox.getStyleClass().add("taste-option");
-        tasteOptionsContainer.getChildren().add(checkBox);
+                servingCountField.getText(), ingredientEditor.inputs(),
+                tasteEditor.selectedNames(), stepEditor.descriptions(),
+                preparationTimeField.getText(), cookingTimeField.getText(),
+                bakingTimeField.getText(), restingTimeField.getText(), caloriesField.getText(),
+                proteinField.getText(), carbohydratesField.getText(), fatField.getText(),
+                dishTypeBox.getValue());
     }
 
     private void configureDishTypeBox() {
@@ -356,16 +257,6 @@ public final class CreateRecipeController implements NavigationAware {
             }
         });
         dishTypeBox.getSelectionModel().select(DishType.MAIN);
-    }
-
-    private CheckBox findTasteCheckBox(String name) {
-        String normalizedName = name.toLowerCase(Locale.ROOT);
-        return tasteOptionsContainer.getChildren().stream()
-                .filter(CheckBox.class::isInstance)
-                .map(CheckBox.class::cast)
-                .filter(checkBox -> checkBox.getText().strip().toLowerCase(Locale.ROOT)
-                        .equals(normalizedName))
-                .findFirst().orElse(null);
     }
 
     private void showMessage(String message) {
