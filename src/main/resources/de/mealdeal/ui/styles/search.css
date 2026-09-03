@@ -1,0 +1,73 @@
+.search-state-card {
+    -fx-padding: 40px 32px;
+}
+
+.match-quality {
+    -fx-background-radius: 999px;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 7px 11px;
+}
+
+.match-perfect {
+    -fx-background-color: -md-accent-soft;
+    -fx-text-fill: -md-text;
+}
+
+.match-good {
+    -fx-background-color: -md-warning-background;
+    -fx-text-fill: -md-warning-text;
+}
+
+.match-partial {
+    -fx-background-color: -md-neutral-background;
+    -fx-text-fill: -md-neutral-text;
+}
+
+.search-missing {
+    -fx-font-size: 15px;
+    -fx-text-fill: -md-danger-text;
+}
+
+.taste-mode-card {
+    -fx-min-width: 0;
+}
+
+.taste-mode-card .radio-button {
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.mode-description {
+    -fx-font-size: 14px;
+    -fx-text-fill: -md-text-muted;
+}
+
+.search-options-pane {
+    -fx-text-fill: -md-text;
+}
+
+.search-options-pane > .title {
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+}
+
+.search-options-content {
+    -fx-padding: 20px 22px 22px 22px;
+}
+
+.search-selection-content {
+    -fx-padding: 20px 22px 22px 22px;
+}
+
+.search-reset-button {
+    -fx-border-color: -md-accent;
+    -fx-border-width: 1px;
+}
+
+.search-filter-name {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-min-width: 92px;
+    -fx-text-fill: -md-text;
+}

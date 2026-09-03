@@ -1,0 +1,207 @@
+.home-plan-content {
+    -fx-padding: 2px 0;
+}
+
+.home-plan-role-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 0 0 0;
+    -fx-text-fill: -md-text-muted;
+}
+
+.home-plan-main-entry,
+.home-plan-side-entry,
+.home-plan-dessert-entry {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 9px;
+    -fx-font-size: 17px;
+    -fx-padding: 11px 14px;
+    -fx-text-fill: -md-text;
+}
+
+.home-plan-main-entry {
+    -fx-font-weight: bold;
+}
+
+.home-plan-side-entry,
+.home-plan-dessert-entry {
+    -fx-text-fill: -md-text-muted;
+}
+
+.home-week-overview {
+    -fx-padding: 2px 0;
+}
+
+.home-week-day {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 10px;
+    -fx-padding: 12px 14px;
+}
+
+.home-week-day-today {
+    -fx-border-color: -md-accent;
+    -fx-border-radius: 10px;
+    -fx-border-width: 1px;
+}
+
+.home-week-day-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.home-week-day .home-plan-main-entry,
+.home-week-day .home-plan-side-entry,
+.home-week-day .home-plan-dessert-entry {
+    -fx-background-color: transparent;
+    -fx-padding: 1px 0;
+}
+
+.meal-plan-week-range {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 0 0 0;
+    -fx-text-fill: -md-accent;
+}
+
+.meal-plan-day-card {
+    -fx-text-fill: -md-text;
+}
+
+.meal-plan-day-content {
+    -fx-padding: 24px 28px 28px 28px;
+}
+
+.meal-plan-day-name,
+.meal-plan-day-summary {
+    -fx-font-size: 23px;
+    -fx-font-weight: bold;
+}
+
+.meal-plan-day-edit-button {
+    -fx-font-size: 14px;
+    -fx-padding: 8px 13px;
+}
+
+.meal-plan-day-summary {
+    -fx-text-fill: -md-on-accent;
+}
+
+.home-week-pane > .title {
+    -fx-font-size: 21px;
+    -fx-font-weight: bold;
+}
+
+.home-week-content {
+    -fx-padding: 22px 24px 24px 24px;
+}
+
+.meal-plan-save-button {
+    -fx-padding: 10px 16px;
+    -fx-effect: dropshadow(gaussian, rgba(31, 20, 23, 0.22), 18, 0.12, 0, 5);
+}
+
+.meal-plan-unsaved-note {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-accent;
+}
+
+.meal-plan-day-name {
+    -fx-text-fill: -md-text;
+}
+
+.meal-plan-date {
+    -fx-font-size: 16px;
+    -fx-text-fill: -md-text-muted;
+}
+
+.meal-plan-today-badge {
+    -fx-background-color: -md-accent;
+    -fx-background-radius: 999px;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 7px 12px;
+    -fx-text-fill: -md-on-accent;
+}
+
+.meal-plan-recipe-link {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+    -fx-font-size: 21px;
+    -fx-font-weight: bold;
+    -fx-padding: 0;
+    -fx-text-fill: -md-accent;
+}
+
+.meal-plan-recipe-link:hover {
+    -fx-underline: true;
+}
+
+.meal-plan-controls {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 12px;
+    -fx-padding: 16px 18px;
+}
+
+.meal-plan-role-section {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 12px;
+    -fx-padding: 18px 20px;
+}
+
+.meal-plan-main-row,
+.meal-plan-side-row,
+.meal-plan-dessert-row {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 10px;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 10px;
+    -fx-padding: 14px 16px;
+}
+
+.meal-plan-role-header {
+    -fx-min-height: 44px;
+}
+
+.meal-plan-view-row {
+    -fx-min-height: 58px;
+}
+
+.meal-plan-serving-text {
+    -fx-font-size: 16px;
+    -fx-text-fill: -md-text;
+}
+
+.meal-plan-role-section .meal-plan-controls {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}
+
+.meal-plan-recipe-picker {
+    -fx-pref-width: 340px;
+}
+
+.meal-plan-serving-spinner {
+    -fx-pref-width: 130px;
+}
+
+.meal-plan-ingredient-selections {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 10px;
+    -fx-padding: 12px;
+}
+
+.meal-plan-ingredient-picker {
+    -fx-min-width: 280px;
+}
+
+.meal-plan-day-card.meal-plan-day-today > .title {
+    -fx-background-color: -md-accent;
+    -fx-border-color: -md-on-accent;
+    -fx-border-width: 2px;
+}
+
+.home-card {
+    -fx-padding: 0;
+}

@@ -1,0 +1,139 @@
+.recipe-group-pane {
+    -fx-text-fill: -md-text;
+}
+
+.recipe-group-pane > .title {
+    -fx-font-size: 19px;
+    -fx-font-weight: bold;
+}
+
+.recipe-group-content {
+    -fx-padding: 14px;
+}
+
+.recipe-group-empty {
+    -fx-padding: 16px 12px;
+    -fx-font-size: 15px;
+    -fx-text-fill: -md-text-muted;
+}
+
+.detail-time-name {
+    -fx-min-width: 180px;
+    -fx-font-size: 16px;
+    -fx-text-fill: -md-text-muted;
+}
+
+.detail-time-value {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.form-label {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.ingredient-group-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.form-field {
+    -fx-max-width: infinity;
+}
+
+.serving-field {
+    -fx-min-width: 210px;
+}
+
+.dish-type-field {
+    -fx-min-width: 190px;
+}
+
+.form-row {
+    -fx-padding: 6px 0;
+}
+
+.ingredient-group-form {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 12px;
+    -fx-padding: 16px;
+}
+
+.ingredient-standard-choice {
+    -fx-font-size: 15px;
+    -fx-text-fill: -md-text;
+}
+
+.step-position {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-min-width: 30px;
+    -fx-padding: 10px 0 0 0;
+    -fx-text-fill: -md-text;
+}
+
+.form-actions {
+    -fx-padding: 0 0 24px 0;
+}
+
+.detail-row {
+    -fx-alignment: top-left;
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 10px;
+    -fx-padding: 15px 17px;
+}
+
+.detail-row-text,
+.detail-step-text {
+    -fx-font-size: 16px;
+    -fx-text-fill: -md-text;
+}
+
+.detail-quantity {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-min-width: 125px;
+    -fx-text-fill: -md-text;
+}
+
+.detail-ingredient-group {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 10px;
+    -fx-padding: 10px;
+}
+
+.detail-ingredient-group > .detail-row {
+    -fx-background-color: transparent;
+    -fx-padding: 5px 7px;
+}
+
+.detail-alternative-separator {
+    -fx-font-size: 14px;
+    -fx-font-style: italic;
+    -fx-padding: 0 0 0 132px;
+    -fx-text-fill: -md-text-muted;
+}
+
+.detail-standard-badge {
+    -fx-background-color: -md-accent-soft;
+    -fx-background-radius: 999px;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 8px;
+    -fx-text-fill: -md-accent;
+}
+
+.detail-step-position {
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-min-width: 30px;
+    -fx-text-fill: -md-accent;
+}
+
+.serving-spinner {
+    -fx-font-size: 16px;
+}

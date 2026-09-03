@@ -3,6 +3,7 @@ package de.mealdeal.ui;
 import de.mealdeal.ui.navigation.ViewType;
 import de.mealdeal.ui.controller.InventoryController;
 import de.mealdeal.ui.controller.IngredientsController;
+import javafx.css.CssParser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -11,7 +12,14 @@ import org.w3c.dom.Document;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -24,6 +32,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class FxmlResourceTest {
 
     private static final String MAIN_VIEW = "/de/mealdeal/ui/main-view.fxml";
+    private static final String STYLESHEET = "/de/mealdeal/ui/styles.css";
+    private static final Pattern CSS_COMMENT = Pattern.compile("/\\*.*?\\*/", Pattern.DOTALL);
+    private static final Pattern CSS_RULE = Pattern.compile("([^{}]+)\\{([^{}]*)}",
+            Pattern.DOTALL);
+    private static final List<String> STYLESHEET_MODULES = List.of(
+            "/de/mealdeal/ui/styles/tokens.css",
+            "/de/mealdeal/ui/styles/base.css",
+            "/de/mealdeal/ui/styles/controls.css",
+            "/de/mealdeal/ui/styles/components.css",
+            "/de/mealdeal/ui/styles/recipes.css",
+            "/de/mealdeal/ui/styles/search.css",
+            "/de/mealdeal/ui/styles/planning.css",
+            "/de/mealdeal/ui/styles/stock.css",
+            "/de/mealdeal/ui/styles/responsive.css");
 
     @ParameterizedTest
     @MethodSource("allFxmlResources")
@@ -165,9 +187,8 @@ class FxmlResourceTest {
         assertTrue(css.contains(".home-plan-main-entry"));
         assertTrue(css.contains(".home-plan-side-entry"));
         assertTrue(css.contains(".home-week-day"));
-        assertTrue(Pattern.compile(
-                "\\.content-card-header-title,\\s*\\.home-week-pane > \\.title\\s*\\{")
-                .matcher(css).find());
+        assertTrue(css.contains(".content-card-header-title {"));
+        assertTrue(css.contains(".home-week-pane > .title {"));
         assertTrue(css.contains(".content-card-header {"));
         assertTrue(css.contains(".content-card-body {"));
         assertTrue(css.contains(".root-shell.viewport-wide .content-card-header-title"));
@@ -256,6 +277,85 @@ class FxmlResourceTest {
     }
 
     @Test
+    void stylesheetEntryPointLoadsAcyclicModulesInRequiredOrder() throws Exception {
+        CssResourceGraph graph = CssResourceGraph.load(STYLESHEET);
+
+        assertEquals(STYLESHEET_MODULES, graph.directImports());
+        assertEquals(STYLESHEET_MODULES.size() + 1, graph.resourcePaths().size());
+        assertTrue(graph.resourcePaths().contains(STYLESHEET));
+        assertTrue(graph.resourcePaths().containsAll(STYLESHEET_MODULES));
+        assertEquals("/de/mealdeal/ui/styles/responsive.css",
+                graph.directImports().getLast());
+        assertTrue(graph.entryCss().lines()
+                .filter(line -> !line.isBlank())
+                .allMatch(line -> line.startsWith("@import url(\"styles/")
+                        && line.endsWith(".css\");")));
+    }
+
+    @Test
+    void stylesheetEntryPointAndRelativeImportsParseWithJavaFx() throws Exception {
+        URL stylesheetUrl = FxmlResourceTest.class.getResource(STYLESHEET);
+        assertNotNull(stylesheetUrl);
+        CssParser.errorsProperty().clear();
+
+        assertNotNull(new CssParser().parse(stylesheetUrl));
+        assertTrue(CssParser.errorsProperty().isEmpty(),
+                () -> "JavaFX CSS errors: " + CssParser.errorsProperty());
+    }
+
+    @Test
+    void stylesheetModulesKeepSharedControlsAndFeatureRulesSeparated() throws Exception {
+        assertTrue(readResource("/de/mealdeal/ui/styles/tokens.css")
+                .contains(".root-shell.theme-dark"));
+        String controls = readResource("/de/mealdeal/ui/styles/controls.css");
+        assertTrue(controls.contains(".combo-box > .list-cell"));
+        assertTrue(controls.contains(".spinner > .increment-arrow-button"));
+        assertTrue(controls.contains(".scroll-bar .thumb"));
+        String components = readResource("/de/mealdeal/ui/styles/components.css");
+        assertTrue(components.contains(".content-card"));
+        assertTrue(components.contains(".expandable-card > .title"));
+        assertTrue(readResource("/de/mealdeal/ui/styles/recipes.css")
+                .contains(".recipe-group-pane"));
+        assertTrue(readResource("/de/mealdeal/ui/styles/search.css")
+                .contains(".search-options-pane"));
+        assertTrue(readResource("/de/mealdeal/ui/styles/planning.css")
+                .contains(".meal-plan-day-card"));
+        String stock = readResource("/de/mealdeal/ui/styles/stock.css");
+        assertTrue(stock.contains(".inventory-row"));
+        assertTrue(stock.contains(".shopping-list-row"));
+        assertTrue(readResource("/de/mealdeal/ui/styles/responsive.css")
+                .contains(".root-shell.viewport-extra-wide"));
+    }
+
+    @Test
+    void stylesheetModulesDoNotDuplicateSelectorsOrProperties() throws Exception {
+        Map<String, String> selectorOwners = new HashMap<>();
+        Map<String, Set<String>> selectorProperties = new HashMap<>();
+        for (String module : STYLESHEET_MODULES) {
+            Matcher rules = CSS_RULE.matcher(
+                    CSS_COMMENT.matcher(readResource(module)).replaceAll(""));
+            while (rules.find()) {
+                String selector = rules.group(1).strip().replaceAll("\\s+", " ");
+                String previousOwner = selectorOwners.putIfAbsent(selector, module);
+                assertTrue(previousOwner == null || previousOwner.equals(module),
+                        () -> selector + " occurs in " + previousOwner + " and " + module);
+
+                Set<String> properties = selectorProperties.computeIfAbsent(
+                        selector, ignored -> new HashSet<>());
+                for (String declaration : rules.group(2).split(";")) {
+                    int separator = declaration.indexOf(':');
+                    if (separator < 0) {
+                        continue;
+                    }
+                    String property = declaration.substring(0, separator).strip();
+                    assertTrue(properties.add(property),
+                            () -> property + " is duplicated in " + selector);
+                }
+            }
+        }
+    }
+
+    @Test
     void weekPlanViewDefinesFunctionalCurrentWeekStates() throws Exception {
         String fxml = readResource("/de/mealdeal/ui/week-plan-view.fxml");
         String css = readResource("/de/mealdeal/ui/styles.css");
@@ -302,7 +402,7 @@ class FxmlResourceTest {
         assertTrue(css.contains(".combo-box-base > .arrow-button"));
         assertTrue(css.contains(".spinner > .increment-arrow-button"));
         assertTrue(css.contains(".searchable-combo-box"));
-        assertTrue(css.contains(".meal-plan-day-card > .title"));
+        assertTrue(css.contains(".meal-plan-day-card.meal-plan-day-today > .title"));
         assertTrue(css.contains(".meal-plan-day-summary"));
         assertTrue(Pattern.compile(
                 "\\.meal-plan-day-name,\\s*\\.meal-plan-day-summary\\s*\\{")
@@ -409,6 +509,9 @@ class FxmlResourceTest {
     }
 
     private static String readResource(String path) throws Exception {
+        if (STYLESHEET.equals(path)) {
+            return CssResourceGraph.load(path).combinedCss();
+        }
         try (InputStream input = FxmlResourceTest.class.getResourceAsStream(path)) {
             assertNotNull(input, () -> "Missing resource: " + path);
             return new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);

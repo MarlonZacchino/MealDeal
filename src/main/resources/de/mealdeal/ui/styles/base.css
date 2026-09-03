@@ -1,0 +1,113 @@
+.label {
+    -fx-text-fill: -md-text;
+}
+
+.sidebar {
+    -fx-background-color: -md-sidebar;
+    -fx-min-width: 220px;
+    -fx-pref-width: 235px;
+    -fx-max-width: 250px;
+}
+
+.sidebar-title {
+    -fx-font-size: 31px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-sidebar-text;
+}
+
+.sidebar-subtitle {
+    -fx-font-size: 14px;
+    -fx-padding: 0 0 22px 0;
+    -fx-text-fill: -md-sidebar-muted;
+}
+
+.nav-button,
+.theme-toggle {
+    -fx-background-color: transparent;
+    -fx-background-radius: 10px;
+    -fx-cursor: hand;
+    -fx-font-size: 16px;
+    -fx-padding: 13px 14px;
+    -fx-text-fill: -md-sidebar-text;
+}
+
+.nav-button {
+    -fx-alignment: center-left;
+}
+
+.nav-button:hover,
+.theme-toggle:hover {
+    -fx-background-color: -md-sidebar-hover;
+}
+
+.nav-button.nav-button-active {
+    -fx-background-color: -md-accent;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-on-accent;
+}
+
+.theme-toggle {
+    -fx-alignment: center-left;
+    -fx-border-color: -md-sidebar-hover;
+    -fx-border-radius: 10px;
+}
+
+.theme-toggle:selected {
+    -fx-background-color: -md-accent;
+    -fx-border-color: -md-accent;
+    -fx-text-fill: -md-on-accent;
+}
+
+.content-host,
+.content-scroll,
+.content-scroll > .viewport,
+.page-shell,
+.page-container {
+    -fx-background-color: -md-background;
+}
+
+.content-scroll {
+    -fx-border-color: transparent;
+}
+
+.page-shell {
+    -fx-padding: 42px;
+}
+
+.page-container {
+    -fx-max-width: 1080px;
+}
+
+.page-container-detail {
+    -fx-max-width: 1240px;
+}
+
+.page-title {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.page-subtitle {
+    -fx-font-size: 17px;
+    -fx-max-width: 880px;
+    -fx-text-fill: -md-text-muted;
+}
+
+.card-title {
+    -fx-font-size: 23px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.section-title {
+    -fx-font-size: 21px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.card-text {
+    -fx-font-size: 16px;
+    -fx-max-width: 880px;
+    -fx-text-fill: -md-text-muted;
+}

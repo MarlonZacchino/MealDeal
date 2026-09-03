@@ -1,0 +1,160 @@
+.check-box,
+.radio-button {
+    -fx-text-fill: -md-text;
+}
+
+.primary-button,
+.secondary-button,
+.danger-button {
+    -fx-background-radius: 10px;
+    -fx-cursor: hand;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 13px 21px;
+}
+
+.primary-button {
+    -fx-background-color: -md-accent;
+    -fx-text-fill: -md-on-accent;
+}
+
+.primary-button:hover {
+    -fx-background-color: -md-accent-hover;
+}
+
+.secondary-button {
+    -fx-background-color: -md-accent-soft;
+    -fx-text-fill: -md-text;
+}
+
+.secondary-button:hover {
+    -fx-background-color: -md-accent-soft-hover;
+}
+
+.text-field,
+.combo-box,
+.spinner {
+    -fx-background-color: -md-input;
+    -fx-background-insets: 0;
+    -fx-background-radius: 9px;
+    -fx-border-color: -md-border;
+    -fx-border-insets: 0;
+    -fx-border-radius: 9px;
+    -fx-border-width: 1px;
+    -fx-font-size: 16px;
+    -fx-min-height: 44px;
+    -fx-prompt-text-fill: -md-text-muted;
+    -fx-text-fill: -md-text;
+}
+
+.combo-box,
+.spinner {
+    -fx-padding: 0;
+}
+
+.text-field:focused,
+.combo-box-base:focused,
+.spinner:focused {
+    -fx-border-color: -md-accent;
+}
+
+.text-area {
+    -fx-background-color: -md-input;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 9px;
+    -fx-font-size: 16px;
+    -fx-prompt-text-fill: -md-text-muted;
+    -fx-text-fill: -md-text;
+}
+
+.text-area .content {
+    -fx-background-color: -md-input;
+    -fx-text-fill: -md-text;
+}
+
+/* The outer control owns its edge; JavaFX skin children stay visually neutral. */
+.combo-box > .list-cell,
+.combo-box-base > .text-field,
+.spinner > .text-field {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-border-insets: 0;
+    -fx-border-radius: 0;
+    -fx-border-width: 0;
+    -fx-min-height: 0;
+    -fx-padding: 0 10px;
+    -fx-text-fill: -md-text;
+}
+
+.combo-box-base > .arrow-button,
+.spinner > .increment-arrow-button,
+.spinner > .decrement-arrow-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+}
+
+.combo-box-base > .arrow-button {
+    -fx-min-width: 38px;
+    -fx-pref-width: 38px;
+    -fx-padding: 0 12px;
+}
+
+.combo-box-base > .arrow-button > .arrow,
+.spinner > .increment-arrow-button > .increment-arrow,
+.spinner > .decrement-arrow-button > .decrement-arrow {
+    -fx-background-color: -md-text-muted;
+}
+
+.spinner > .increment-arrow-button,
+.spinner > .decrement-arrow-button {
+    -fx-padding: 0 10px;
+}
+
+.searchable-combo-box {
+    -fx-cursor: text;
+}
+
+.searchable-combo-box > .arrow-button {
+    -fx-cursor: hand;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: -md-surface;
+    -fx-border-color: -md-border;
+}
+
+.combo-box-popup .list-cell {
+    -fx-background-color: -md-surface;
+    -fx-text-fill: -md-text;
+}
+
+.combo-box-popup .list-cell:hover,
+.combo-box-popup .list-cell:selected {
+    -fx-background-color: -md-accent-soft;
+}
+
+.check-box,
+.radio-button {
+    -fx-font-size: 15px;
+}
+
+.danger-button {
+    -fx-background-color: -md-danger-background;
+    -fx-text-fill: -md-danger-text;
+}
+
+.danger-button:hover {
+    -fx-background-color: -md-danger-hover;
+}
+
+.scroll-bar .track {
+    -fx-background-color: -md-surface-alt;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: -md-border;
+    -fx-background-radius: 999px;
+}

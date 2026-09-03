@@ -1,0 +1,252 @@
+.content-card {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 16px;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 16px;
+    -fx-padding: 30px;
+}
+
+.sub-card {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 12px;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 12px;
+    -fx-padding: 15px 17px;
+}
+
+.content-card-header-title {
+    -fx-font-size: 21px;
+    -fx-font-weight: bold;
+}
+
+.content-card-header {
+    -fx-background-color: -md-accent;
+    -fx-background-radius: 15px 15px 0 0;
+    -fx-border-color: -md-accent-hover;
+    -fx-border-radius: 15px 15px 0 0;
+    -fx-border-width: 0 0 1px 0;
+    -fx-padding: 16px 20px;
+}
+
+.content-card-header-title {
+    -fx-text-fill: -md-on-accent;
+}
+
+.content-card-body {
+    -fx-padding: 14px 30px 18px 30px;
+}
+
+.recipe-state-card {
+    -fx-alignment: center;
+    -fx-padding: 48px 34px;
+}
+
+.error-state-card {
+    -fx-border-color: -md-danger-border;
+}
+
+.recipe-list-item,
+.search-result-item {
+    -fx-alignment: center-left;
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 14px;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 14px;
+    -fx-cursor: hand;
+    -fx-padding: 22px 26px;
+}
+
+.search-result-item {
+    -fx-min-height: -1;
+    -fx-pref-height: -1;
+    -fx-max-height: -1;
+}
+
+.recipe-list-item:hover,
+.search-result-item:hover {
+    -fx-background-color: -md-surface-hover;
+}
+
+.recipe-list-item:selected {
+    -fx-background-color: -md-accent-soft;
+    -fx-border-color: -md-accent;
+}
+
+.recipe-name {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -md-text;
+}
+
+.recipe-facts {
+    -fx-font-size: 16px;
+    -fx-text-fill: -md-text;
+}
+
+.recipe-tastes {
+    -fx-font-size: 15px;
+    -fx-text-fill: -md-text-muted;
+}
+
+.recipe-type-badge {
+    -fx-background-color: -md-accent-soft;
+    -fx-background-radius: 999px;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 5px 10px;
+    -fx-text-fill: -md-accent;
+}
+
+.meal-plan-save-message {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 12px;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 12px;
+    -fx-padding: 10px 14px;
+    -fx-effect: dropshadow(gaussian, rgba(31, 20, 23, 0.22), 18, 0.12, 0, 5);
+}
+
+.form-message {
+    -fx-background-color: -md-danger-background;
+    -fx-background-radius: 10px;
+    -fx-border-color: -md-danger-border;
+    -fx-border-radius: 10px;
+    -fx-font-size: 15px;
+    -fx-padding: 16px 18px;
+    -fx-text-fill: -md-danger-text;
+}
+
+.taste-option,
+.ingredient-option,
+.taste-search-option {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 9px;
+    -fx-cursor: hand;
+    -fx-font-size: 15px;
+    -fx-padding: 11px 15px;
+    -fx-text-fill: -md-text;
+}
+
+.ingredient-option:hover,
+.taste-search-option:hover {
+    -fx-background-color: -md-surface-hover;
+}
+
+.ingredient-category-options .ingredient-option {
+    -fx-background-color: -md-accent-soft;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 9px;
+}
+
+.ingredient-category-options .ingredient-option:hover,
+.ingredient-category-options .ingredient-option:focused {
+    -fx-background-color: -md-accent-soft-hover;
+    -fx-border-color: -md-accent;
+}
+
+.selection-count {
+    -fx-background-color: -md-surface-alt;
+    -fx-background-radius: 999px;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-padding: 9px 13px;
+    -fx-text-fill: -md-text;
+}
+
+.selected-ingredients-box {
+    -fx-padding: 17px 19px;
+}
+
+.selected-ingredient-chip,
+.selected-taste-chip {
+    -fx-background-color: -md-accent-soft;
+    -fx-background-radius: 999px;
+    -fx-cursor: hand;
+    -fx-font-size: 15px;
+    -fx-padding: 10px 14px;
+    -fx-text-fill: -md-text;
+}
+
+.selected-ingredient-chip:hover,
+.selected-taste-chip:hover {
+    -fx-background-color: -md-accent-soft-hover;
+}
+
+/* Shared visual language for every independently expandable application section. */
+.expandable-card {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.expandable-card > .title {
+    -fx-background-color: -md-accent;
+    -fx-background-radius: 14px;
+    -fx-border-color: -md-accent-hover;
+    -fx-border-radius: 14px;
+    -fx-cursor: hand;
+    -fx-padding: 16px 20px;
+    -fx-text-fill: -md-on-accent;
+}
+
+.expandable-card > .title:hover {
+    -fx-background-color: -md-accent-hover;
+}
+
+.expandable-card:expanded > .title {
+    -fx-background-radius: 14px 14px 0 0;
+    -fx-border-radius: 14px 14px 0 0;
+}
+
+.expandable-card > .title > .text {
+    -fx-fill: -md-on-accent;
+}
+
+.expandable-card > .title .label {
+    -fx-text-fill: -md-on-accent;
+}
+
+.expandable-card > .title > .arrow-button .arrow {
+    -fx-background-color: -md-on-accent;
+}
+
+.expandable-card > *.content {
+    -fx-background-color: -md-surface;
+    -fx-background-radius: 0 0 14px 14px;
+    -fx-border-color: transparent -md-border -md-border -md-border;
+    -fx-border-radius: 0 0 14px 14px;
+    -fx-padding: 0;
+}
+
+.ingredient-category-pane > .title {
+    -fx-background-color: -md-accent-soft;
+    -fx-border-color: -md-border;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 11px 15px;
+}
+
+.ingredient-category-pane > .title:hover {
+    -fx-background-color: -md-accent-soft-hover;
+}
+
+.ingredient-category-pane > .title > .text {
+    -fx-fill: -md-text;
+}
+
+.ingredient-category-pane > .title .label {
+    -fx-text-fill: -md-text;
+}
+
+.ingredient-category-pane > .title > .arrow-button .arrow {
+    -fx-background-color: -md-accent;
+}
+
+.ingredient-category-pane > *.content {
+    -fx-background-color: -md-surface-alt;
+}
+
+.ingredient-category-content,
+.ingredient-category-options {
+    -fx-padding: 14px 16px 16px 16px;
+}

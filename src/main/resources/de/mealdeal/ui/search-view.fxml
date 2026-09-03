@@ -23,7 +23,7 @@
                     <ToggleGroup fx:id="tasteModeGroup"/>
                 </fx:define>
                 <VBox spacing="6.0" styleClass="page-header">
-                    <Label text="Was essen?" styleClass="page-title"/>
+                    <Label text="Gericht finden" styleClass="page-title"/>
                     <Label text="Finde passende Gerichte nach Zutaten oder Geschmack."
                            wrapText="true" styleClass="page-subtitle"/>
                 </VBox>
