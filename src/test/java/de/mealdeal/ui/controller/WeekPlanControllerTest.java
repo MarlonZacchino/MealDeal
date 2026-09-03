@@ -36,8 +36,8 @@ class WeekPlanControllerTest {
 
     @Test
     void formatsServingCountForCompactViewRows() {
-        assertEquals("1 Person", WeekPlanController.servingCountText(1));
-        assertEquals("2 Personen", WeekPlanController.servingCountText(2));
+        assertEquals("1 Person", MealPlanEntryRowFactory.servingCountText(1));
+        assertEquals("2 Personen", MealPlanEntryRowFactory.servingCountText(2));
     }
 
     private static final class EmptyMealPlanRepository implements MealPlanRepository {
