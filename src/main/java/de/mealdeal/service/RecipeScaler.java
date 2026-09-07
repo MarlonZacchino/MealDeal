@@ -15,7 +15,9 @@ import java.util.Objects;
  * Calculates recipe ingredient amounts for a requested serving count.
  *
  * <p>The calculation creates new immutable ingredient entries. It never
- * changes the stored recipe or its standard serving count.</p>
+ * changes the stored recipe or its standard serving count. Exact decimal
+ * results are retained; only non-terminating divisions fall back to
+ * {@link MathContext#DECIMAL128}.</p>
  */
 public final class RecipeScaler {
 
@@ -80,10 +82,23 @@ public final class RecipeScaler {
 
     private static RecipeIngredientOption scaleOption(
             RecipeIngredientOption option, BigDecimal requested, BigDecimal standard) {
-        BigDecimal scaledAmount = option.getQuantity()
-                .multiply(requested)
-                .divide(standard, CALCULATION_CONTEXT);
+        BigDecimal scaledAmount = scaleQuantity(
+                option.getQuantity(), requested, standard);
         return new RecipeIngredientOption(option.getId(), option.getIngredient(), scaledAmount,
                 option.getUnit(), option.getPosition());
+    }
+
+    private static BigDecimal scaleQuantity(
+            BigDecimal quantity, BigDecimal requested, BigDecimal standard) {
+        if (requested.compareTo(standard) == 0) {
+            return quantity;
+        }
+
+        BigDecimal scaledDividend = quantity.multiply(requested);
+        try {
+            return scaledDividend.divide(standard);
+        } catch (ArithmeticException nonTerminatingDivision) {
+            return scaledDividend.divide(standard, CALCULATION_CONTEXT);
+        }
     }
 }

@@ -64,7 +64,10 @@ public final class RecipeRecommendationService {
         RecipeScaler checkedScaler = Objects.requireNonNull(
                 recipeScaler, "Recipe scaler must not be null.");
         eligibilityEvaluator = new CandidateEligibilityEvaluator();
-        pantryCalculator = new PantrySignalCalculator(checkedScaler);
+        pantryCalculator = new PantrySignalCalculator(
+                checkedScaler,
+                scoringProfile.weightOf(RecommendationSignal.PANTRY_COVERAGE),
+                scoringProfile.weightOf(RecommendationSignal.MISSING_INGREDIENT_PENALTY));
         preferenceCalculator = new PreferenceSignalCalculator(scoringProfile);
     }
 
@@ -116,7 +119,9 @@ public final class RecipeRecommendationService {
         preferenceCalculator.individualScore(context.tastePreferences(), recipe)
                 .ifPresent(value -> {
                     values.put(RecommendationSignal.TASTE_AFFINITY, value);
-                    reasons.add(tasteReason(value));
+                    if (hasWeight(RecommendationSignal.TASTE_AFFINITY)) {
+                        reasons.add(tasteReason(value));
+                    }
                 });
         addTimeSignal(recipe, context, values, reasons);
 
@@ -124,11 +129,14 @@ public final class RecipeRecommendationService {
                 preferenceCalculator.householdScore(recipe, context.householdPreferences());
         household.score().ifPresent(value -> {
             values.put(RecommendationSignal.HOUSEHOLD_PREFERENCE, value);
-            if (value.compareTo(STRONG_MATCH_THRESHOLD) >= 0) {
+            if (!household.strongRejection()
+                    && hasWeight(RecommendationSignal.HOUSEHOLD_PREFERENCE)
+                    && value.compareTo(STRONG_MATCH_THRESHOLD) >= 0) {
                 reasons.add(RecommendationReasonCode.HOUSEHOLD_STRONG_MATCH);
             }
         });
         if (household.strongRejection()) {
+            reasons.add(RecommendationReasonCode.HOUSEHOLD_CONFLICT);
             reasons.add(RecommendationReasonCode.HOUSEHOLD_MEMBER_DISLIKES);
         }
 
@@ -150,33 +158,38 @@ public final class RecipeRecommendationService {
         values.put(RecommendationSignal.PANTRY_COVERAGE, pantry.coverage());
         values.put(RecommendationSignal.MISSING_INGREDIENT_PENALTY,
                 ratio(pantry.missingGroupCount(), pantry.groupCount()));
-        pantry.alternativeFit().ifPresent(value ->
-                values.put(RecommendationSignal.INGREDIENT_ALTERNATIVE_FIT, value));
         return values;
     }
 
-    private static LinkedHashSet<RecommendationReasonCode> pantryReasons(
+    private LinkedHashSet<RecommendationReasonCode> pantryReasons(
             PantrySignalCalculator.Result pantry) {
         LinkedHashSet<RecommendationReasonCode> reasons = new LinkedHashSet<>();
-        if (pantry.coverage().compareTo(BigDecimal.ONE) == 0) {
-            reasons.add(RecommendationReasonCode.PANTRY_FULL_COVERAGE);
-        } else if (pantry.coverage().compareTo(STRONG_MATCH_THRESHOLD) >= 0) {
-            reasons.add(RecommendationReasonCode.PANTRY_MOSTLY_COVERED);
-        } else {
-            reasons.add(RecommendationReasonCode.PANTRY_LOW_COVERAGE);
+        if (hasWeight(RecommendationSignal.PANTRY_COVERAGE)) {
+            if (pantry.missingGroupCount() == 0) {
+                reasons.add(RecommendationReasonCode.PANTRY_FULL_COVERAGE);
+            } else if (pantry.coverage().compareTo(STRONG_MATCH_THRESHOLD) >= 0) {
+                reasons.add(RecommendationReasonCode.PANTRY_MOSTLY_COVERED);
+            } else {
+                reasons.add(RecommendationReasonCode.PANTRY_LOW_COVERAGE);
+            }
         }
-        if (pantry.missingGroupCount() == 1) {
-            reasons.add(RecommendationReasonCode.MISSING_ONE_INGREDIENT_GROUP);
-        } else if (pantry.missingGroupCount() > 1) {
-            reasons.add(RecommendationReasonCode.MISSING_MULTIPLE_INGREDIENT_GROUPS);
+        if (hasWeight(RecommendationSignal.MISSING_INGREDIENT_PENALTY)) {
+            if (pantry.missingGroupCount() == 1) {
+                reasons.add(RecommendationReasonCode.MISSING_ONE_INGREDIENT_GROUP);
+            } else if (pantry.missingGroupCount() > 1) {
+                reasons.add(RecommendationReasonCode.MISSING_MULTIPLE_INGREDIENT_GROUPS);
+            }
         }
-        if (pantry.rescuedByAlternative()) {
+        if (pantry.usesAlternative()) {
             reasons.add(RecommendationReasonCode.ALTERNATIVE_AVAILABLE);
+        }
+        if (pantry.alternativeImprovesCoverage()) {
+            reasons.add(RecommendationReasonCode.ALTERNATIVE_IMPROVES_COVERAGE);
         }
         return reasons;
     }
 
-    private static void addTimeSignal(
+    private void addTimeSignal(
             Recipe recipe,
             RecommendationContext context,
             Map<RecommendationSignal, BigDecimal> values,
@@ -192,13 +205,21 @@ public final class RecipeRecommendationService {
         Duration total = recipe.getTotalTime().orElseThrow();
         if (total.compareTo(limit) <= 0) {
             values.put(RecommendationSignal.PREPARATION_TIME_FIT, BigDecimal.ONE);
-            reasons.add(RecommendationReasonCode.TIME_WITHIN_LIMIT);
+            if (hasWeight(RecommendationSignal.PREPARATION_TIME_FIT)) {
+                reasons.add(RecommendationReasonCode.TIME_WITHIN_LIMIT);
+            }
             return;
         }
         BigDecimal fit = BigDecimal.valueOf(limit.toSeconds())
                 .divide(BigDecimal.valueOf(total.toSeconds()), CALCULATION_CONTEXT);
         values.put(RecommendationSignal.PREPARATION_TIME_FIT, fit);
-        reasons.add(RecommendationReasonCode.TIME_OVER_LIMIT);
+        if (hasWeight(RecommendationSignal.PREPARATION_TIME_FIT)) {
+            reasons.add(RecommendationReasonCode.TIME_OVER_LIMIT);
+        }
+    }
+
+    private boolean hasWeight(RecommendationSignal signal) {
+        return scoringProfile.weightOf(signal).signum() > 0;
     }
 
     private static RecommendationReasonCode tasteReason(BigDecimal affinity) {

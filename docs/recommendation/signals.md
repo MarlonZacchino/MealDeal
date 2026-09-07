@@ -7,11 +7,15 @@ dass das Signal bei dieser Anfrage nicht in die gewichtete Summe eingeht.
 
 - Bedeutung: durchschnittlicher mengenbezogener Inventory-Deckungsgrad der benötigten Gruppen.
 - Input: skaliertes Recipe, Inventory-Snapshot, zulässige Optionen.
-- Berechnung je Option: `min(1, kompatibler Bestand / skalierter Bedarf)`.
-- Berechnung je Gruppe: Maximum ihrer zulässigen Optionen; eine Gruppe zählt genau einmal.
-- Gesamtsignal: arithmetisches Mittel der Gruppenabdeckungen.
+- Berechnung: Eine exakte gemeinsame Zuordnung wählt pro Gruppe eine Option und verteilt den
+  Inventory-Snapshot als nicht wiederverwendbares Mengenbudget.
+- Zielfunktion: `0,35 * pantryCoverage + 0,15 * (1 - missingGroupShare)`.
+- Berechnung je gewählter Option: tatsächlich zugeteilte kompatible Menge geteilt durch den
+  skalierten Bedarf, begrenzt auf `1`.
+- Gesamtsignal: arithmetisches Mittel dieser gemeinsam erreichbaren Gruppenabdeckungen.
 - Units: nur Regeln aus `UnitConverter`; inkompatible Units tragen null bei.
-- Alternativen: bei Gleichstand Standardoption, danach Position und UUID. Mehrere verfügbare
+- Alternativen: Die Suche berücksichtigt Ressourcenkonflikte zwischen allen Gruppen. Bei
+  fachlichem Gleichstand gelten Standardoption, Position und UUID. Mehrere verfügbare
   Alternativen erzeugen keine Mehrfachbelohnung.
 - Leeres Inventory: `0`. Mengenüberdeckung: auf `1` begrenzt.
 - Richtung: höher ist besser.
@@ -22,7 +26,7 @@ dass das Signal bei dieser Anfrage nicht in die gewichtete Summe eingeht.
 
 - Bedeutung: Anteil der IngredientGroups, deren beste zulässige Option nicht vollständig
   mengenmäßig gedeckt ist.
-- Input: dieselben Gruppenabdeckungen wie Pantry Coverage.
+- Input: dieselbe optimale gemeinsame Zuordnung wie Pantry Coverage.
 - Berechnung: `unterdeckte Gruppen / alle Gruppen`.
 - Teilbestand: Gruppe gilt als unterdeckt; die Tiefe der Unterdeckung bleibt ausschließlich
   in Pantry Coverage.
@@ -45,7 +49,7 @@ dass das Signal bei dieser Anfrage nicht in die gewichtete Summe eingeht.
 ## preparationTimeFit
 
 - Bedeutung: Passung der bekannten Recipe-Gesamtzeit zum verfügbaren Zeitbudget.
-- Input: optionales Nutzerlimit und `Recipe.getTotalTime()`.
+- Input: optionales positives Nutzerlimit in ganzen Sekunden und `Recipe.getTotalTime()`.
 - Innerhalb des Limits: `1`.
 - Über dem Limit: `limit / totalTime`.
 - Kein Limit: nicht verfügbar.
@@ -57,15 +61,14 @@ dass das Signal bei dieser Anfrage nicht in die gewichtete Summe eingeht.
 
 ## ingredientAlternativeFit
 
-- Bedeutung: tatsächliche Verbesserung der Pantry-Abdeckung durch eine zulässige
+- R0-Review-Status: im V1-Profil Gewicht `0` und nicht als Signalwert erzeugt.
+- Grund: Eine Alternative wirkt bereits über die gemeinsam erreichbare Pantry Coverage und
+  den Missing Group Count. Ein zusätzlicher Bonus wäre Doppelzählung und konnte durch
+  Renormalisierung paradoxe Verschlechterungen verursachen.
+- `ALTERNATIVE_AVAILABLE`: Die optimale Zuordnung verwendet tatsächlich eine
   Nicht-Standardoption.
-- Input: Gruppen mit mindestens einer zulässigen Alternative.
-- Je relevante Gruppe: `max(0, beste Abdeckung - Abdeckung der Standardoption)`.
-- Gesamtsignal: Mittel dieser Verbesserungen.
-- Keine zulässige Alternative: nicht verfügbar.
-- Mehrere Alternativen derselben Gruppe: höchstens die beste Verbesserung zählt einmal.
-- Richtung: höher ist besser.
-- Reason: `ALTERNATIVE_AVAILABLE`, wenn eine bessere Nicht-Standardoption vorgeschlagen wird.
+- `ALTERNATIVE_IMPROVES_COVERAGE`: Die optimale Zuordnung erzielt mehr Coverage als die
+  beste zulässige reine Standardoptionen-Zuordnung.
 - Ausgeschlossene, aber sicher ersetzbare Optionen erzeugen zusätzlich
   `HARD_EXCLUDED_ALTERNATIVE_IGNORED`.
 
@@ -98,8 +101,9 @@ dass das Signal bei dieser Anfrage nicht in die gewichtete Summe eingeht.
 - Aggregation: `0,70 * Minimum + 0,30 * Average`.
 - Keine passenden Mitgliedsdaten: nicht verfügbar.
 - Richtung: höher ist besser.
-- Reasons: `HOUSEHOLD_STRONG_MATCH`; bei einer einzelnen starken Ablehnung
-  `HOUSEHOLD_MEMBER_DISLIKES` plus globaler Score-Cap.
+- Reasons: `HOUSEHOLD_STRONG_MATCH`; bei einer einzelnen starken Ablehnung ausschließlich
+  die Konflikterklärung `HOUSEHOLD_CONFLICT` plus `HOUSEHOLD_MEMBER_DISLIKES` und globaler
+  Score-Cap.
 - Hard Constraints aller Mitglieder laufen vorher in Eligibility und können nie durch dieses
   Signal aufgehoben werden.
 
@@ -112,3 +116,8 @@ dass das Signal bei dieser Anfrage nicht in die gewichtete Summe eingeht.
 
 Reason Codes enthalten keine UI-Texte. Eine spätere Oberfläche lokalisiert sie und zeigt
 positive, negative und Ausschlussgründe getrennt an.
+
+Score-bezogene Reasons werden nur erzeugt, wenn das betreffende Signal im aktiven Profil ein
+positives Gewicht besitzt. Eligibility-Gründe bleiben davon unabhängig. Rein informative
+Hinweise wie `TIME_UNKNOWN` und Alternative-Hinweise dürfen trotz Gewicht `0` erklären, welche
+Daten fehlen beziehungsweise welche Option gewählt wurde.

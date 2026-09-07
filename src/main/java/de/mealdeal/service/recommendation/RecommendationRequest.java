@@ -21,8 +21,9 @@ public record RecommendationRequest(
         desiredDishType = Objects.requireNonNull(
                 desiredDishType, "Desired dish type must not be null.");
         availableTime.ifPresent(duration -> {
-            if (duration.isZero() || duration.isNegative()) {
-                throw new IllegalArgumentException("Available time must be positive.");
+            if (duration.isZero() || duration.isNegative() || duration.getNano() != 0) {
+                throw new IllegalArgumentException(
+                        "Available time must be positive and use whole seconds.");
             }
         });
     }

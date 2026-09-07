@@ -21,12 +21,12 @@ erwartete Reason Codes stimmen. Exakte Dezimalwerte werden nur an echten Grenzwe
 
 | # | Input/Konflikt | Eligibility und erwartete Rangrelation | Erwartete Gründe |
 |---:|---|---|---|
-| 1 | alle Gruppen mengenmäßig vorhanden | eligible; vor sonst identischem unterdecktem Recipe | `PANTRY_FULL_COVERAGE` |
-| 2 | genau eine Gruppe fehlt | eligible; hinter Vollabdeckung | `MISSING_ONE_INGREDIENT_GROUP` |
-| 3 | mehrere Gruppen fehlen | eligible; hinter gleicher Coverage mit weniger fehlenden Gruppen | `MISSING_MULTIPLE_INGREDIENT_GROUPS` |
-| 4 | Standard fehlt, Alternative vollständig vorhanden | eligible; Alternative vorgeschlagen | `ALTERNATIVE_AVAILABLE`, `PANTRY_FULL_COVERAGE` |
-| 5 | Alternative nur teilweise vorhanden | eligible; proportionale Coverage | Pantry- und Missing-Grund passend zum Grenzwert |
-| 6 | Standard und mehrere Alternativen vollständig vorhanden | eligible; Gruppe zählt einmal, Standard gewinnt Tie | `PANTRY_FULL_COVERAGE`, kein doppelter Bonus |
+| 1 | zwei Groups benötigen je 100 g X, Bestand 200 g | eligible und vollständig; gemeinsames Budget reicht | `PANTRY_FULL_COVERAGE` |
+| 2 | zwei Groups benötigen je 100 g X, Bestand 100 g | eligible, Coverage 0,5 und eine Group unterdeckt | `MISSING_ONE_INGREDIENT_GROUP` |
+| 3 | gleiche Gesamtzahl Groups, aber größerer Anteil unterdeckt | eligible; kleinerer Missing-Anteil liegt bei sonst gleichen Signalen vorn | passender Missing-Grund |
+| 4 | flexible Group X/Y konkurriert mit fixer X-Group, X und Y vorhanden | eligible; Alternative löst Konflikt und beide Groups sind gedeckt | `ALTERNATIVE_AVAILABLE`, `ALTERNATIVE_IMPROVES_COVERAGE` |
+| 5 | zwei Groups konkurrieren um dieselbe knappe Alternative | eligible; Bestand wird höchstens einmal verwendet | Missing- und Pantry-Grund der gemeinsamen Zuordnung |
+| 6 | drei oder mehr Alternativen, mehrere davon vollständig vorhanden | eligible; Gruppe zählt einmal, Standard gewinnt fachlichen Tie | `PANTRY_FULL_COVERAGE`, kein doppelter Bonus |
 | 7 | starke positive Taste-Affinität | eligible; vor sonst gleichem negativem Match | `TASTE_STRONG_MATCH` |
 | 8 | negative Taste-Affinität ohne Hard Constraint | eligible; Ranking-Malus, kein Ausschluss | `TASTE_MISMATCH` |
 | 9 | keine passenden Taste-Präferenzdaten | eligible; Taste-Signal nicht verfügbar | kein erfundener Taste-Grund |
@@ -34,9 +34,9 @@ erwartete Reason Codes stimmen. Exakte Dezimalwerte werden nur an echten Grenzwe
 | 11 | Gesamtzeit über Nutzerlimit | eligible; proportionaler Time Fit | `TIME_OVER_LIMIT` |
 | 12 | Nutzerlimit vorhanden, Recipe-Zeit fehlt | eligible; kein geratener Wert | `TIME_UNKNOWN` |
 | 13 | Household mit übereinstimmend positiven Präferenzen | eligible; hoher Hybridwert | `HOUSEHOLD_STRONG_MATCH` |
-| 14 | Household mit normalen unterschiedlichen Präferenzen | eligible; `0,70*Minimum + 0,30*Average` | normale Household-Erklärung |
-| 15 | ein Mitglied lehnt stark ab | eligible, aber Gesamtscore höchstens `0,39` | `HOUSEHOLD_MEMBER_DISLIKES` |
-| 16 | stark ablehnendes plus viele positive Mitglieder | eligible; Cap bleibt unverändert wirksam | `HOUSEHOLD_MEMBER_DISLIKES` |
+| 14 | Household mit normalen unterschiedlichen Präferenzen (`-0,5`, `+1,0`) | eligible; Household-Aggregat `0,3625` | kein Household-Reason; Signalwert bleibt für den Score verfügbar |
+| 15 | ein Mitglied lehnt stark ab | eligible, aber Gesamtscore höchstens `0,39` | `HOUSEHOLD_CONFLICT`, `HOUSEHOLD_MEMBER_DISLIKES` |
+| 16 | stark ablehnendes plus viele positive Mitglieder | eligible; Cap bleibt unverändert wirksam, kein positiver Household-Grund | `HOUSEHOLD_CONFLICT`, `HOUSEHOLD_MEMBER_DISLIKES` |
 | 17 | Recipe-UUID hart ausgeschlossen | ineligible; kein Score | `RECIPE_HARD_EXCLUDED` |
 | 18 | alle Optionen einer Gruppe als Ingredient ausgeschlossen | ineligible; kein Score | `INGREDIENT_GROUP_HARD_EXCLUDED` |
 | 19 | ausgeschlossener Standard, sichere Alternative vorhanden | eligible; nur sichere Option vorgeschlagen | `HARD_EXCLUDED_ALTERNATIVE_IGNORED` |
@@ -52,17 +52,26 @@ erwartete Reason Codes stimmen. Exakte Dezimalwerte werden nur an echten Grenzwe
 | 29 | wiederholte ähnliche Gerichte | R0 unverändert; erst R2 nach Variety-Definition | später `VARIETY_BONUS` |
 | 30 | Candidate- oder Inventory-Reihenfolge vertauscht | identische Eligibility, Scores, Optionen und Reihenfolge | identische Reason Codes |
 
-Die automatisierten R0-Tests decken die ausführbaren Szenarien und Invarianten ab. Die
+Die Tabelle ist der vollständige Golden-Acceptance-Katalog. Automatisierte Tests sichern die
+kritischen ausführbaren Regeln gruppiert ab, aber nicht jede Tabellenzeile besitzt zwingend
+eine gleichnamige Eins-zu-eins-Testmethode. Besonders abgedeckt sind Shared Budget,
+Alternativen mit Teildeckung und drei Optionen, Eligibility-Kombinationen, Household-Grenzen,
+Sekundenpräzision, Tie-Breaks, Eingabereihenfolge sowie die folgenden Invarianten. Die
 deferred Szenarien 28 und 29 sind bewusst keine Pseudo-Tests mit erfundener Historie.
 
 ## Invarianten / property-orientierte Tests
 
-- Mehr passende Inventory-Menge verschlechtert Pantry Coverage nie.
+- Mehr kompatibler Inventory-Bestand verschlechtert bei ansonsten identischem Problem den
+  optimalen Pantry-V1-Nutzen `0,35 * Coverage + 0,15 * Completeness` nie. Die einzelnen
+  Teilmetriken müssen dabei nicht jeweils monoton sein.
 - Eine zusätzlich vollständig erfüllte Gruppe erhöht Missing Penalty nie.
 - Hard Exclusions können von keinem Score oder Gewicht aufgehoben werden.
 - Gleiche Inputs ergeben exakt dieselben Scores, Optionen, Gründe und dieselbe Reihenfolge.
 - Reihenfolge von InventoryItems und Candidates ist semantisch irrelevant.
 - Mehrere verfügbare Optionen derselben Gruppe erhöhen deren Coverage nie über `1`.
+- Derselbe Inventory-Bestand kann innerhalb eines Recipe niemals mehrfach verbraucht werden.
+- Branch-and-Bound liefert für kleine erzeugte Probleme dasselbe Optimum wie vollständige
+  Enumeration.
 - Portionsskalierung erfolgt vor Pantry Coverage.
 - Inkompatible Units tragen nicht zur Abdeckung bei.
 - Die Duplizierung positiver Household-Mitglieder entfernt einen vorhandenen Strong-Rejection-

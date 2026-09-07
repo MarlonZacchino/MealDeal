@@ -32,8 +32,8 @@ temporärer Request-Contract angenommen oder ausdrücklich zurückgestellt.
 
 `RecommendationContext` enthält genau den Snapshot einer Anfrage:
 
-- `RecommendationRequest`: gewünschte positive Portionszahl, optionales Zeitlimit und
-  optionaler `DishType`,
+- `RecommendationRequest`: gewünschte positive Portionszahl, optionales positives Zeitlimit
+  in ganzen Sekunden und optionaler `DishType`,
 - unveränderlicher Inventory-Snapshot,
 - optionale individuelle Taste-Affinitäten im Bereich `-1..1`,
 - optionale Haushaltsmitglieder mit eigenen Taste-Affinitäten und Hard Constraints,
@@ -75,7 +75,8 @@ score = Summe(weight(s) * benefit(s))
         / Summe(weight(s))                     nur über verfügbare Signale
 ```
 
-Der Score wird in `0..1` gehalten. Die zentralen Startgewichte sind:
+Der Score wird in `0..1` gehalten. Die zentralen Startgewichte nach der
+R0-Review-Korrektur sind:
 
 | Signal | Gewicht | Begründung |
 |---|---:|---|
@@ -83,16 +84,58 @@ Der Score wird in `0..1` gehalten. Die zentralen Startgewichte sind:
 | missingIngredientPenalty | 0,15 | ergänzt Abdeckung um die Breite des Einkaufsbedarfs |
 | tasteAffinity | 0,15 | persönliche Passung, aber nicht Safety |
 | preparationTimeFit | 0,10 | konkrete Entscheidungssituation ohne Pantry zu überstimmen |
-| ingredientAlternativeFit | 0,05 | kleiner Bonus für eine tatsächlich hilfreichere Alternative |
+| ingredientAlternativeFit | 0,00 | nur Explainability; Coverage enthält die Wirkung bereits |
 | recentMealPenalty | 0,05 | für R2 reserviert; in R0 nicht verfügbar |
 | varietyScore | 0,05 | für R2 reserviert; in R0 nicht verfügbar |
 | householdPreference | 0,10 | normales Haushaltsaggregat; starke Ablehnung greift zusätzlich als Cap |
 
-Pantry Coverage und Missing Penalty tragen zusammen 50 Prozent der Vollprofil-Gewichte.
-Die beiden Signale sind bewusst korreliert, aber nicht identisch: Coverage misst die
-Mengenabdeckung je Gruppe, Missing Penalty die Zahl nicht vollständig gedeckter Gruppen.
+Die Rohgewichte summieren sich nach Entfernung des Alternative-Bonus auf `0,95`. Die
+zentrale Aggregation teilt stets durch die Summe der tatsächlich verfügbaren positiven
+Gewichte. Die freigewordenen `0,05` wurden daher keinem anderen Signal zugeschlagen. Pantry
+Coverage und Missing Penalty tragen gemeinsam das Rohgewicht `0,50`. Die beiden Signale
+sind bewusst korreliert, aber nicht identisch: Coverage misst die Mengenabdeckung je Gruppe,
+Missing Penalty den Anteil nicht vollständig gedeckter Gruppen.
 Alle Werte und Gewichte sind Experimente und müssen in R4 gegen die vorab definierten
 Metriken geprüft werden.
+
+## R0 Review Correction: gemeinsames Inventory-Budget
+
+Innerhalb der Bewertung eines Recipe ist der Inventory-Snapshot ein gemeinsames Budget.
+Dieselbe vorhandene Menge darf nicht gleichzeitig mehrere IngredientGroups decken. Für jede
+Gruppe wird genau eine zulässige Option gewählt; Coverage, Missing Count und vorgeschlagene
+Optionen stammen aus derselben Zuordnung.
+
+Die exakte Zielfunktion für eine vollständige Zuordnung ist:
+
+```text
+0,35 * pantryCoverage
++ 0,15 * (1 - missingGroupShare)
+```
+
+Eine kleine spezialisierte Branch-and-Bound-Suche enumeriert Optionszuordnungen. Für eine
+feste Zuordnung werden Bedarfe je kompatiblem Ingredient-/Unit-Budget nach aufsteigender
+benötigter Menge gedeckt. Das ist optimal, weil ein kleinerer Bedarf pro Mengeneinheit
+mindestens denselben Coverage-Ertrag besitzt und denselben Vollabdeckungsbonus früher
+erreicht. Die obere Schranke darf jede noch offene Gruppe optimistisch gegen den gesamten
+Bestand prüfen. Sie überschätzt damit bewusst die erreichbare Leistung und schneidet niemals
+einen möglicherweise besseren Zweig ab.
+
+Die Suche läuft unabhängig von Eingabelisten in stabiler Group-UUID-Reihenfolge. Bei gleichem
+fachlichem Optimum gilt je Gruppe: Standardoption, dann Option-Position, dann Option-UUID.
+Es gibt keine künstliche Obergrenze für Gruppen oder Optionen; das theoretische Worst-Case-
+Verhalten bleibt exponentiell und wird durch einen Realgrößen-Regressionstest sichtbar
+gehalten.
+
+`ingredientAlternativeFit` wird nicht mehr erzeugt oder gewichtet. Eine Alternative kann
+bereits durch bessere Coverage beziehungsweise weniger fehlende Gruppen gewinnen. Die
+maschinenlesbaren Hinweise `ALTERNATIVE_AVAILABLE` und
+`ALTERNATIVE_IMPROVES_COVERAGE` erklären eine tatsächlich gewählte Alternative, ohne sie
+ein zweites Mal zu belohnen.
+
+Die benötigten Mengen werden vor dieser Optimierung portionsbezogen skaliert. Exakt
+darstellbare `BigDecimal`-Ergebnisse bleiben dabei ungerundet; insbesondere übernimmt eine
+unveränderte Portionszahl die gespeicherte Menge exakt. Nur bei einer nicht terminierenden
+Division verwendet `RecipeScaler` als definierten Fallback `MathContext.DECIMAL128`.
 
 ## Household Fairness
 
@@ -117,8 +160,10 @@ householdPreference = 0,70 * minimum(memberScores)
 Hard Constraints aller Mitglieder wurden bereits vorher geprüft. Liegt eine einzelne
 explizite Taste-Affinität bei höchstens `0,20` normalisiert (entspricht `-0,60` roh), gilt
 sie als starke Ablehnung. Dann wird der gesamte Recommendation Score auf höchstens `0,39`
-begrenzt und `HOUSEHOLD_MEMBER_DISLIKES` ausgegeben. Zusätzliche positive Mitglieder können
-diese Schutzwirkung deshalb nicht wegmitteln.
+begrenzt und der Konflikt mit `HOUSEHOLD_CONFLICT` sowie
+`HOUSEHOLD_MEMBER_DISLIKES` erklärt. `HOUSEHOLD_STRONG_MATCH` wird in diesem Fall niemals
+gleichzeitig ausgegeben. Zusätzliche positive Mitglieder können diese Schutzwirkung deshalb
+nicht wegmitteln.
 
 ## Qualitative Bänder
 

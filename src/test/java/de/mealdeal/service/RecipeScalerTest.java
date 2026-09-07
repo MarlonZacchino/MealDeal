@@ -36,6 +36,26 @@ class RecipeScalerTest {
     }
 
     @Test
+    void keepsArbitrarilyPreciseAmountExactlyForStandardServingCount() {
+        String preciseAmount = "1.00000000000000000000000000000000001";
+
+        BigDecimal actual = scaler.scale(recipe(2, preciseAmount), 2)
+                .getFirst().getQuantity();
+
+        assertEquals(new BigDecimal(preciseAmount), actual);
+    }
+
+    @Test
+    void keepsExactTerminatingScaleWithoutMathContextRounding() {
+        String preciseAmount = "1.00000000000000000000000000000000001";
+
+        BigDecimal actual = scaler.scale(recipe(2, preciseAmount), 3)
+                .getFirst().getQuantity();
+
+        assertEquals(new BigDecimal("1.500000000000000000000000000000000015"), actual);
+    }
+
+    @Test
     void halvesAmountForHalfTheServings() {
         assertScaledAmount(recipe(2, "500"), 1, "250");
     }

@@ -11,8 +11,6 @@ import java.util.Objects;
 public final class RecommendationScoringProfile {
 
     private static final MathContext CALCULATION_CONTEXT = MathContext.DECIMAL128;
-    private static final BigDecimal ONE_HUNDRED_PERCENT = BigDecimal.ONE;
-
     private final String version;
     private final Map<RecommendationSignal, BigDecimal> weights;
     private final BigDecimal verySuitableThreshold;
@@ -62,7 +60,7 @@ public final class RecommendationScoringProfile {
         weights.put(RecommendationSignal.MISSING_INGREDIENT_PENALTY, new BigDecimal("0.15"));
         weights.put(RecommendationSignal.TASTE_AFFINITY, new BigDecimal("0.15"));
         weights.put(RecommendationSignal.PREPARATION_TIME_FIT, new BigDecimal("0.10"));
-        weights.put(RecommendationSignal.INGREDIENT_ALTERNATIVE_FIT, new BigDecimal("0.05"));
+        weights.put(RecommendationSignal.INGREDIENT_ALTERNATIVE_FIT, BigDecimal.ZERO);
         weights.put(RecommendationSignal.RECENT_MEAL_PENALTY, new BigDecimal("0.05"));
         weights.put(RecommendationSignal.VARIETY_SCORE, new BigDecimal("0.05"));
         weights.put(RecommendationSignal.HOUSEHOLD_PREFERENCE, new BigDecimal("0.10"));
@@ -163,9 +161,9 @@ public final class RecommendationScoringProfile {
             }
             checked.put(signal, weight);
         }
-        BigDecimal total = checked.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
-        if (total.compareTo(ONE_HUNDRED_PERCENT) != 0) {
-            throw new IllegalArgumentException("Recommendation weights must sum to 1.");
+        if (checked.values().stream().allMatch(weight -> weight.signum() == 0)) {
+            throw new IllegalArgumentException(
+                    "At least one recommendation weight must be positive.");
         }
         return Map.copyOf(checked);
     }

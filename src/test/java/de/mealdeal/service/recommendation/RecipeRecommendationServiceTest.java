@@ -149,8 +149,10 @@ class RecipeRecommendationServiceTest {
         assertEquals(tofu, selectedIngredient(candidate, recommendation));
         assertTrue(recommendation.reasonCodes().contains(
                 RecommendationReasonCode.ALTERNATIVE_AVAILABLE));
-        assertSignalEquals(BigDecimal.ONE, recommendation,
-                RecommendationSignal.INGREDIENT_ALTERNATIVE_FIT);
+        assertTrue(recommendation.reasonCodes().contains(
+                RecommendationReasonCode.ALTERNATIVE_IMPROVES_COVERAGE));
+        assertTrue(recommendation.signals().valueOf(
+                RecommendationSignal.INGREDIENT_ALTERNATIVE_FIT).isEmpty());
     }
 
     @Test
@@ -169,11 +171,13 @@ class RecipeRecommendationServiceTest {
     }
 
     @Test
-    void addingMatchingPantryQuantityNeverReducesCoverage() {
+    void addingMatchingPantryQuantityNeverReducesOptimalPantryUtility() {
         Ingredient rice = ingredient("Reis");
         Recipe candidate = singleIngredientRecipe("monotonic", "Reis", rice, "100", Unit.GRAM);
-        BigDecimal less = coverage(candidate, List.of(stock("less", rice, "25", Unit.GRAM)));
-        BigDecimal more = coverage(candidate, List.of(stock("more", rice, "75", Unit.GRAM)));
+        BigDecimal less = pantryUtility(candidate,
+                List.of(stock("less", rice, "25", Unit.GRAM)));
+        BigDecimal more = pantryUtility(candidate,
+                List.of(stock("more", rice, "75", Unit.GRAM)));
 
         assertTrue(more.compareTo(less) >= 0);
     }
@@ -297,6 +301,10 @@ class RecipeRecommendationServiceTest {
         assertTrue(rejected.score().compareTo(new BigDecimal("0.39")) <= 0);
         assertTrue(rejected.reasonCodes().contains(
                 RecommendationReasonCode.HOUSEHOLD_MEMBER_DISLIKES));
+        assertTrue(rejected.reasonCodes().contains(
+                RecommendationReasonCode.HOUSEHOLD_CONFLICT));
+        assertFalse(rejected.reasonCodes().contains(
+                RecommendationReasonCode.HOUSEHOLD_STRONG_MATCH));
     }
 
     @Test
@@ -437,10 +445,16 @@ class RecipeRecommendationServiceTest {
                 eligibility.reasonCodes());
     }
 
-    private BigDecimal coverage(Recipe recipe, List<InventoryItem> inventory) {
-        return service.recommend(List.of(recipe), RecommendationContext.pantryOnly(2, inventory))
-                .recommendations().getFirst().signals()
+    private BigDecimal pantryUtility(Recipe recipe, List<InventoryItem> inventory) {
+        RecipeRecommendation result = service.recommend(
+                        List.of(recipe), RecommendationContext.pantryOnly(2, inventory))
+                .recommendations().getFirst();
+        BigDecimal coverage = result.signals()
                 .valueOf(RecommendationSignal.PANTRY_COVERAGE).orElseThrow();
+        BigDecimal completeness = BigDecimal.ONE.subtract(result.signals()
+                .valueOf(RecommendationSignal.MISSING_INGREDIENT_PENALTY).orElseThrow());
+        return new BigDecimal("0.35").multiply(coverage)
+                .add(new BigDecimal("0.15").multiply(completeness));
     }
 
     private static Recipe singleIngredientRecipe(
