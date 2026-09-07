@@ -47,6 +47,8 @@ IngredientSearchResult / TasteSearchResult
 
 Zutaten werden nach Trefferzahl bewertet. Taste-Suchen unterstützen `AND`, `OR` und `RANKING`. Ranking-Ergebnisse verwenden gemeinsam `PERFECT` für vollständige Treffer, `GOOD` für mehr als die Hälfte und andernfalls `PARTIAL`. Namen dienen nur der stabilen Ergebnissortierung; Ähnlichkeit, Normalisierung und Synonyme sind nicht Bestandteil der Suche.
 
+Die R0-Recommendation-Baseline liegt getrennt davon in `service.recommendation`. `RecipeRecommendationService` erhält Recipes und einen unveränderlichen `RecommendationContext` als bereits geladene Snapshots und besitzt weder Repository-, JavaFX- noch Cloud-Abhängigkeiten. Hard Constraints aller relevanten Personen bestimmen zuerst die zulässige Candidate-Menge. Erst danach berechnet der Service mengen- und unitbezogene Pantry Coverage über skalierte IngredientGroups, optionale Taste-/Zeit-/Household-Signale sowie maschinenlesbare Reason Codes. `RecommendationScoringProfile` hält die experimentellen V1-Gewichte, Least-Misery-Parameter und qualitativen Score-Bänder zentral. Nicht verlässlich vorhandene Recent-Meal- und Variety-Daten bleiben bis zu einer belastbaren History-Definition ausdrücklich aus der aktiven Gewichtung ausgeschlossen. Der vollständige fachliche Contract steht unter `docs/recommendation/`.
+
 ## Persistence
 
 Kapselt den direkten JDBC-Zugriff auf SQLite. Repository-Schnittstellen kennen nur Domain- und Standard-Java-Typen; ihre SQLite-Implementierungen bilden Domain-Objekte auf das relationale Schema ab.
