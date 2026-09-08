@@ -59,6 +59,13 @@ class SqliteRecommendationInteractionRepositoryIntegrationTest {
         assertEquals(List.of(selected.getId(), firstRank.getId()),
                 repository.findByRecipeId(recipeOne).stream()
                         .map(RecommendationInteraction::getId).toList());
+        var batch = repository.findByRecipeIds(List.of(
+                recipeTwo, UUID.randomUUID(), recipeOne));
+        assertEquals(List.of(selected.getId(), firstRank.getId()),
+                batch.get(recipeOne).stream().map(RecommendationInteraction::getId).toList());
+        assertEquals(List.of(dismissed.getId(), secondRank.getId()),
+                batch.get(recipeTwo).stream().map(RecommendationInteraction::getId).toList());
+        assertEquals(2, batch.size());
         assertEquals(List.of(dismissed.getId(), selected.getId()), repository.findRecent(2)
                 .stream().map(RecommendationInteraction::getId).toList());
     }

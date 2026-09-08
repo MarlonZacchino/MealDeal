@@ -430,6 +430,7 @@ class RecipeRecommendationServiceTest {
         assertTrue(signals.valueOf(RecommendationSignal.PREPARATION_TIME_FIT).isEmpty());
         assertTrue(signals.valueOf(RecommendationSignal.RECENT_MEAL_PENALTY).isEmpty());
         assertTrue(signals.valueOf(RecommendationSignal.VARIETY_SCORE).isEmpty());
+        assertTrue(signals.valueOf(RecommendationSignal.RECIPE_PREFERENCE).isEmpty());
         assertTrue(signals.valueOf(RecommendationSignal.HOUSEHOLD_PREFERENCE).isEmpty());
     }
 

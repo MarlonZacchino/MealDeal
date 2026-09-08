@@ -74,25 +74,39 @@ dass das Signal bei dieser Anfrage nicht in die gewichtete Summe eingeht.
 
 ## recentMealPenalty
 
-- Bedeutung: späterer Malus für ein kürzlich tatsächlich gekochtes Recipe.
-- Geplante V1-Range: `0` nicht kürzlich gekocht bis `1` unmittelbar wiederholt.
-- R0-Status: nicht verfügbar und nicht berechnet. R2 stellt bestätigte Meal History bereit,
-  doch Zeitfenster und Signalableitung werden erst in R3 festgelegt. MealPlan und
-  Verbrauchsledger bleiben dafür weiterhin keine Ersatzquellen.
-- Abgrenzung zu Variety: Recency betrachtet ausschließlich dasselbe Recipe und zeitlichen
-  Abstand, nicht Ähnlichkeit oder Verteilung anderer Gerichte.
-- Vorgesehener Reason: `RECENTLY_COOKED`.
+- R3-Status: weiterhin nicht als eigenes Signal gesetzt.
+- Grund: R3 V1 definiert Variety ausschließlich als Freshness desselben Recipes. Ein
+  zusätzlicher spiegelbildlicher Penalty würde dieselbe History doppelt zählen.
+- Das konfigurierte Gewicht bleibt aus Kompatibilitätsgründen unverändert, wird aber aus dem
+  aktiven Nenner entfernt, solange kein eigenständiges Signal definiert ist.
 
 ## varietyScore
 
-- Bedeutung: spätere Vielfalt gegenüber einer Folge tatsächlich gekochter Gerichte.
-- Geplante V1-Range: `0` sehr repetitiv bis `1` hohe relevante Vielfalt.
-- R0-Status: nicht verfügbar und nicht berechnet.
-- Abgrenzung zu Recency: Variety betrachtet Muster über unterschiedliche Recipes, DishTypes,
-  Tastes oder zentrale Ingredients; es bestraft nicht nochmals nur denselben Recipe-Abstand.
-- R2 stellt belastbare bestätigte History bereit. Erst R3 legt fest, welche Dimensionen und
-  Zeitfenster daraus fachlich für Variety zählen.
-- Vorgesehener Reason: `VARIETY_BONUS`.
+- Bedeutung in R3 V1: zeitliche Freshness genau dieses Recipes.
+- Quelle: neuestes bestätigtes `MealHistoryEntry.occurredAt`; Source und `createdAt` ändern
+  den Wert nicht. MealPlan und Consumption Ledger sind keine Ersatzquellen.
+- Berechnung: `clamp(vergangene Sekunden / 14 Tage, 0, 1)`.
+- Nie gekocht und mindestens 14 Tage: `1`; heute beziehungsweise zukünftiger Zeitstempel:
+  `0`; dazwischen kontinuierlich monoton.
+- Reasons: `RECIPE_NEVER_COOKED`, `RECIPE_COOKED_TODAY`, `RECENTLY_COOKED` für weniger als
+  sieben Tage und `RECIPE_NOT_COOKED_RECENTLY` ab 14 Tagen. Der mittlere Bereich erzeugt
+  keine künstlich präzise Anzeige-Reason.
+- Recipe-Ähnlichkeit, Frequency und weitere Variety-Dimensionen bleiben außerhalb V1.
+
+## recipePreference
+
+- Bedeutung: langfristige explizite Recipe-Präferenz oder, nur ohne explizites Feedback,
+  schwache implizite Recommendation-Interaktion.
+- Explizites Mapping auf `-1..1`: Rating 1 `-1`, 2 `-0,5`, 3 `0`, 4 `+0,5`, 5 `+1`;
+  LIKE ohne Rating `+0,75`, DISLIKE ohne Rating `-0,75`.
+- Interaction-Fallback: `0,5 * (selected - dismissed) / (selected + dismissed + 2)`.
+  `SHOWN` und Nicht-Interaktion sind neutral; es gibt keinen erfundenen SKIPPED-Wert.
+- Scorer-Normalisierung: `(effectivePreference + 1) / 2`.
+- Explizites Feedback überschreibt den Interaction-Fallback vollständig und wird niemals
+  mit ihm addiert.
+- Reasons unterscheiden starke/einfache explizite Meinung sowie mindestens zweimalige
+  eindeutige SELECTED- oder DISMISSED-Mehrheit. Neutrale und einzelne implizite Evidenz
+  erzeugen keinen Preference-Reason.
 
 ## householdPreference
 

@@ -26,10 +26,15 @@ rein semantische Referenz besitzen. UUID, editierbarer Name und bei Ingredients 
 Kategorie bleiben davon unabhängig.
 
 `MealHistoryEntry`, `RecipeFeedback` und `RecommendationInteraction` bilden drei getrennte
-lokale R2-Signale. History bestätigt eine tatsächlich gekochte Mahlzeit mit Recipe-UUID,
+lokale R2-Datenquellen. History bestätigt eine tatsächlich gekochte Mahlzeit mit Recipe-UUID,
 kleinem Namens-Snapshot, Zeitpunkt, Portionen und Herkunft. Feedback hält höchstens einen
 aktuellen, widerspruchsfreien Präferenz-/Rating-Zustand pro Recipe. Recommendation-
 Interaktionen sind immutable Events mit leichter Session-UUID und Score-/Rank-Snapshot.
+
+R3 überführt diese Persistenzdaten in `RecipePersonalizationSignals`. Der Snapshot hält
+Recipe-UUID, letztes bestätigtes Kochen, 14-Tage-Freshness, explizite und implizite
+Präferenz sowie die für Explainability relevanten Interaktionszahlen. Er bleibt immutable
+und kennt weder JavaFX noch JDBC.
 
 ## Standard Catalog
 
@@ -73,7 +78,17 @@ IngredientSearchResult / TasteSearchResult
 
 Zutaten werden nach Trefferzahl bewertet. Taste-Suchen unterstützen `AND`, `OR` und `RANKING`. Ranking-Ergebnisse verwenden gemeinsam `PERFECT` für vollständige Treffer, `GOOD` für mehr als die Hälfte und andernfalls `PARTIAL`. Namen dienen nur der stabilen Ergebnissortierung; Ähnlichkeit, Normalisierung und Synonyme sind nicht Bestandteil der Suche.
 
-Die R0-Recommendation-Baseline liegt getrennt davon in `service.recommendation`. `RecipeRecommendationService` erhält Recipes und einen unveränderlichen `RecommendationContext` als bereits geladene Snapshots und besitzt weder Repository-, JavaFX- noch Cloud-Abhängigkeiten. Hard Constraints aller relevanten Personen bestimmen zuerst die zulässige Candidate-Menge. Erst danach berechnet der Service mengen- und unitbezogene Pantry Coverage über skalierte IngredientGroups, optionale Taste-/Zeit-/Household-Signale sowie maschinenlesbare Reason Codes. Die Pantry-Berechnung behandelt den Inventory-Snapshot pro Recipe als gemeinsames Mengenbudget. Eine spezialisierte exakte Branch-and-Bound-Suche wählt pro Gruppe eine Option und maximiert die im V1-Profil gewichtete Kombination aus Coverage und vollständig gedeckten Gruppen; dieselbe Menge kann dadurch nicht mehreren Bedarfen zugerechnet werden. Alternative-Nutzung bleibt Explainability-Information und besitzt kein eigenes Score-Gewicht. `RecommendationScoringProfile` hält die experimentellen V1-Gewichte, Least-Misery-Parameter und qualitativen Score-Bänder zentral. R2 stellt inzwischen bestätigte History und explizites Feedback bereit; R0 konsumiert diese Daten jedoch weiterhin nicht. Recent-Meal-, Variety- und Feedback-Signale bleiben bis zu ihrer fachlichen Ableitung in R3 ausdrücklich aus der aktiven Gewichtung ausgeschlossen. Der vollständige fachliche Contract steht unter `docs/recommendation/`.
+Die R0-Recommendation-Baseline liegt getrennt davon in `service.recommendation`. `RecipeRecommendationService` erhält Recipes und einen unveränderlichen `RecommendationContext` als bereits geladene Snapshots und besitzt weder Repository-, JavaFX- noch Cloud-Abhängigkeiten. Hard Constraints aller relevanten Personen bestimmen zuerst die zulässige Candidate-Menge. Erst danach berechnet der Service mengen- und unitbezogene Pantry Coverage über skalierte IngredientGroups, optionale Taste-/Zeit-/Household-Signale sowie maschinenlesbare Reason Codes. Die Pantry-Berechnung behandelt den Inventory-Snapshot pro Recipe als gemeinsames Mengenbudget. Eine spezialisierte exakte Branch-and-Bound-Suche wählt pro Gruppe eine Option und maximiert die im V1-Profil gewichtete Kombination aus Coverage und vollständig gedeckten Gruppen; dieselbe Menge kann dadurch nicht mehreren Bedarfen zugerechnet werden. Alternative-Nutzung bleibt Explainability-Information und besitzt kein eigenes Score-Gewicht. `RecommendationScoringProfile` hält die experimentellen V1-Gewichte, Least-Misery-Parameter und qualitativen Score-Bänder zentral.
+
+`RecommendationPersonalizationService` ist der R3-Context-Builder. Er liest letztes Meal,
+aktuelles Feedback und Interaktionen für alle Candidate-UUIDs in drei Batch-Abfragen und
+verwendet pro Lauf genau einen Zeitpunkt einer injizierten `Clock`. Die Application-Fassade
+`PersonalizedRecommendationService` reicht den angereicherten Context anschließend an den
+bestehenden pure Scorer weiter. Der Scorer verwendet Recipe-Freshness genau einmal als
+`VARIETY_SCORE` und die aus explizitem Feedback beziehungsweise schwachem Interaction-
+Fallback abgeleitete `RECIPE_PREFERENCE`. Bestehende R0-Contexts ohne R3-Snapshot behalten
+ihre bisherige aktive Signalmenge. Der vollständige fachliche Contract steht unter
+`docs/recommendation/`.
 
 `MealHistoryService` erfasst manuelle, planbasierte und ausdrücklich recommendationbasierte
 Kochbestätigungen und delegiert die kleinen History-Abfragen. Wiederholte Bestätigung
@@ -82,6 +97,9 @@ bewusst weder Planung noch Inventory. `RecipeFeedbackService` verwaltet den eine
 Feedback-Zustand pro Recipe, während `RecommendationInteractionService` ausschließlich
 explizite R0-Ergebnisinteraktionen als Ereignisse mit dem angezeigten Score und Rang
 schreibt. Alle drei Services verwenden injizierbare `Clock`s und bleiben JavaFX-unabhängig.
+Die R3-Bewertung ruft keine dieser Schreiboperationen auf: SELECTED erzeugt weder History
+noch Verbrauch, bestätigte History erzeugt weder LIKE noch Interaction und die Berechnung
+allein erzeugt kein SHOWN-Ereignis.
 
 ## Persistence
 

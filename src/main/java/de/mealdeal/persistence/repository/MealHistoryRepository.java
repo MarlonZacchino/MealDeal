@@ -3,7 +3,9 @@ package de.mealdeal.persistence.repository;
 import de.mealdeal.domain.MealHistoryEntry;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,6 +32,9 @@ public interface MealHistoryRepository {
     List<MealHistoryEntry> findBetween(Instant fromInclusive, Instant toExclusive);
 
     Optional<MealHistoryEntry> findLatestByRecipeId(UUID recipeId);
+
+    /** Loads at most the latest event for each requested Recipe in one repository call. */
+    Map<UUID, MealHistoryEntry> findLatestByRecipeIds(Collection<UUID> recipeIds);
 
     long countByRecipeIdBetween(UUID recipeId, Instant fromInclusive, Instant toExclusive);
 

@@ -36,4 +36,16 @@ public final class RecommendationSignals {
     public Map<RecommendationSignal, BigDecimal> asMap() {
         return values;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        return this == other
+                || other instanceof RecommendationSignals signals
+                && values.equals(signals.values);
+    }
+
+    @Override
+    public int hashCode() {
+        return values.hashCode();
+    }
 }

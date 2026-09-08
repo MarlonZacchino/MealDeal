@@ -81,6 +81,9 @@ class SqliteRecipeFeedbackRepositoryIntegrationTest {
         assertTrue(feedback.getValue().isEmpty());
         assertEquals(3, feedbackRepository.findByRecipeId(recipe.getId())
                 .orElseThrow().getRating().orElseThrow());
+        assertEquals(feedback.getId(), feedbackRepository.findByRecipeIds(List.of(
+                UUID.randomUUID(), recipe.getId())).get(recipe.getId()).getId());
+        assertTrue(feedbackRepository.findByRecipeIds(List.of()).isEmpty());
     }
 
     @Test

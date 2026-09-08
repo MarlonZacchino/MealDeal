@@ -49,14 +49,16 @@ class RecommendationContractTest {
     }
 
     @Test
-    void v1WeightsAreCentralAndAlternativeFitIsUnweighted() {
+    void v1WeightsKeepR0ValuesAndUseReservedShareForRecipePreference() {
         RecommendationScoringProfile profile = RecommendationScoringProfile.v1();
 
         assertEquals("V1", profile.version());
         assertEquals(0, profile.weights().values().stream()
-                .reduce(BigDecimal.ZERO, BigDecimal::add).compareTo(new BigDecimal("0.95")));
+                .reduce(BigDecimal.ZERO, BigDecimal::add).compareTo(BigDecimal.ONE));
         assertEquals(new BigDecimal("0.35"),
                 profile.weightOf(RecommendationSignal.PANTRY_COVERAGE));
+        assertEquals(new BigDecimal("0.05"),
+                profile.weightOf(RecommendationSignal.RECIPE_PREFERENCE));
         assertEquals(0, profile.weightOf(RecommendationSignal.INGREDIENT_ALTERNATIVE_FIT)
                 .compareTo(BigDecimal.ZERO));
     }

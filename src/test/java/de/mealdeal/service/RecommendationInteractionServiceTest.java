@@ -15,6 +15,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,6 +61,10 @@ class RecommendationInteractionServiceTest {
         }
         @Override public List<RecommendationInteraction> findByRecipeId(UUID recipeId) {
             return List.of();
+        }
+        @Override public Map<UUID, List<RecommendationInteraction>> findByRecipeIds(
+                Collection<UUID> recipeIds) {
+            return Map.of();
         }
         @Override public List<RecommendationInteraction> findRecent(int limit) {
             return List.of();

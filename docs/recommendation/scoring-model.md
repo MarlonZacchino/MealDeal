@@ -1,6 +1,6 @@
 # Recommendation Contract und Scoring Model
 
-Status: R0-Baseline, Profil `V1`, experimentell. Der interne Score ist nicht kalibriert
+Status: R3 Recommendation Engine V1 auf der R0-Baseline, Profil `V1`, experimentell. Der interne Score ist nicht kalibriert
 und darf deshalb nicht als Prozentwert dargestellt werden.
 
 ## Bestehender fachlicher Stand
@@ -12,16 +12,14 @@ Direkt nutzbar sind:
 - `InventoryItem`s mit Ingredient-UUID, nichtnegativer Menge und Unit,
 - `RecipeScaler` für exakte Portionsskalierung,
 - `UnitConverter` für identische Units, Gramm/Kilogramm und Milliliter/Liter,
-- `MealPlanEntry`s mit Recipe, Datum und Portionen sowie maximal 30 Tagen Historie.
+- `MealPlanEntry`s mit Recipe, Datum und Portionen sowie maximal 30 Tagen Historie,
+- lokal persistierte Meal History, Recipe Feedback und Recommendation Interactions aus R2.
 
 Nicht vorhanden oder nicht sicher ableitbar sind:
 
 - persistierte Allergien und sonstige harte Personenregeln,
 - positive oder negative Taste-Präferenzwerte,
 - persistierte Haushalte und deren Mitglieder,
-- eine bestätigte Koch-/Akzeptanzhistorie. Vergangene Planungen zeigen nur Planung; das
-  Verbrauchsledger speichert keinen Recipe-Verweis. Beides ist kein sicherer Beleg für
-  eine gegessene Mahlzeit,
 - Ablaufdaten, Preise, Einkaufswege, Budgetziele und Ernährungsziele,
 - eine Trennung von aktiver und passiver Recipe-Zeit.
 
@@ -37,11 +35,14 @@ temporärer Request-Contract angenommen oder ausdrücklich zurückgestellt.
 - unveränderlicher Inventory-Snapshot,
 - optionale individuelle Taste-Affinitäten im Bereich `-1..1`,
 - optionale Haushaltsmitglieder mit eigenen Taste-Affinitäten und Hard Constraints,
-- globale Hard Constraints für Recipe- und Ingredient-UUIDs.
+- globale Hard Constraints für Recipe- und Ingredient-UUIDs,
+- optional bereits geladene, immutable `RecipePersonalizationSignals` je Recipe-UUID.
 
 Repositories, JavaFX-Zustand und persistierte Profilobjekte gehören nicht in den Context.
-Recent Meal History und Variety werden erst ergänzt, wenn R2 eine belastbare Quelle für
-„tatsächlich gekocht/akzeptiert“ definiert.
+`RecommendationPersonalizationService` liest R2-Daten gebündelt, verwendet pro Lauf genau
+einen Clock-Zeitpunkt und erzeugt daraus den Snapshot. `RecipeRecommendationService` bleibt
+dadurch frei von JDBC- und Repository-Zugriffen. Alte R0-Contexts ohne diesen Snapshot
+lassen die neuen Signale weiterhin aus und behalten ihr bisheriges Score-Verhalten.
 
 ## Candidate Eligibility
 
@@ -86,17 +87,48 @@ R0-Review-Korrektur sind:
 | preparationTimeFit | 0,10 | konkrete Entscheidungssituation ohne Pantry zu überstimmen |
 | ingredientAlternativeFit | 0,00 | nur Explainability; Coverage enthält die Wirkung bereits |
 | recentMealPenalty | 0,05 | für R2 reserviert; in R0 nicht verfügbar |
-| varietyScore | 0,05 | für R2 reserviert; in R0 nicht verfügbar |
+| varietyScore | 0,05 | lineare Recipe-Freshness aus bestätigter Meal History |
+| recipePreference | 0,05 | explizites Recipe Feedback oder schwacher Interaction-Fallback |
 | householdPreference | 0,10 | normales Haushaltsaggregat; starke Ablehnung greift zusätzlich als Cap |
 
-Die Rohgewichte summieren sich nach Entfernung des Alternative-Bonus auf `0,95`. Die
-zentrale Aggregation teilt stets durch die Summe der tatsächlich verfügbaren positiven
-Gewichte. Die freigewordenen `0,05` wurden daher keinem anderen Signal zugeschlagen. Pantry
+R3 verwendet die in R0 nach Entfernung des Alternative-Bonus ausdrücklich freigebliebenen
+`0,05` für `recipePreference`; kein zuvor vorhandenes Top-Level-Gewicht wurde verändert.
+Die Rohgewichte summieren sich nun auf `1,00`. Die zentrale Aggregation teilt weiterhin
+stets durch die Summe der tatsächlich verfügbaren positiven Gewichte. Pantry
 Coverage und Missing Penalty tragen gemeinsam das Rohgewicht `0,50`. Die beiden Signale
 sind bewusst korreliert, aber nicht identisch: Coverage misst die Mengenabdeckung je Gruppe,
 Missing Penalty den Anteil nicht vollständig gedeckter Gruppen.
 Alle Werte und Gewichte sind Experimente und müssen in R4 gegen die vorab definierten
 Metriken geprüft werden.
+
+## R3 Personalization Pipeline
+
+```text
+MealHistoryRepository + RecipeFeedbackRepository + RecommendationInteractionRepository
+                              ↓ drei Batch-Abfragen
+RecommendationPersonalizationService + injizierte Clock
+                              ↓ immutable RecipePersonalizationSignals
+RecommendationContext
+                              ↓
+RecipeRecommendationService (bestehendes R0-Scoring und Tie-Breaking)
+```
+
+Die Application-Fassade `PersonalizedRecommendationService` verbindet beide Schritte, ohne
+eine zweite Ranking-Engine einzuführen. Eine bloße Berechnung persistiert keine `SHOWN`-
+Interaktion. Session-Erzeugung und das Erfassen tatsächlich sichtbarer Ergebnisse bleiben
+Aufgabe einer späteren Präsentationsintegration.
+
+R3 verwendet für Recency und V1-Variety bewusst nur ein Score-Signal: `varietyScore` ist
+die lineare Freshness desselben Recipes im 14-Tage-Fenster. Der spiegelbildliche
+`recentMealPenalty` bleibt ungesetzt, weil beide gleichzeitig dieselbe Information doppelt
+gewichten würden. Quellen der bestätigten History sind gleichwertig; maßgeblich ist allein
+das neueste `occurredAt`, nicht `createdAt`.
+
+Explizites Recipe Feedback wird auf `-1..1` abgebildet und für den Scorer nach `0..1`
+normalisiert. Bei vorhandenem Rating bestimmt das Rating die Stärke; LIKE/DISLIKE wird nicht
+noch einmal addiert. Ohne Feedback gilt der schwache, beschränkte Interaction-Wert als
+Fallback. `SHOWN` ist neutral. Damit verändert Berechnung oder Sichtbarkeit allein keine
+Präferenz und es entsteht keine selbstverstärkende Schleife.
 
 ## R0 Review Correction: gemeinsames Inventory-Budget
 
@@ -193,14 +225,16 @@ Die Reihenfolge der Candidate- oder Inventory-Eingabe verändert das Ergebnis ni
 
 ## Bekannte Grenzen und Deferred Decisions
 
-- R0 besitzt keine UI, keine Repositories und keine Profilpersistenz.
+- R3 besitzt noch keine sichtbare UI-Integration; der Core und seine Interaktions-API sind
+  vollständig JavaFX-unabhängig.
 - Allergie-/Ausschlussdaten werden nur als bereits bekannte Ingredient- oder Recipe-UUIDs
   angenommen. Zutatenherkunft und Kreuzkontamination sind nicht modellierbar.
 - Als Zeitfit dient konservativ die abgeleitete Gesamtzeit. Aktiv/passiv kann mit dem
   aktuellen Modell nicht zuverlässig getrennt werden.
 - Fehlende Recipe-Zeit wird bei vorhandenem Nutzerlimit erklärt, aber nicht geraten oder
   künstlich bestraft.
-- R2 persistiert inzwischen bestätigte Meal History und Feedback. Recent Meal Penalty und
-  Variety bleiben im R0-Service dennoch bis zur fachlichen Ableitung in R3 nicht verfügbar;
-  die aktive Gewichtssumme wird weiterhin ohne sie normalisiert.
+- V1-Variety betrachtet ausschließlich die Zeit seit demselben Recipe. Ingredient-, Taste-,
+  Cuisine- oder DishType-Ähnlichkeit und eine separate Frequency-Strafe bleiben bewusst aus.
+- R1 Catalog IDs werden für R3 nicht benötigt: lokale Recipe-, Ingredient- und Taste-UUIDs
+  bleiben die Identitäten; bestehende Pantry- und Alternative-Logik wird nicht dupliziert.
 - Kosten, Expiry, Nutrition Goals, ML und externe AI sind nicht Bestandteil von V1.

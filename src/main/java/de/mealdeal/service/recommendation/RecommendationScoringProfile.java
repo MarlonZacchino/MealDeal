@@ -63,6 +63,7 @@ public final class RecommendationScoringProfile {
         weights.put(RecommendationSignal.INGREDIENT_ALTERNATIVE_FIT, BigDecimal.ZERO);
         weights.put(RecommendationSignal.RECENT_MEAL_PENALTY, new BigDecimal("0.05"));
         weights.put(RecommendationSignal.VARIETY_SCORE, new BigDecimal("0.05"));
+        weights.put(RecommendationSignal.RECIPE_PREFERENCE, new BigDecimal("0.05"));
         weights.put(RecommendationSignal.HOUSEHOLD_PREFERENCE, new BigDecimal("0.10"));
         return new RecommendationScoringProfile(
                 "V1", weights,

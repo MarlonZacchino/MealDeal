@@ -9,7 +9,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -128,6 +132,31 @@ public final class SqliteMealHistoryRepository implements MealHistoryRepository 
     }
 
     @Override
+    public Map<UUID, MealHistoryEntry> findLatestByRecipeIds(Collection<UUID> recipeIds) {
+        List<UUID> ids = checkedIds(recipeIds);
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        String sql = "SELECT * FROM meal_history WHERE recipe_id IN ("
+                + placeholders(ids.size())
+                + ") ORDER BY recipe_id, occurred_at DESC, created_at DESC, id";
+        try (var connection = database.openConnection();
+             var statement = connection.prepareStatement(sql)) {
+            bindIds(statement, ids);
+            try (var resultSet = statement.executeQuery()) {
+                Map<UUID, MealHistoryEntry> latest = new LinkedHashMap<>();
+                while (resultSet.next()) {
+                    MealHistoryEntry entry = read(resultSet);
+                    latest.putIfAbsent(entry.getRecipeId(), entry);
+                }
+                return Collections.unmodifiableMap(latest);
+            }
+        } catch (SQLException exception) {
+            throw new PersistenceException("Could not load latest recipe history batch.", exception);
+        }
+    }
+
+    @Override
     public long countByRecipeIdBetween(
             UUID recipeId, Instant fromInclusive, Instant toExclusive) {
         Objects.requireNonNull(recipeId, "Recipe ID must not be null.");
@@ -222,6 +251,25 @@ public final class SqliteMealHistoryRepository implements MealHistoryRepository 
         Objects.requireNonNull(toExclusive, "End timestamp must not be null.");
         if (!fromInclusive.isBefore(toExclusive)) {
             throw new IllegalArgumentException("History period start must be before its end.");
+        }
+    }
+
+    private static List<UUID> checkedIds(Collection<UUID> recipeIds) {
+        Objects.requireNonNull(recipeIds, "Recipe IDs must not be null.");
+        if (recipeIds.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("Recipe IDs must not contain null values.");
+        }
+        return recipeIds.stream().distinct().sorted().toList();
+    }
+
+    private static String placeholders(int count) {
+        return String.join(", ", Collections.nCopies(count, "?"));
+    }
+
+    private static void bindIds(java.sql.PreparedStatement statement, List<UUID> ids)
+            throws SQLException {
+        for (int index = 0; index < ids.size(); index++) {
+            statement.setString(index + 1, ids.get(index).toString());
         }
     }
 }

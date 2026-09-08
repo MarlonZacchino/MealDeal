@@ -77,6 +77,12 @@ class SqliteMealHistoryRepositoryIntegrationTest {
                         .map(MealHistoryEntry::getId).toList());
         assertEquals(second.getId(), historyRepository.findLatestByRecipeId(recipe.getId())
                 .orElseThrow().getId());
+        var latestBatch = historyRepository.findLatestByRecipeIds(List.of(
+                otherRecipe.getRecipeId(), recipe.getId(), UUID.randomUUID()));
+        assertEquals(second.getId(), latestBatch.get(recipe.getId()).getId());
+        assertEquals(otherRecipe.getId(),
+                latestBatch.get(otherRecipe.getRecipeId()).getId());
+        assertEquals(2, latestBatch.size());
         assertEquals(List.of(otherRecipe.getId(), second.getId()), historyRepository.findBetween(
                         Instant.parse("2026-09-01T00:00:00Z"),
                         Instant.parse("2026-09-03T00:00:00Z"))
@@ -145,6 +151,42 @@ class SqliteMealHistoryRepositoryIntegrationTest {
         assertEquals(1, historyRepository.countByRecipeIdBetween(recipe.getId(),
                 Instant.parse("2026-09-01T19:00:00.500000000Z"),
                 Instant.parse("2026-09-01T19:00:01Z")));
+    }
+
+    @Test
+    void latestBatchUsesOccurredAtRatherThanLaterCreationTimestamp() {
+        MealHistoryEntry cookedLater = new MealHistoryEntry(
+                recipe.getId(), recipe.getName(), Instant.parse("2026-09-02T19:00:00Z"),
+                2, MealHistorySource.MANUAL, null,
+                Instant.parse("2026-09-02T19:01:00Z"));
+        MealHistoryEntry recordedLaterButCookedEarlier = new MealHistoryEntry(
+                recipe.getId(), recipe.getName(), Instant.parse("2026-09-01T19:00:00Z"),
+                2, MealHistorySource.MANUAL, null,
+                Instant.parse("2026-09-03T19:01:00Z"));
+        historyRepository.save(cookedLater);
+        historyRepository.save(recordedLaterButCookedEarlier);
+
+        MealHistoryEntry latest = historyRepository.findLatestByRecipeIds(List.of(recipe.getId()))
+                .get(recipe.getId());
+
+        assertEquals(cookedLater.getId(), latest.getId());
+    }
+
+    @Test
+    void latestBatchUsesOccurredAtInsteadOfCreatedAt() {
+        MealHistoryEntry actuallyLatest = new MealHistoryEntry(
+                recipe.getId(), recipe.getName(), Instant.parse("2026-09-03T12:00:00Z"),
+                2, MealHistorySource.MANUAL, null,
+                Instant.parse("2026-09-03T12:01:00Z"));
+        MealHistoryEntry recordedLater = new MealHistoryEntry(
+                recipe.getId(), recipe.getName(), Instant.parse("2026-09-02T12:00:00Z"),
+                2, MealHistorySource.MANUAL, null,
+                Instant.parse("2026-09-04T12:01:00Z"));
+        historyRepository.save(actuallyLatest);
+        historyRepository.save(recordedLater);
+
+        assertEquals(actuallyLatest.getId(), historyRepository.findLatestByRecipeIds(
+                List.of(recipe.getId())).get(recipe.getId()).getId());
     }
 
     @Test

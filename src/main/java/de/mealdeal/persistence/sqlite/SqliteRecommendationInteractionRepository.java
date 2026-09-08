@@ -9,7 +9,11 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -64,6 +68,39 @@ public final class SqliteRecommendationInteractionRepository
     }
 
     @Override
+    public Map<UUID, List<RecommendationInteraction>> findByRecipeIds(
+            Collection<UUID> recipeIds) {
+        List<UUID> ids = checkedIds(recipeIds);
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        String sql = "SELECT * FROM recommendation_interactions WHERE recipe_id IN ("
+                + String.join(", ", Collections.nCopies(ids.size(), "?"))
+                + ") ORDER BY recipe_id, occurred_at DESC, id";
+        try (var connection = database.openConnection();
+             var statement = connection.prepareStatement(sql)) {
+            for (int index = 0; index < ids.size(); index++) {
+                statement.setString(index + 1, ids.get(index).toString());
+            }
+            try (var resultSet = statement.executeQuery()) {
+                Map<UUID, List<RecommendationInteraction>> mutable = new LinkedHashMap<>();
+                while (resultSet.next()) {
+                    RecommendationInteraction interaction = read(resultSet);
+                    mutable.computeIfAbsent(interaction.getRecipeId(), ignored -> new ArrayList<>())
+                            .add(interaction);
+                }
+                Map<UUID, List<RecommendationInteraction>> immutable = new LinkedHashMap<>();
+                mutable.forEach((recipeId, events) ->
+                        immutable.put(recipeId, List.copyOf(events)));
+                return Collections.unmodifiableMap(immutable);
+            }
+        } catch (SQLException exception) {
+            throw new PersistenceException(
+                    "Could not load recommendation interaction batch.", exception);
+        }
+    }
+
+    @Override
     public List<RecommendationInteraction> findRecent(int limit) {
         if (limit <= 0) {
             throw new IllegalArgumentException("Interaction query limit must be greater than zero.");
@@ -108,16 +145,28 @@ public final class SqliteRecommendationInteractionRepository
         try (resultSet) {
             List<RecommendationInteraction> interactions = new ArrayList<>();
             while (resultSet.next()) {
-                interactions.add(new RecommendationInteraction(
-                        UUID.fromString(resultSet.getString("id")),
-                        UUID.fromString(resultSet.getString("session_id")),
-                        UUID.fromString(resultSet.getString("recipe_id")),
-                        RecommendationAction.valueOf(resultSet.getString("action")),
-                        resultSet.getInt("displayed_rank"),
-                        new BigDecimal(resultSet.getString("displayed_score")),
-                        SqliteInstantCodec.parse(resultSet.getString("occurred_at"))));
+                interactions.add(read(resultSet));
             }
             return List.copyOf(interactions);
         }
+    }
+
+    private static RecommendationInteraction read(ResultSet resultSet) throws SQLException {
+        return new RecommendationInteraction(
+                UUID.fromString(resultSet.getString("id")),
+                UUID.fromString(resultSet.getString("session_id")),
+                UUID.fromString(resultSet.getString("recipe_id")),
+                RecommendationAction.valueOf(resultSet.getString("action")),
+                resultSet.getInt("displayed_rank"),
+                new BigDecimal(resultSet.getString("displayed_score")),
+                SqliteInstantCodec.parse(resultSet.getString("occurred_at")));
+    }
+
+    private static List<UUID> checkedIds(Collection<UUID> recipeIds) {
+        Objects.requireNonNull(recipeIds, "Recipe IDs must not be null.");
+        if (recipeIds.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("Recipe IDs must not contain null values.");
+        }
+        return recipeIds.stream().distinct().sorted().toList();
     }
 }

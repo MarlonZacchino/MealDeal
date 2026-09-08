@@ -48,16 +48,21 @@ erwartete Reason Codes stimmen. Exakte Dezimalwerte werden nur an echten Grenzwe
 | 25 | identische Scores und fehlende Gruppen | eligible; kürzere bekannte Zeit vor längerer | Time-/Pantry-Gründe unverändert |
 | 26 | vollständiger fachlicher Tie | eligible; Name, dann UUID entscheidet stabil | gleiche fachliche Gründe |
 | 27 | Recipe ohne optionale Zeit/Nutrition/Steps | eligible, sofern Gruppen/Taste valide | keine Gründe für fehlende optionale Daten |
-| 28 | kürzlich geplant/gegessen | R0 unverändert; erst R2 nach belastbarer History | später `RECENTLY_COOKED` |
-| 29 | wiederholte ähnliche Gerichte | R0 unverändert; erst R2 nach Variety-Definition | später `VARIETY_BONUS` |
+| 28 | gleiches Basis-Fit, heute gekocht vs. nie gekocht | nie oder lange nicht gekocht liegt vorn; nur bestätigte History zählt | `RECIPE_COOKED_TODAY` bzw. `RECIPE_NEVER_COOKED` |
+| 29 | gleiches Basis-Fit, explizites LIKE vs. neutral | liked Recipe liegt vorn; kein doppelter Rating-Bonus | `RECIPE_EXPLICITLY_LIKED` |
 | 30 | Candidate- oder Inventory-Reihenfolge vertauscht | identische Eligibility, Scores, Optionen und Reihenfolge | identische Reason Codes |
+| 31 | starkes Basis-Fit neutral vs. schwaches Fit mit LIKE | Pantry- und Basisqualität bleibt ausschlaggebend | passende Pantry- und Preference-Gründe |
+| 32 | nur SHOWN Events | Score und Ranking bleiben gegenüber keiner Interaction gleich | kein Interaction-Grund |
+| 33 | viele SELECTED plus explizites DISLIKE | explizites Feedback bestimmt Preference | Dislike-Grund, kein Selected-Grund |
+| 34 | viele DISMISSED plus explizites LIKE | explizites Feedback bestimmt Preference | Like-Grund, kein Dismissed-Grund |
 
 Die Tabelle ist der vollständige Golden-Acceptance-Katalog. Automatisierte Tests sichern die
 kritischen ausführbaren Regeln gruppiert ab, aber nicht jede Tabellenzeile besitzt zwingend
 eine gleichnamige Eins-zu-eins-Testmethode. Besonders abgedeckt sind Shared Budget,
 Alternativen mit Teildeckung und drei Optionen, Eligibility-Kombinationen, Household-Grenzen,
-Sekundenpräzision, Tie-Breaks, Eingabereihenfolge sowie die folgenden Invarianten. Die
-deferred Szenarien 28 und 29 sind bewusst keine Pseudo-Tests mit erfundener Historie.
+Sekundenpräzision, Tie-Breaks, Eingabereihenfolge sowie die folgenden Invarianten. R3 macht
+die früher zurückgestellten Szenarien 28 und 29 mit festen History-/Feedback-Snapshots
+ausführbar.
 
 ## Invarianten / property-orientierte Tests
 
@@ -78,8 +83,23 @@ deferred Szenarien 28 und 29 sind bewusst keine Pseudo-Tests mit erfundener Hist
   Cap nicht.
 
 JUnit-Beispieldaten übernehmen diese Rolle ohne zusätzliche Property-Test-Dependency. Eine
-dedizierte Generatorbibliothek wird erst eingeführt, wenn sie gegenüber den deterministischen
-Invarianten einen belegbaren Mehrwert liefert.
+R3-Tests ergänzen feste Clock-Szenarien für 0, 1, 7, 14 und mehr als 14 Tage,
+monotone Freshness, Feedback-Mapping, begrenzte Interaction-Aggregation und deterministische
+personalisierte Rangfolgen. Eine dedizierte Generatorbibliothek wird erst eingeführt, wenn
+sie gegenüber den deterministischen Invarianten einen belegbaren Mehrwert liefert.
+
+## R4-Hypothesen aus R3
+
+- **H1:** Ein lineares 14-Tage-Fenster ist für Recipe-level Recency sinnvoll.
+- **H2:** Explizites Recipe Feedback soll implizite Interaktionen vollständig überstimmen.
+- **H3:** `SHOWN` ist neutral und darf keine selbstverstärkende Rangschleife erzeugen.
+- **H4:** `0,5 * net / (evidence + 2)` ist als Interaction-Fallback ausreichend schwach und
+  beschränkt.
+- **H5:** Gesamtfrequenz wird nicht separat bestraft; ein Lieblingsgericht bleibt möglich.
+- **H6:** Recency desselben Recipes reicht als erste V1-Variety-Näherung.
+
+Diese Annahmen sind experimentell. R4 bewertet sie gegen Golden Scenarios und freiwillige
+lokale Nutzung, ohne die unten definierten Produktschwellen rückwirkend abzusenken.
 
 ## Pilotmetriken und Datenschutz
 

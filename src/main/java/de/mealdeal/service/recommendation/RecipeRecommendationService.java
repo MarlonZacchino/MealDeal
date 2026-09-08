@@ -124,6 +124,8 @@ public final class RecipeRecommendationService {
                     }
                 });
         addTimeSignal(recipe, context, values, reasons);
+        context.personalizationFor(recipe.getId()).ifPresent(personalization ->
+                addPersonalizationSignals(personalization, values, reasons));
 
         PreferenceSignalCalculator.HouseholdResult household =
                 preferenceCalculator.householdScore(recipe, context.householdPreferences());
@@ -215,6 +217,63 @@ public final class RecipeRecommendationService {
         values.put(RecommendationSignal.PREPARATION_TIME_FIT, fit);
         if (hasWeight(RecommendationSignal.PREPARATION_TIME_FIT)) {
             reasons.add(RecommendationReasonCode.TIME_OVER_LIMIT);
+        }
+    }
+
+    private void addPersonalizationSignals(
+            RecipePersonalizationSignals personalization,
+            Map<RecommendationSignal, BigDecimal> values,
+            Set<RecommendationReasonCode> reasons) {
+        values.put(RecommendationSignal.VARIETY_SCORE, personalization.freshness());
+        values.put(RecommendationSignal.RECIPE_PREFERENCE,
+                personalization.normalizedEffectivePreference());
+        addRecencyReason(personalization, reasons);
+        addPreferenceReason(personalization, reasons);
+    }
+
+    private void addRecencyReason(
+            RecipePersonalizationSignals personalization,
+            Set<RecommendationReasonCode> reasons) {
+        if (!hasWeight(RecommendationSignal.VARIETY_SCORE)) {
+            return;
+        }
+        switch (personalization.recency()) {
+            case NEVER_COOKED -> reasons.add(RecommendationReasonCode.RECIPE_NEVER_COOKED);
+            case COOKED_TODAY -> reasons.add(RecommendationReasonCode.RECIPE_COOKED_TODAY);
+            case COOKED_RECENTLY -> reasons.add(RecommendationReasonCode.RECENTLY_COOKED);
+            case NOT_COOKED_RECENTLY -> reasons.add(
+                    RecommendationReasonCode.RECIPE_NOT_COOKED_RECENTLY);
+            case MID_WINDOW -> {
+                // A middle-window value contributes continuously but is not material to display.
+            }
+        }
+    }
+
+    private void addPreferenceReason(
+            RecipePersonalizationSignals personalization,
+            Set<RecommendationReasonCode> reasons) {
+        if (!hasWeight(RecommendationSignal.RECIPE_PREFERENCE)) {
+            return;
+        }
+        if (personalization.hasExplicitFeedback()) {
+            BigDecimal preference = personalization.explicitPreference().orElseThrow();
+            if (preference.compareTo(BigDecimal.ONE) == 0) {
+                reasons.add(RecommendationReasonCode.RECIPE_STRONGLY_LIKED);
+            } else if (preference.signum() > 0) {
+                reasons.add(RecommendationReasonCode.RECIPE_EXPLICITLY_LIKED);
+            } else if (preference.compareTo(BigDecimal.ONE.negate()) == 0) {
+                reasons.add(RecommendationReasonCode.RECIPE_STRONGLY_DISLIKED);
+            } else if (preference.signum() < 0) {
+                reasons.add(RecommendationReasonCode.RECIPE_EXPLICITLY_DISLIKED);
+            }
+            return;
+        }
+        if (personalization.selectedCount() >= 2
+                && personalization.selectedCount() > personalization.dismissedCount()) {
+            reasons.add(RecommendationReasonCode.RECIPE_REPEATEDLY_SELECTED);
+        } else if (personalization.dismissedCount() >= 2
+                && personalization.dismissedCount() > personalization.selectedCount()) {
+            reasons.add(RecommendationReasonCode.RECIPE_REPEATEDLY_DISMISSED);
         }
     }
 

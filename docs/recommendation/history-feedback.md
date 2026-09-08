@@ -108,6 +108,12 @@ Meal History als potenziell haushaltsbezogen und persönliche Präferenz als pot
 nutzerspezifisch behandeln; mangels heutiger User-/Household-Identität werden diese IDs in
 R2 nicht vorweggenommen.
 
-R3 darf die Query-APIs nutzen, um neue History-/Feedback-Signale zu berechnen. Gewichte,
-Zeitfenster, Variety-Definitionen und die eigentliche Score-Integration sind ausdrücklich
-nicht Teil von R2.
+R3 nutzt diese Query-APIs nun über `RecommendationPersonalizationService`. Drei Batch-
+Abfragen laden für alle aktuellen Candidates jeweils letztes Meal, aktuellen Feedback-
+Zustand und Interaktionen. Der Service schreibt dabei nichts. `PersonalizedRecommendationService`
+übergibt den erzeugten Snapshot an den bestehenden R0-Scorer.
+
+Meal History liefert ausschließlich die 14-Tage-Freshness; gekocht bedeutet nicht LIKE.
+`SELECTED` liefert ausschließlich schwache implizite Preference; ausgewählt bedeutet nicht
+gekocht. Explizites Feedback überschreibt den Interaction-Fallback. Recipe-Löschung bleibt
+unproblematisch, weil nur aktuell geladene Candidate-UUIDs einen Snapshot und Score erhalten.
