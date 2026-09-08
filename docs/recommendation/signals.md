@@ -76,9 +76,9 @@ dass das Signal bei dieser Anfrage nicht in die gewichtete Summe eingeht.
 
 - Bedeutung: späterer Malus für ein kürzlich tatsächlich gekochtes Recipe.
 - Geplante V1-Range: `0` nicht kürzlich gekocht bis `1` unmittelbar wiederholt.
-- R0-Status: nicht verfügbar und nicht berechnet.
-- Grund: MealPlan-Daten belegen Planung, nicht Akzeptanz oder tatsächliches Kochen; das
-  Verbrauchsledger besitzt keinen Recipe-Verweis.
+- R0-Status: nicht verfügbar und nicht berechnet. R2 stellt bestätigte Meal History bereit,
+  doch Zeitfenster und Signalableitung werden erst in R3 festgelegt. MealPlan und
+  Verbrauchsledger bleiben dafür weiterhin keine Ersatzquellen.
 - Abgrenzung zu Variety: Recency betrachtet ausschließlich dasselbe Recipe und zeitlichen
   Abstand, nicht Ähnlichkeit oder Verteilung anderer Gerichte.
 - Vorgesehener Reason: `RECENTLY_COOKED`.
@@ -90,7 +90,8 @@ dass das Signal bei dieser Anfrage nicht in die gewichtete Summe eingeht.
 - R0-Status: nicht verfügbar und nicht berechnet.
 - Abgrenzung zu Recency: Variety betrachtet Muster über unterschiedliche Recipes, DishTypes,
   Tastes oder zentrale Ingredients; es bestraft nicht nochmals nur denselben Recipe-Abstand.
-- Erst R2 darf festlegen, welche Dimensionen fachlich zählen und welche Historie belastbar ist.
+- R2 stellt belastbare bestätigte History bereit. Erst R3 legt fest, welche Dimensionen und
+  Zeitfenster daraus fachlich für Variety zählen.
 - Vorgesehener Reason: `VARIETY_BONUS`.
 
 ## householdPreference

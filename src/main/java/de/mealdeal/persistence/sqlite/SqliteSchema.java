@@ -8,7 +8,7 @@ import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 15;
+    static final int CURRENT_VERSION = 16;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -145,6 +145,10 @@ final class SqliteSchema {
         }
         if (version == 14) {
             createVersion15(connection);
+            version = 15;
+        }
+        if (version == 15) {
+            createVersion16(connection);
         }
     }
 
@@ -639,6 +643,78 @@ final class SqliteSchema {
             statement.execute("ALTER TABLE tastes ADD COLUMN catalog_id TEXT "
                     + "CHECK (catalog_id IS NULL OR length(trim(catalog_id)) > 0)");
             statement.execute("PRAGMA user_version = 15");
+        }
+    }
+
+    /** Adds local meal history, current recipe feedback and recommendation interactions. */
+    static void createVersion16(Connection connection) throws SQLException {
+        String[] statements = {
+            """
+            CREATE TABLE meal_history (
+                id TEXT PRIMARY KEY NOT NULL,
+                recipe_id TEXT NOT NULL,
+                recipe_name TEXT NOT NULL CHECK (length(trim(recipe_name)) > 0),
+                occurred_at TEXT NOT NULL,
+                servings INTEGER NOT NULL CHECK (servings > 0),
+                source TEXT NOT NULL
+                    CHECK (source IN ('MANUAL', 'MEAL_PLAN', 'RECOMMENDATION')),
+                source_meal_plan_entry_id TEXT UNIQUE,
+                created_at TEXT NOT NULL,
+                CHECK ((source = 'MEAL_PLAN' AND source_meal_plan_entry_id IS NOT NULL)
+                    OR (source != 'MEAL_PLAN' AND source_meal_plan_entry_id IS NULL))
+            )
+            """,
+            """
+            CREATE INDEX meal_history_recipe_occurred_at
+            ON meal_history (recipe_id, occurred_at DESC, created_at DESC, id)
+            """,
+            """
+            CREATE INDEX meal_history_occurred_at
+            ON meal_history (occurred_at DESC, created_at DESC, id)
+            """,
+            """
+            CREATE TABLE recipe_feedback (
+                id TEXT PRIMARY KEY NOT NULL,
+                recipe_id TEXT NOT NULL UNIQUE,
+                preference TEXT CHECK (preference IN ('LIKE', 'DISLIKE')),
+                rating INTEGER CHECK (rating BETWEEN 1 AND 5),
+                updated_at TEXT NOT NULL,
+                CHECK (preference IS NOT NULL OR rating IS NOT NULL),
+                CHECK (preference IS NULL OR rating IS NULL
+                    OR (preference = 'LIKE' AND rating >= 4)
+                    OR (preference = 'DISLIKE' AND rating <= 2)),
+                FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+            )
+            """,
+            """
+            CREATE TABLE recommendation_interactions (
+                id TEXT PRIMARY KEY NOT NULL,
+                session_id TEXT NOT NULL,
+                recipe_id TEXT NOT NULL,
+                action TEXT NOT NULL CHECK (action IN ('SHOWN', 'SELECTED', 'DISMISSED')),
+                displayed_rank INTEGER NOT NULL CHECK (displayed_rank > 0),
+                displayed_score TEXT NOT NULL CHECK (length(trim(displayed_score)) > 0),
+                occurred_at TEXT NOT NULL
+            )
+            """,
+            """
+            CREATE INDEX recommendation_interactions_session
+            ON recommendation_interactions (session_id, displayed_rank, occurred_at, id)
+            """,
+            """
+            CREATE INDEX recommendation_interactions_recipe
+            ON recommendation_interactions (recipe_id, occurred_at DESC, id)
+            """,
+            """
+            CREATE INDEX recommendation_interactions_occurred_at
+            ON recommendation_interactions (occurred_at DESC, id)
+            """,
+            "PRAGMA user_version = 16"
+        };
+        try (Statement statement = connection.createStatement()) {
+            for (String sql : statements) {
+                statement.execute(sql);
+            }
         }
     }
 }

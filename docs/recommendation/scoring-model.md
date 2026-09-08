@@ -200,6 +200,7 @@ Die Reihenfolge der Candidate- oder Inventory-Eingabe verändert das Ergebnis ni
   aktuellen Modell nicht zuverlässig getrennt werden.
 - Fehlende Recipe-Zeit wird bei vorhandenem Nutzerlimit erklärt, aber nicht geraten oder
   künstlich bestraft.
-- Recent Meal Penalty und Variety bleiben bis R2 nicht verfügbar. Ihre Gewichte sind bereits
-  versioniert; die aktive Gewichtssumme wird ohne sie normalisiert.
+- R2 persistiert inzwischen bestätigte Meal History und Feedback. Recent Meal Penalty und
+  Variety bleiben im R0-Service dennoch bis zur fachlichen Ableitung in R3 nicht verfügbar;
+  die aktive Gewichtssumme wird weiterhin ohne sie normalisiert.
 - Kosten, Expiry, Nutrition Goals, ML und externe AI sind nicht Bestandteil von V1.

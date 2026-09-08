@@ -40,7 +40,7 @@ class SqliteCatalogLinkIntegrationTest {
                 .findById(ingredientId).orElseThrow();
         Taste taste = new SqliteTasteRepository(database).findById(tasteId).orElseThrow();
 
-        assertEquals(15, database.getSchemaVersion());
+        assertEquals(16, database.getSchemaVersion());
         assertEquals(ingredientId, ingredient.getId());
         assertEquals("Eigene Zutat", ingredient.getName());
         assertTrue(ingredient.getCatalogId().isEmpty());
