@@ -1,6 +1,7 @@
 package de.mealdeal.persistence.sqlite;
 
 import de.mealdeal.domain.Ingredient;
+import de.mealdeal.domain.IngredientCategories;
 import de.mealdeal.domain.DishType;
 import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredient;
@@ -46,9 +47,10 @@ class SqliteRecipeRepositoryIntegrationTest {
         tasteRepository = new SqliteTasteRepository(database);
         recipeRepository = new SqliteRecipeRepository(database);
 
-        pasta = new Ingredient("Pasta");
+        pasta = new Ingredient("Pasta", IngredientCategories.GRAINS_RICE_AND_PASTA,
+                "ingredient.pasta");
         salt = new Ingredient("Salt");
-        savory = new Taste("Savory");
+        savory = new Taste("Savory", "taste.savory");
         mild = new Taste("Mild");
         ingredientRepository.save(pasta);
         ingredientRepository.save(salt);
@@ -73,8 +75,13 @@ class SqliteRecipeRepositoryIntegrationTest {
         assertEquals(exactQuantity, loaded.getIngredients().getFirst().getQuantity());
         assertEquals(Unit.GRAM, loaded.getIngredients().getFirst().getUnit());
         assertEquals(pasta, loaded.getIngredients().getFirst().getIngredient());
+        assertEquals("ingredient.pasta", loaded.getIngredients().getFirst().getIngredient()
+                .getCatalogId().orElseThrow());
         assertEquals(List.of(1, 2), loaded.getSteps().stream().map(RecipeStep::getPosition).toList());
         assertEquals(2, loaded.getTastes().size());
+        assertEquals("taste.savory", loaded.getTastes().stream()
+                .filter(taste -> taste.equals(savory)).findFirst().orElseThrow()
+                .getCatalogId().orElseThrow());
     }
 
     @Test

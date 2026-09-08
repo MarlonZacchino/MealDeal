@@ -7,6 +7,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class IngredientTest {
 
@@ -42,5 +43,18 @@ class IngredientTest {
         assertEquals(IngredientCategories.VEGETABLES, categorized.getCategory());
         assertEquals(IngredientCategories.OTHER, new Ingredient("Salt").getCategory());
         assertThrows(NullPointerException.class, () -> new Ingredient("Tomato", null));
+    }
+
+    @Test
+    void optionalCatalogLinkDoesNotReplaceLocalIdentity() {
+        UUID id = UUID.randomUUID();
+        Ingredient linked = new Ingredient(id, "Eigene Tomate",
+                IngredientCategories.VEGETABLES, "ingredient.tomato");
+
+        assertEquals("ingredient.tomato", linked.getCatalogId().orElseThrow());
+        assertEquals(id, linked.getId());
+        assertTrue(new Ingredient("Freie Zutat").getCatalogId().isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> new Ingredient(
+                "Tomate", IngredientCategories.VEGETABLES, "  "));
     }
 }

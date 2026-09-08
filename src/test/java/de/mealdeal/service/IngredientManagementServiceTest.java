@@ -50,7 +50,8 @@ class IngredientManagementServiceTest {
     @Test
     void renamesAndRecategorizesIngredientWithoutChangingItsIdentity() {
         MemoryIngredientRepository ingredients = new MemoryIngredientRepository();
-        Ingredient original = new Ingredient("Tomate", IngredientCategories.VEGETABLES);
+        Ingredient original = new Ingredient("Tomate", IngredientCategories.VEGETABLES,
+                "ingredient.tomato");
         ingredients.save(original);
         IngredientManagementService service = service(ingredients);
 
@@ -60,6 +61,7 @@ class IngredientManagementServiceTest {
         assertEquals(original.getId(), updated.getId());
         assertEquals("Cherrytomate", updated.getName());
         assertEquals(IngredientCategories.FRUIT, updated.getCategory());
+        assertEquals("ingredient.tomato", updated.getCatalogId().orElseThrow());
         assertEquals(updated.getId(), ingredients.findById(original.getId()).orElseThrow().getId());
     }
 

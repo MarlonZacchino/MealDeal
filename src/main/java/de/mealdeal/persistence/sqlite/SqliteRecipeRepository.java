@@ -396,7 +396,7 @@ public final class SqliteRecipeRepository implements RecipeRepository {
     private static List<RecipeIngredientOption> loadIngredientOptions(
             Connection connection, UUID groupId) throws SQLException {
         String sql = """
-                SELECT rio.id, i.id AS ingredient_id, i.name,
+                SELECT rio.id, i.id AS ingredient_id, i.name, i.catalog_id,
                        category.id AS category_id, category.name AS category_name,
                        category.position AS category_position,
                        rio.quantity, rio.unit, rio.position
@@ -417,7 +417,8 @@ public final class SqliteRecipeRepository implements RecipeRepository {
                             resultSet.getInt("category_position"));
                     Ingredient ingredient = new Ingredient(
                             UUID.fromString(resultSet.getString("ingredient_id")),
-                            resultSet.getString("name"), category);
+                            resultSet.getString("name"), category,
+                            resultSet.getString("catalog_id"));
                     options.add(new RecipeIngredientOption(
                             UUID.fromString(resultSet.getString("id")), ingredient,
                             new BigDecimal(resultSet.getString("quantity")),
@@ -451,7 +452,7 @@ public final class SqliteRecipeRepository implements RecipeRepository {
     private static List<Taste> loadTastes(Connection connection, UUID recipeId)
             throws SQLException {
         String sql = """
-                SELECT t.id, t.name FROM recipe_tastes rt
+                SELECT t.id, t.name, t.catalog_id FROM recipe_tastes rt
                 JOIN tastes t ON t.id = rt.taste_id
                 WHERE rt.recipe_id = ? ORDER BY t.name, t.id
                 """;
@@ -461,7 +462,7 @@ public final class SqliteRecipeRepository implements RecipeRepository {
             try (var resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     tastes.add(new Taste(UUID.fromString(resultSet.getString("id")),
-                            resultSet.getString("name")));
+                            resultSet.getString("name"), resultSet.getString("catalog_id")));
                 }
             }
         }

@@ -25,16 +25,18 @@ public final class SqliteIngredientRepository implements IngredientRepository {
     public void save(Ingredient ingredient) {
         Objects.requireNonNull(ingredient, "Ingredient must not be null.");
         String sql = """
-                INSERT INTO ingredients (id, name, category_id) VALUES (?, ?, ?)
+                INSERT INTO ingredients (id, name, category_id, catalog_id) VALUES (?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     name = excluded.name,
-                    category_id = excluded.category_id
+                    category_id = excluded.category_id,
+                    catalog_id = excluded.catalog_id
                 """;
         try (var connection = database.openConnection();
              var statement = connection.prepareStatement(sql)) {
             statement.setString(1, ingredient.getId().toString());
             statement.setString(2, ingredient.getName());
             statement.setString(3, ingredient.getCategory().getId().toString());
+            statement.setString(4, ingredient.getCatalogId().orElse(null));
             statement.executeUpdate();
         } catch (SQLException exception) {
             throw new PersistenceException("Could not save ingredient.", exception);
@@ -45,7 +47,7 @@ public final class SqliteIngredientRepository implements IngredientRepository {
     public Optional<Ingredient> findById(UUID id) {
         Objects.requireNonNull(id, "Ingredient ID must not be null.");
         String sql = """
-                SELECT ingredient.id, ingredient.name,
+                SELECT ingredient.id, ingredient.name, ingredient.catalog_id,
                        category.id AS category_id, category.name AS category_name,
                        category.position AS category_position
                 FROM ingredients ingredient
@@ -69,7 +71,7 @@ public final class SqliteIngredientRepository implements IngredientRepository {
     @Override
     public List<Ingredient> findAll() {
         String sql = """
-                SELECT ingredient.id, ingredient.name,
+                SELECT ingredient.id, ingredient.name, ingredient.catalog_id,
                        category.id AS category_id, category.name AS category_name,
                        category.position AS category_position
                 FROM ingredients ingredient
@@ -107,6 +109,6 @@ public final class SqliteIngredientRepository implements IngredientRepository {
                 resultSet.getString("category_name"),
                 resultSet.getInt("category_position"));
         return new Ingredient(UUID.fromString(resultSet.getString("id")),
-                resultSet.getString("name"), category);
+                resultSet.getString("name"), category, resultSet.getString("catalog_id"));
     }
 }

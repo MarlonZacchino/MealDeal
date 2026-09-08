@@ -8,7 +8,7 @@ import java.sql.Statement;
 
 final class SqliteSchema {
 
-    static final int CURRENT_VERSION = 14;
+    static final int CURRENT_VERSION = 15;
 
     private static final String[] VERSION_1_STATEMENTS = {
         """
@@ -141,6 +141,10 @@ final class SqliteSchema {
         }
         if (version == 13) {
             createVersion14(connection);
+            version = 14;
+        }
+        if (version == 14) {
+            createVersion15(connection);
         }
     }
 
@@ -624,6 +628,17 @@ final class SqliteSchema {
                         + column + "_seconds * 60 WHERE " + column + "_seconds IS NOT NULL");
             }
             statement.execute("PRAGMA user_version = 14");
+        }
+    }
+
+    /** Adds nullable links to immutable application catalogs without backfilling user data. */
+    static void createVersion15(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("ALTER TABLE ingredients ADD COLUMN catalog_id TEXT "
+                    + "CHECK (catalog_id IS NULL OR length(trim(catalog_id)) > 0)");
+            statement.execute("ALTER TABLE tastes ADD COLUMN catalog_id TEXT "
+                    + "CHECK (catalog_id IS NULL OR length(trim(catalog_id)) > 0)");
+            statement.execute("PRAGMA user_version = 15");
         }
     }
 }

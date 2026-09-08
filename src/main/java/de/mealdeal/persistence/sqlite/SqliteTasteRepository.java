@@ -24,13 +24,16 @@ public final class SqliteTasteRepository implements TasteRepository {
     public void save(Taste taste) {
         Objects.requireNonNull(taste, "Taste must not be null.");
         String sql = """
-                INSERT INTO tastes (id, name) VALUES (?, ?)
-                ON CONFLICT(id) DO UPDATE SET name = excluded.name
+                INSERT INTO tastes (id, name, catalog_id) VALUES (?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    name = excluded.name,
+                    catalog_id = excluded.catalog_id
                 """;
         try (var connection = database.openConnection();
              var statement = connection.prepareStatement(sql)) {
             statement.setString(1, taste.getId().toString());
             statement.setString(2, taste.getName());
+            statement.setString(3, taste.getCatalogId().orElse(null));
             statement.executeUpdate();
         } catch (SQLException exception) {
             throw new PersistenceException("Could not save taste.", exception);
@@ -40,7 +43,7 @@ public final class SqliteTasteRepository implements TasteRepository {
     @Override
     public Optional<Taste> findById(UUID id) {
         Objects.requireNonNull(id, "Taste ID must not be null.");
-        String sql = "SELECT id, name FROM tastes WHERE id = ?";
+        String sql = "SELECT id, name, catalog_id FROM tastes WHERE id = ?";
         try (var connection = database.openConnection();
              var statement = connection.prepareStatement(sql)) {
             statement.setString(1, id.toString());
@@ -49,7 +52,7 @@ public final class SqliteTasteRepository implements TasteRepository {
                     return Optional.empty();
                 }
                 return Optional.of(new Taste(UUID.fromString(resultSet.getString("id")),
-                        resultSet.getString("name")));
+                        resultSet.getString("name"), resultSet.getString("catalog_id")));
             }
         } catch (SQLException exception) {
             throw new PersistenceException("Could not load taste.", exception);
@@ -58,14 +61,14 @@ public final class SqliteTasteRepository implements TasteRepository {
 
     @Override
     public List<Taste> findAll() {
-        String sql = "SELECT id, name FROM tastes ORDER BY name, id";
+        String sql = "SELECT id, name, catalog_id FROM tastes ORDER BY name, id";
         List<Taste> tastes = new ArrayList<>();
         try (var connection = database.openConnection();
              var statement = connection.prepareStatement(sql);
              var resultSet = statement.executeQuery()) {
             while (resultSet.next()) {
                 tastes.add(new Taste(UUID.fromString(resultSet.getString("id")),
-                        resultSet.getString("name")));
+                        resultSet.getString("name"), resultSet.getString("catalog_id")));
             }
             return List.copyOf(tastes);
         } catch (SQLException exception) {

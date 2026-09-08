@@ -21,9 +21,29 @@ Recipe
 
 `Ingredient` und `Taste` besitzen eine persistenzunabhängige UUID als stabile technische Identität. Ein Recipe besitzt außerdem genau einen `DishType`: `MAIN`, `SIDE` oder `DESSERT`. Seine geordnete Liste von `RecipeIngredientGroup`s beschreibt Zutatenbedarfe; jede Gruppe hat eine stabile UUID, mindestens eine geordnete `RecipeIngredientOption` und genau eine ihrer Optionen als Standard. Optionen besitzen ebenfalls stabile UUIDs sowie ihre eigene positive `BigDecimal`-Menge, Unit und Position. `Recipe.getIngredients()` bildet für noch nicht migrierte Anwendungsfälle ausschließlich die Standardoption jeder Gruppe als alte `RecipeIngredient`-Ansicht ab; eine zweite Zutatenliste wird nicht gespeichert. Rezeptschritte sind optional und werden, wenn vorhanden, anhand ihrer eindeutigen Position sortiert. Rezeptmengen werden mit `BigDecimal` gespeichert. Vorbereitungs-, Koch-, Back- und Ruhezeit sind optionale positive `Duration`-Werte mit ganzen Sekunden als kanonischer Genauigkeit. Die Gesamtzeit wird zentral als Summe aller gesetzten Einzelzeiten abgeleitet; ist keine gesetzt, bleibt auch die Gesamtzeit leer. Optionales `NutritionInfo` bündelt Kalorien sowie Protein, Kohlenhydrate und Fett pro Portion; es wird nicht aus Zutaten berechnet und nicht mit Personenanzahlen skaliert. Einheiten weisen ihre Dimension aus, damit spätere Umrechnung nur zwischen kompatiblen Einheiten erfolgt.
 
+`Ingredient` und `Taste` können zusätzlich eine nullable, sprachunabhängige Catalog ID als
+rein semantische Referenz besitzen. UUID, editierbarer Name und bei Ingredients die lokale
+Kategorie bleiben davon unabhängig.
+
+## Standard Catalog
+
+Das Package `catalog` enthält den immutable, offline verfügbaren Standard Ingredient Catalog
+und Standard Taste Catalog. `CatalogIngredient`/`CatalogTaste` sind bewusst andere Typen als
+lokale `Ingredient`/`Taste`: stabile `ingredient.*`- beziehungsweise `taste.*`-IDs beschreiben
+sprachunabhängige Semantik, ersetzen aber niemals lokale UUIDs oder Nutzerhoheit. Catalog-
+Ingredient-Kategorien sind ebenfalls von den editierbaren SQLite-Kategorien getrennt.
+
+`CatalogTextNormalizer` normalisiert Unicode, Groß-/Kleinschreibung, Whitespace und die
+deutschen Schreibvarianten `ä/ae`, `ö/oe`, `ü/ue`, `ß/ss`. `CatalogMatcher` löst nur ID,
+exakten Anzeigenamen, exakten Alias, normalisierten Anzeigenamen oder normalisierten Alias in
+dieser Reihenfolge auf; Fuzzy-, Teilstring- oder automatische Pluralgleichheit existiert
+nicht. `LocalCatalogResolver` erkennt auf derselben konservativen Grundlage einen bereits
+vorhandenen lokalen Kandidaten und meldet Mehrdeutigkeit, statt Daten zusammenzuführen.
+Die vollständigen Verträge stehen unter `docs/catalog/`.
+
 ## Service
 
-Enthält Geschäftslogik unabhängig von Darstellung und Persistenz. `RecipeScaler` erzeugt für eine gewünschte positive Personenanzahl neue `RecipeIngredient`-Objekte, ohne das gespeicherte Recipe zu verändern. Die Berechnung verwendet `BigDecimal` mit `MathContext.DECIMAL128`.
+Enthält Geschäftslogik unabhängig von Darstellung und Persistenz. `RecipeScaler` erzeugt für eine gewünschte positive Personenanzahl neue `RecipeIngredient`-Objekte, ohne das gespeicherte Recipe zu verändern. Exakte `BigDecimal`-Ergebnisse bleiben erhalten; nur nicht terminierende Divisionen verwenden `MathContext.DECIMAL128`.
 
 ```text
 Recipe
@@ -63,7 +83,7 @@ SQLite Repository
       SQLite
 ```
 
-Schema-Versionen werden beim Öffnen über `PRAGMA user_version` schrittweise migriert. Version 2 ergänzt `meal_plan_entries`, Version 3 ergänzt die zwei nullable Zeitspalten `preparation_time_minutes` und `cooking_time_minutes` in `recipes`, Version 4 ergänzt dort die vier nullable Nährwertspalten pro Portion. Version 5 ergänzt `recipes.dish_type` und ersetzt den früheren einzelnen Meal-Plan-Eintrag pro Datum durch Haupt- und Beilageneinträge. Version 6 ergänzt die nullable Spalte `baking_time_minutes`; eine Gesamtzeitspalte existiert bewusst nicht. Version 7 ersetzt die flache Tabelle `recipe_ingredients` vollständig durch `recipe_ingredient_groups` und `recipe_ingredient_options`. Version 8 ergänzt die optionale Zuordnung konkreter Alternativzutaten pro Planungseintrag, Version 9 Ingredient-Kategorien und Version 10 das lokale Inventar. Version 11 erweitert die Recipe- und MealPlan-CHECK-Constraints um `DESSERT` und ergänzt einen eigenen eindeutigen Positionsindex für Nachtische pro Datum. Version 12 ergänzt das unveränderliche Verbrauchsledger aus `inventory_consumptions` und `inventory_consumption_items`. Version 13 ergänzt die nullable positive `resting_time_minutes`-Spalte. Version 14 benennt alle vier Minutenspalten in Sekundenspalten um und multipliziert vorhandene Werte mit 60; `NULL` bleibt erhalten und eine Gesamtzeitspalte existiert weiterhin bewusst nicht. Vorhandene Daten bleiben erhalten; bestehende Recipes und Planungseinträge aus älteren Schemas migrieren jeweils zu `MAIN`. UUIDs werden als Text, `BigDecimal`-Mengen und Nährwert-Grammwerte verlustfrei als Dezimaltext und Units über ihre Enum-Namen gespeichert. Jede neue Verbindung aktiviert SQLite-Foreign-Keys ausdrücklich.
+Schema-Versionen werden beim Öffnen über `PRAGMA user_version` schrittweise migriert. Version 2 ergänzt `meal_plan_entries`, Version 3 ergänzt die zwei nullable Zeitspalten `preparation_time_minutes` und `cooking_time_minutes` in `recipes`, Version 4 ergänzt dort die vier nullable Nährwertspalten pro Portion. Version 5 ergänzt `recipes.dish_type` und ersetzt den früheren einzelnen Meal-Plan-Eintrag pro Datum durch Haupt- und Beilageneinträge. Version 6 ergänzt die nullable Spalte `baking_time_minutes`; eine Gesamtzeitspalte existiert bewusst nicht. Version 7 ersetzt die flache Tabelle `recipe_ingredients` vollständig durch `recipe_ingredient_groups` und `recipe_ingredient_options`. Version 8 ergänzt die optionale Zuordnung konkreter Alternativzutaten pro Planungseintrag, Version 9 Ingredient-Kategorien und Version 10 das lokale Inventar. Version 11 erweitert die Recipe- und MealPlan-CHECK-Constraints um `DESSERT` und ergänzt einen eigenen eindeutigen Positionsindex für Nachtische pro Datum. Version 12 ergänzt das unveränderliche Verbrauchsledger aus `inventory_consumptions` und `inventory_consumption_items`. Version 13 ergänzt die nullable positive `resting_time_minutes`-Spalte. Version 14 benennt alle vier Minutenspalten in Sekundenspalten um und multipliziert vorhandene Werte mit 60; `NULL` bleibt erhalten und eine Gesamtzeitspalte existiert weiterhin bewusst nicht. Version 15 ergänzt nullable `catalog_id`-Links für Ingredients und Tastes ohne Backfill und ohne Foreign Key auf die statischen Anwendungskataloge. Vorhandene Daten bleiben erhalten; bestehende Recipes und Planungseinträge aus älteren Schemas migrieren jeweils zu `MAIN`. UUIDs werden als Text, `BigDecimal`-Mengen und Nährwert-Grammwerte verlustfrei als Dezimaltext und Units über ihre Enum-Namen gespeichert. Jede neue Verbindung aktiviert SQLite-Foreign-Keys ausdrücklich.
 
 In V7 besitzt `recipe_ingredient_groups` eine UUID, den Recipe-Fremdschlüssel, eine pro Recipe eindeutige Position und die UUID seiner verpflichtenden Standardoption. `recipe_ingredient_options` besitzt eine UUID, den Group- und Ingredient-Fremdschlüssel, Dezimalmenge, Unit sowie eine pro Gruppe eindeutige Position. Recipe-, Group- und Ingredient-Beziehungen verwenden Cascades beziehungsweise `ON DELETE RESTRICT` so, dass beim Entfernen eines Recipe seine Gruppen und Optionen verschwinden, zentrale Ingredients aber erhalten bleiben. Ein zusammengesetzter, bis zum Commit verschobener Fremdschlüssel `(group.id, group.default_option_id) -> (option.group_id, option.id)` erzwingt, dass die Standardoption tatsächlich derselben Gruppe angehört. Die Domain erzwingt zusätzlich mindestens eine Option und genau eine vorhandene Standardoption.
 

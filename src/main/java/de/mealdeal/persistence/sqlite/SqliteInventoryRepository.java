@@ -22,6 +22,7 @@ public final class SqliteInventoryRepository implements InventoryRepository {
     private static final String SELECT_COLUMNS = """
             SELECT inventory.id, inventory.quantity, inventory.unit,
                    ingredient.id AS ingredient_id, ingredient.name AS ingredient_name,
+                   ingredient.catalog_id AS ingredient_catalog_id,
                    category.id AS category_id, category.name AS category_name,
                    category.position AS category_position
             FROM inventory_items inventory
@@ -134,7 +135,8 @@ public final class SqliteInventoryRepository implements InventoryRepository {
                 resultSet.getInt("category_position"));
         Ingredient ingredient = new Ingredient(
                 UUID.fromString(resultSet.getString("ingredient_id")),
-                resultSet.getString("ingredient_name"), category);
+                resultSet.getString("ingredient_name"), category,
+                resultSet.getString("ingredient_catalog_id"));
         return new InventoryItem(UUID.fromString(resultSet.getString("id")), ingredient,
                 new BigDecimal(resultSet.getString("quantity")),
                 Unit.valueOf(resultSet.getString("unit")));

@@ -38,7 +38,9 @@ class SqliteInventoryRepositoryIntegrationTest {
 
     @Test
     void persistsZeroAndPositiveQuantitiesWithStableUuid() {
-        Ingredient flour = saveIngredient("Mehl", IngredientCategories.BAKING);
+        Ingredient flour = new Ingredient("Mehl", IngredientCategories.BAKING,
+                "ingredient.flour");
+        ingredientRepository.save(flour);
         InventoryItem zero = new InventoryItem(flour, BigDecimal.ZERO, Unit.GRAM);
         InventoryItem positive = new InventoryItem(
                 flour, new BigDecimal("1.25050"), Unit.KILOGRAM);
@@ -55,6 +57,8 @@ class SqliteInventoryRepositoryIntegrationTest {
         assertEquals(Unit.KILOGRAM, loadedPositive.getUnit());
         assertEquals(IngredientCategories.BAKING,
                 loadedPositive.getIngredient().getCategory());
+        assertEquals("ingredient.flour", loadedPositive.getIngredient()
+                .getCatalogId().orElseThrow());
     }
 
     @Test

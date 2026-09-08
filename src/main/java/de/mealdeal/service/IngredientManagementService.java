@@ -62,7 +62,7 @@ public final class IngredientManagementService {
                 .orElseThrow(() -> new PersistenceException("Die Zutat existiert nicht mehr."));
         rejectDuplicateName(validatedName, ingredientId);
         Ingredient updated = new Ingredient(current.getId(), validatedName,
-                findCategory(categoryId));
+                findCategory(categoryId), current.getCatalogId().orElse(null));
         ingredientRepository.save(updated);
         return updated;
     }
