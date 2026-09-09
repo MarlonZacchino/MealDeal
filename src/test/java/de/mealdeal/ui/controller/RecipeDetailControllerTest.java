@@ -11,18 +11,70 @@ import de.mealdeal.domain.Taste;
 import de.mealdeal.domain.Unit;
 import de.mealdeal.persistence.repository.RecipeRepository;
 import de.mealdeal.service.RecipeScaler;
+import de.mealdeal.ui.navigation.RecipeDetailContext;
+import de.mealdeal.service.recommendation.RecipeRecommendationService;
+import de.mealdeal.service.recommendation.RecommendationContext;
+import de.mealdeal.service.recommendation.RecommendationRequest;
+import de.mealdeal.service.recommendation.RecommendationConstraints;
+import de.mealdeal.service.recommendation.RecommendationSession;
+import de.mealdeal.service.recommendation.TastePreferenceProfile;
+import de.mealdeal.domain.InventoryItem;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 import java.util.UUID;
 import java.math.BigDecimal;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RecipeDetailControllerTest {
+
+    @Test
+    void recommendationOpensWithFourServingsAndSuggestedAlternativeWithoutChangingRecipe() {
+        var first = new RecipeIngredientOption(new Ingredient("Kalb"), new BigDecimal("400"), Unit.GRAM, 0);
+        var second = new RecipeIngredientOption(new Ingredient("Hähnchen"), new BigDecimal("300"), Unit.GRAM, 1);
+        var group = new RecipeIngredientGroup(List.of(first, second), first);
+        Recipe recipe = Recipe.withIngredientGroups("Schnitzel", 2, List.of(group),
+                List.of(), List.of(new Taste("Herzhaft")), DishType.MAIN);
+        var context = new RecommendationContext(new RecommendationRequest(4, Optional.empty(), Optional.empty()),
+                List.of(new InventoryItem(second.getIngredient(), new BigDecimal("600"), Unit.GRAM)),
+                new TastePreferenceProfile(Map.of()), List.of(), RecommendationConstraints.none());
+        var results = new RecipeRecommendationService().recommend(List.of(recipe), context).recommendations();
+        var session = new RecommendationSession(UUID.randomUUID(), results, false, 4, Map.of());
+        RecipeDetailContext detail = RecipeDetailContext.recommended(session, recipe.getId());
+        var model = new RecipeDetailIngredientModel(detail, new RecipeScaler());
+
+        assertEquals(4, detail.servings());
+        assertEquals(second.getId(), detail.selectedOptions().get(group.getId()));
+        assertEquals("Hähnchen", model.rows().getFirst().ingredientName());
+        assertEquals("600 g", model.rows().getFirst().quantity());
+        assertEquals(first.getId(), group.getStandardOptionId());
+        assertEquals(2, recipe.getStandardServingCount());
+        assertEquals("400 g", new RecipeDetailIngredientModel(recipe, new RecipeScaler())
+                .rows().getFirst().quantity());
+    }
+
+    @Test
+    void detailContextRejectsUnknownOptionsAndCopiesTemporarySelections() {
+        var first = new RecipeIngredientOption(new Ingredient("Ei"), BigDecimal.ONE, Unit.PIECE, 0);
+        var group = new RecipeIngredientGroup(List.of(first), first);
+        Recipe recipe = Recipe.withIngredientGroups("Ei", 2, List.of(group),
+                List.of(), List.of(new Taste("Herzhaft")), DishType.MAIN);
+        Map<UUID, UUID> options = new java.util.HashMap<>(Map.of(group.getId(), first.getId()));
+        var context = new RecipeDetailContext(recipe, 3, options);
+        options.clear();
+        assertEquals(first.getId(), context.selectedOptions().get(group.getId()));
+        assertThrows(UnsupportedOperationException.class, () -> context.selectedOptions().clear());
+        assertThrows(IllegalArgumentException.class,
+                () -> new RecipeDetailContext(recipe, 3, Map.of(group.getId(), UUID.randomUUID())));
+        assertThrows(IllegalArgumentException.class,
+                () -> new RecipeDetailContext(recipe, 3, Map.of(UUID.randomUUID(), first.getId())));
+    }
 
     @Test
     void cancelledConfirmationDoesNotCallRepository() {

@@ -45,6 +45,8 @@ public final class MainController {
     @FXML
     private Button recipesButton;
     @FXML
+    private Button recommendationButton;
+    @FXML
     private Button searchButton;
     @FXML
     private Button weekPlanButton;
@@ -54,6 +56,8 @@ public final class MainController {
     private Button inventoryButton;
     @FXML
     private Button shoppingButton;
+    @FXML
+    private Button helpButton;
     @FXML
     private ToggleButton themeToggle;
 
@@ -70,11 +74,13 @@ public final class MainController {
     private void initialize() {
         navigationButtons.put(ViewType.HOME, homeButton);
         navigationButtons.put(ViewType.RECIPES, recipesButton);
+        navigationButtons.put(ViewType.RECOMMENDATION, recommendationButton);
         navigationButtons.put(ViewType.SEARCH, searchButton);
         navigationButtons.put(ViewType.WEEK_PLAN, weekPlanButton);
         navigationButtons.put(ViewType.INGREDIENTS, ingredientsButton);
         navigationButtons.put(ViewType.INVENTORY, inventoryButton);
         navigationButtons.put(ViewType.SHOPPING, shoppingButton);
+        navigationButtons.put(ViewType.HELP, helpButton);
         applyTheme(themeService.getMode());
         configureResponsiveViewportStyles();
 
@@ -99,6 +105,11 @@ public final class MainController {
     }
 
     @FXML
+    private void showRecommendation() {
+        navigator.navigateTo(ViewType.RECOMMENDATION);
+    }
+
+    @FXML
     private void showWeekPlan() {
         navigator.navigateTo(ViewType.WEEK_PLAN);
     }
@@ -116,6 +127,11 @@ public final class MainController {
     @FXML
     private void showInventory() {
         navigator.navigateTo(ViewType.INVENTORY);
+    }
+
+    @FXML
+    private void showHelp() {
+        navigator.navigateTo(ViewType.HELP);
     }
 
     @FXML

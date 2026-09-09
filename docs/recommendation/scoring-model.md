@@ -1,6 +1,6 @@
 # Recommendation Contract und Scoring Model
 
-Status: R3 Recommendation Engine V1 auf der R0-Baseline, Profil `V1`, experimentell. Der interne Score ist nicht kalibriert
+Status: R5.3 Recommendation Engine auf der R0–R4-Baseline, Profil `V1.1`, experimentell. Der interne Score ist nicht kalibriert
 und darf deshalb nicht als Prozentwert dargestellt werden.
 
 ## Bestehender fachlicher Stand
@@ -36,7 +36,8 @@ temporärer Request-Contract angenommen oder ausdrücklich zurückgestellt.
 - optionale individuelle Taste-Affinitäten im Bereich `-1..1`,
 - optionale Haushaltsmitglieder mit eigenen Taste-Affinitäten und Hard Constraints,
 - globale Hard Constraints für Recipe- und Ingredient-UUIDs,
-- optional bereits geladene, immutable `RecipePersonalizationSignals` je Recipe-UUID.
+- optional bereits geladene, immutable `RecipePersonalizationSignals` je Recipe-UUID,
+- optionale lokale Wunschzutaten als eigenes, weiches `DesiredIngredientProfile`.
 
 Repositories, JavaFX-Zustand und persistierte Profilobjekte gehören nicht in den Context.
 `RecommendationPersonalizationService` liest R2-Daten gebündelt, verwendet pro Lauf genau
@@ -55,13 +56,15 @@ Ein Recipe wird ausgeschlossen, wenn mindestens eine Regel greift:
 2. der angefragte `DishType` stimmt nicht überein,
 3. es besitzt keine IngredientGroup und ist damit für diese Baseline strukturell unvollständig,
 4. eine IngredientGroup besitzt nach Zusammenführung aller Hard Constraints keine einzige
-   zulässige Option.
+   zulässige Option,
+5. Meal History weist für seine lokale Recipe-UUID mindestens eine bestätigte Mahlzeit am
+   aktuellen lokalen Kalendertag aus.
 
 Bei Alternativen bleibt ein Recipe zulässig, wenn je Gruppe mindestens eine sichere Option
 existiert. Ausgeschlossene Optionen werden niemals für Pantry-Score oder Vorschlag verwendet.
 Das modelliert bekannte Ingredient-Ausschlüsse, aber keine unbekannte Kreuzkontamination.
 
-## Scoring Profile V1
+## Scoring Profile V1.1
 
 Alle verfügbaren Signale liegen in `0..1`. Für positive Signale ist höher besser. Penalties
 werden bei der Aggregation in `1 - penalty` umgewandelt. Fehlende Signale werden nicht mit
@@ -90,16 +93,28 @@ R0-Review-Korrektur sind:
 | varietyScore | 0,05 | lineare Recipe-Freshness aus bestätigter Meal History |
 | recipePreference | 0,05 | explizites Recipe Feedback oder schwacher Interaction-Fallback |
 | householdPreference | 0,10 | normales Haushaltsaggregat; starke Ablehnung greift zusätzlich als Cap |
+| desiredIngredientFit | 0,05 | weicher Anteil erfüllter Wunschzutaten; kein Filter und kein Inventory |
 
 R3 verwendet die in R0 nach Entfernung des Alternative-Bonus ausdrücklich freigebliebenen
 `0,05` für `recipePreference`; kein zuvor vorhandenes Top-Level-Gewicht wurde verändert.
-Die Rohgewichte summieren sich nun auf `1,00`. Die zentrale Aggregation teilt weiterhin
+R5.3 ergänzt `desiredIngredientFit` über den bestehenden optionalen Signal-Extension-Point
+mit `0,05`, ohne ein vorhandenes Gewicht umzuverteilen. Die Rohgewichte summieren sich nun
+auf `1,05`. Die zentrale Aggregation teilt weiterhin
 stets durch die Summe der tatsächlich verfügbaren positiven Gewichte. Pantry
 Coverage und Missing Penalty tragen gemeinsam das Rohgewicht `0,50`. Die beiden Signale
 sind bewusst korreliert, aber nicht identisch: Coverage misst die Mengenabdeckung je Gruppe,
 Missing Penalty den Anteil nicht vollständig gedeckter Gruppen.
-Alle Werte und Gewichte sind Experimente und müssen in R4 gegen die vorab definierten
-Metriken geprüft werden.
+Das Wunschzutaten-Signal ist bei leerer Auswahl nicht vorhanden. Dadurch bleibt der aktive
+Nenner in allen bisherigen Requests unverändert und die R0–R4-Ergebnisse bleiben exakt
+gleich. Ist es aktiv, beträgt seine maximale gewichtete Wirkung `0,05`: gegenüber dem
+minimalen Pantry-Nenner `0,50` sind dies höchstens `0,05 / 0,55 = 9,09` Score-Prozentpunkte;
+im üblichen vollständigen Context mit vorherigem Nenner `0,95` sind es `0,05 / 1,00 = 5`
+Prozentpunkte. Es kann damit enge Entscheidungen beeinflussen, aber deutliche Pantry- oder
+Safety-Unterschiede nicht aufheben. Die geprüften Kandidaten `0,03`, `0,05` und `0,07` sowie
+die Entscheidung für `0,05` sind in `evaluation.md` dokumentiert.
+
+Alle Werte und Gewichte bleiben experimentell und benötigen für spätere Änderungen erneut
+die vereinbarte Evaluation.
 
 ## R3 Personalization Pipeline
 
@@ -122,7 +137,9 @@ R3 verwendet für Recency und V1-Variety bewusst nur ein Score-Signal: `varietyS
 die lineare Freshness desselben Recipes im 14-Tage-Fenster. Der spiegelbildliche
 `recentMealPenalty` bleibt ungesetzt, weil beide gleichzeitig dieselbe Information doppelt
 gewichten würden. Quellen der bestätigten History sind gleichwertig; maßgeblich ist allein
-das neueste `occurredAt`, nicht `createdAt`.
+das neueste `occurredAt`, nicht `createdAt`. Seit der R5.3-Akzeptanzkorrektur werden Recipes
+mit `COOKED_TODAY` vor dem Scoring ausgeschlossen. Ab dem folgenden lokalen Kalendertag
+greift wieder ausschließlich der unveränderte lineare 14-Tage-Mechanismus.
 
 Explizites Recipe Feedback wird auf `-1..1` abgebildet und für den Scorer nach `0..1`
 normalisiert. Bei vorhandenem Rating bestimmt das Rating die Stärke; LIKE/DISLIKE wird nicht
@@ -225,8 +242,8 @@ Die Reihenfolge der Candidate- oder Inventory-Eingabe verändert das Ergebnis ni
 
 ## Bekannte Grenzen und Deferred Decisions
 
-- R3 besitzt noch keine sichtbare UI-Integration; der Core und seine Interaktions-API sind
-  vollständig JavaFX-unabhängig.
+- R5 bindet den weiterhin JavaFX-unabhängigen Core über einen eigenen UI-Workflow an.
+  Sie zeigt keine rohen Scores und verändert weder Profil noch Ranking.
 - Allergie-/Ausschlussdaten werden nur als bereits bekannte Ingredient- oder Recipe-UUIDs
   angenommen. Zutatenherkunft und Kreuzkontamination sind nicht modellierbar.
 - Als Zeitfit dient konservativ die abgeleitete Gesamtzeit. Aktiv/passiv kann mit dem

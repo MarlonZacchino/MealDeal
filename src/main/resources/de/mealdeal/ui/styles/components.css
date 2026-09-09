@@ -1,3 +1,11 @@
+.recipe-feedback-active {
+    -fx-background-color: -md-accent;
+    -fx-border-color: -md-accent;
+    -fx-border-radius: 10px;
+    -fx-text-fill: -md-on-accent;
+    -fx-underline: true;
+}
+
 .content-card {
     -fx-background-color: -md-surface;
     -fx-background-radius: 16px;

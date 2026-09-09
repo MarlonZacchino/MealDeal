@@ -59,6 +59,7 @@ public final class RecommendationScoringProfile {
         weights.put(RecommendationSignal.PANTRY_COVERAGE, new BigDecimal("0.35"));
         weights.put(RecommendationSignal.MISSING_INGREDIENT_PENALTY, new BigDecimal("0.15"));
         weights.put(RecommendationSignal.TASTE_AFFINITY, new BigDecimal("0.15"));
+        weights.put(RecommendationSignal.DESIRED_INGREDIENT_FIT, new BigDecimal("0.05"));
         weights.put(RecommendationSignal.PREPARATION_TIME_FIT, new BigDecimal("0.10"));
         weights.put(RecommendationSignal.INGREDIENT_ALTERNATIVE_FIT, BigDecimal.ZERO);
         weights.put(RecommendationSignal.RECENT_MEAL_PENALTY, new BigDecimal("0.05"));
@@ -66,7 +67,7 @@ public final class RecommendationScoringProfile {
         weights.put(RecommendationSignal.RECIPE_PREFERENCE, new BigDecimal("0.05"));
         weights.put(RecommendationSignal.HOUSEHOLD_PREFERENCE, new BigDecimal("0.10"));
         return new RecommendationScoringProfile(
-                "V1", weights,
+                "V1.1", weights,
                 new BigDecimal("0.80"), new BigDecimal("0.65"), new BigDecimal("0.50"),
                 new BigDecimal("0.70"), new BigDecimal("0.20"), new BigDecimal("0.39"));
     }

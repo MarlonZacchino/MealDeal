@@ -49,14 +49,17 @@ class RecommendationContractTest {
     }
 
     @Test
-    void v1WeightsKeepR0ValuesAndUseReservedShareForRecipePreference() {
+    void v11AddsDesiredIngredientExtensionWithoutRedistributingExistingWeights() {
         RecommendationScoringProfile profile = RecommendationScoringProfile.v1();
 
-        assertEquals("V1", profile.version());
+        assertEquals("V1.1", profile.version());
         assertEquals(0, profile.weights().values().stream()
-                .reduce(BigDecimal.ZERO, BigDecimal::add).compareTo(BigDecimal.ONE));
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .compareTo(new BigDecimal("1.05")));
         assertEquals(new BigDecimal("0.35"),
                 profile.weightOf(RecommendationSignal.PANTRY_COVERAGE));
+        assertEquals(new BigDecimal("0.05"),
+                profile.weightOf(RecommendationSignal.DESIRED_INGREDIENT_FIT));
         assertEquals(new BigDecimal("0.05"),
                 profile.weightOf(RecommendationSignal.RECIPE_PREFERENCE));
         assertEquals(0, profile.weightOf(RecommendationSignal.INGREDIENT_ALTERNATIVE_FIT)

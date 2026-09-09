@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane xmlns:fx="http://javafx.com/fxml/1"
+            fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
+    <content>
+        <StackPane alignment="TOP_CENTER" styleClass="page-shell">
+            <VBox maxWidth="1.7976931348623157E308" spacing="16.0"
+                  styleClass="page-container">
+                <VBox spacing="6.0">
+                    <Label text="Hilfe" styleClass="page-title"/>
+                    <Label text="Hier findest du die wichtigsten Funktionen von MealDeal auf einen Blick."
+                           wrapText="true" styleClass="page-subtitle"/>
+                </VBox>
+
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="1. MealDeal kurz erklärt" styleClass="section-title"/>
+                    <Label text="MealDeal hilft dir, eigene Rezepte zu verwalten, Mahlzeiten zu planen und aus deinem Vorrat passende Gerichte auszuwählen. Alle Angaben bleiben lokal auf deinem Gerät."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="2. Was soll ich kochen?" styleClass="section-title"/>
+                    <Label text="Hier lässt du MealDeal entscheiden, was gerade gut passt. Lege Personen und auf Wunsch eine maximale Zeit fest. Unter „Geschmack und Zutaten“ kannst du Wunschzutaten und Geschmacksrichtungen ergänzen. Dein Inventar sowie deine bisherige Nutzung werden automatisch berücksichtigt."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="3. Empfehlung oder Rezeptsuche?" styleClass="section-title"/>
+                    <Label text="„Was soll ich kochen?“ bewertet automatisch, welches Gericht aktuell gut zu dir passt. In der „Rezeptsuche“ legst du dagegen selbst fest, nach welchen Zutaten und Geschmacksrichtungen deine Rezeptbibliothek gefiltert wird."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="4. Warum wird mir etwas empfohlen?" styleClass="section-title"/>
+                    <Label text="Kurze Hinweise auf jeder Vorschlagskarte nennen die wichtigsten Gründe, etwa vorhandene Zutaten, passende Zeit, Geschmack oder Abwechslung. Die Reihenfolge entsteht aus mehreren Faktoren und ist keine Prozentbewertung."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="5. Gefällt mir / Gefällt mir nicht" styleClass="section-title"/>
+                    <Label text="Mit diesen Schaltern speicherst du deine allgemeine Meinung zu einem Gericht. Ein Häkchen kennzeichnet die aktive Auswahl. Klicke den aktiven Schalter erneut, um das Feedback zu entfernen."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="6. Gerade nicht" styleClass="section-title"/>
+                    <Label text="Damit blendest du einen Vorschlag nur für die aktuelle Runde aus. Das ist kein „Gefällt mir nicht“ und löscht das Gericht nicht."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="7. Als gekocht markieren" styleClass="section-title"/>
+                    <Label text="Bestätige damit, dass du das Gericht tatsächlich gekocht hast. MealDeal merkt sich diesen Zeitpunkt und die Personenzahl, damit spätere Vorschläge abwechslungsreicher werden können."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="8. Rezeptsuche" styleClass="section-title"/>
+                    <Label text="Wähle Zutaten oder Geschmacksrichtungen und starte die Suche. Zutaten werden als PERFECT, GOOD oder PARTIAL bewertet. Für Geschmack kannst du festlegen, ob alle, mindestens eine oder die besten Treffer gelten sollen."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="9. Rezepte" styleClass="section-title"/>
+                    <Label text="Unter „Gerichte“ kannst du Rezepte anlegen, öffnen, bearbeiten und löschen. Zutatenalternativen, Zeiten, Nährwerte und der Typ des Gerichts werden direkt am Rezept gepflegt."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="10. Wochenplan" styleClass="section-title"/>
+                    <Label text="Plane Hauptgerichte, Beilagen und Nachtische für Montag bis Sonntag. Änderungen bleiben zunächst als Entwurf erhalten und werden gemeinsam über „Änderungen speichern“ gesichert."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="11. Inventar" styleClass="section-title"/>
+                    <Label text="Im Inventar erfasst du, welche Zutaten und Mengen vorhanden sind. MealDeal berücksichtigt diese Bestände bei Vorschlägen und kann geplante, vergangene Mahlzeiten automatisch verbuchen."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="12. Einkaufsliste" styleClass="section-title"/>
+                    <Label text="Die Einkaufsliste wird aus deinem Wochenplan abgeleitet. Du kannst sie für heute oder für die verbleibende Woche anzeigen und vorhandene Inventarmengen berücksichtigen lassen."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="13. Zutatenverwaltung" styleClass="section-title"/>
+                    <Label text="Unter „Zutaten“ verwaltest du zentrale Zutaten und ihre Kategorien. Diese Zutaten stehen anschließend für Rezepte, Suche und Inventar zur Verfügung."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+                <VBox spacing="8.0" styleClass="content-card">
+                    <Label text="14. Lokal und offline" styleClass="section-title"/>
+                    <Label text="MealDeal funktioniert ohne Konto und ohne Internetverbindung. Rezepte, Inventar, Planung und Feedback werden in deiner lokalen MealDeal-Datenbank gespeichert."
+                           wrapText="true" styleClass="card-text"/>
+                </VBox>
+            </VBox>
+        </StackPane>
+    </content>
+</ScrollPane>

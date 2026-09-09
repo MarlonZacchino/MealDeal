@@ -29,15 +29,6 @@
     -fx-text-fill: -md-danger-text;
 }
 
-.taste-mode-card {
-    -fx-min-width: 0;
-}
-
-.taste-mode-card .radio-button {
-    -fx-font-weight: bold;
-    -fx-text-fill: -md-text;
-}
-
 .mode-description {
     -fx-font-size: 14px;
     -fx-text-fill: -md-text-muted;
@@ -66,4 +57,55 @@
     -fx-font-weight: bold;
     -fx-min-width: 92px;
     -fx-text-fill: -md-text;
+}
+
+.recommendation-request-card {
+    -fx-padding: 20px 24px;
+}
+
+.recommendation-request-fields {
+    -fx-alignment: center-left;
+}
+
+.recommendation-selection-grid {
+    -fx-alignment: top-left;
+}
+
+.recommendation-card {
+    -fx-padding: 22px 26px;
+}
+
+.recommendation-card-actions {
+    -fx-alignment: center-left;
+}
+
+.recommendation-feedback-actions,
+.recommendation-tertiary-actions {
+    -fx-alignment: center-left;
+}
+
+.recommendation-reason-positive {
+    -fx-text-fill: -md-accent;
+}
+
+.recommendation-reason-negative {
+    -fx-text-fill: -md-danger-text;
+}
+
+/* The dark accent is a surface color; use existing readable text tokens here. */
+.root-shell.theme-dark .recommendation-reason-positive {
+    -fx-text-fill: -md-text;
+}
+
+.recommendation-success-message {
+    -fx-background-color: -md-surface-alt;
+    -fx-border-color: -md-border;
+    -fx-text-fill: -md-text;
+}
+
+.recommendation-inventory-notice {
+    -fx-background-color: -md-warning-background;
+    -fx-background-radius: 10px;
+    -fx-padding: 12px 16px;
+    -fx-text-fill: -md-warning-text;
 }

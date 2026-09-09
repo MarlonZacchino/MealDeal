@@ -203,7 +203,7 @@ public final class CreateRecipeController implements NavigationAware {
             if (editingRecipe == null) {
                 navigator.navigateTo(ViewType.RECIPES);
             } else {
-                navigator.navigateToRecipeDetail(savedRecipe);
+                navigator.navigateToUpdatedRecipeDetail(savedRecipe);
             }
         } catch (RecipeFormValidationException exception) {
             showMessage(exception.getErrors().stream()

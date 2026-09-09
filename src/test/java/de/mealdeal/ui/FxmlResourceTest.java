@@ -74,6 +74,33 @@ class FxmlResourceTest {
     }
 
     @Test
+    void recommendationAndRecipeSearchUseSeparateCompleteRoutes() throws Exception {
+        assertEquals("/de/mealdeal/ui/recommendation-view.fxml",
+                ViewType.RECOMMENDATION.getResourcePath());
+        assertEquals("/de/mealdeal/ui/search-view.fxml", ViewType.SEARCH.getResourcePath());
+        String recommendation = readResource(ViewType.RECOMMENDATION.getResourcePath());
+        String search = readResource(ViewType.SEARCH.getResourcePath());
+        assertTrue(recommendation.contains("text=\"Was soll ich kochen?\""));
+        assertTrue(search.contains("text=\"Rezeptsuche\""));
+        assertTrue(recommendation.contains("<ScrollPane"));
+        assertTrue(search.contains("<ScrollPane"));
+        assertFalse(recommendation.contains("tasteModeGroup"));
+        assertFalse(search.contains("servingsSpinner"));
+        assertFalse(recommendation.contains("FindingMode"));
+        assertFalse(search.contains("FindingMode"));
+    }
+
+    @Test
+    void sharedFeedbackStyleLivesInComponentsAndNewViewsHaveNoInlineStyles() throws Exception {
+        assertTrue(readResource("/de/mealdeal/ui/styles/components.css").contains(".recipe-feedback-active"));
+        assertFalse(readResource("/de/mealdeal/ui/styles/search.css").contains(".recipe-feedback-active"));
+        assertFalse(readResource(STYLESHEET).contains("!important"));
+        for (String resource : allFxmlResources().toList()) {
+            assertFalse(Pattern.compile("\\sstyle=").matcher(readResource(resource)).find(), resource);
+        }
+    }
+
+    @Test
     void ingredientSearchViewDefinesAVisibleEmptyResultState() throws Exception {
         try (InputStream input = FxmlResourceTest.class.getResourceAsStream(
                 "/de/mealdeal/ui/search-view.fxml")) {
@@ -89,28 +116,25 @@ class FxmlResourceTest {
             assertEquals(3, fxml.split("toggleGroup=\"\\$tasteModeGroup\"", -1).length - 1);
             assertTrue(fxml.contains("selected=\"true\" toggleGroup=\"$tasteModeGroup\""));
             assertFalse(fxml.contains("fx:id=\"searchOptionsPane\""));
-            assertTrue(fxml.contains("fx:id=\"searchOptionsButton\""));
-            assertTrue(fxml.contains("fx:id=\"searchOptionsContent\" managed=\"false\" visible=\"false\""));
+            assertFalse(fxml.contains("searchOptionsButton"));
+            assertFalse(fxml.contains("searchOptionsContent"));
             assertTrue(fxml.contains("fx:id=\"ingredientSelectionPane\""));
             assertTrue(fxml.contains("fx:id=\"tasteSelectionPane\""));
             assertTrue(fxml.contains("fx:id=\"searchSelectionGrid\""));
             assertEquals(2, fxml.split("<ColumnConstraints percentWidth=\"50.0\"/>", -1)
                     .length - 1);
             assertEquals(2, fxml.split("collapsible=\"true\" expanded=\"false\"", -1).length - 1);
-            assertTrue(fxml.contains("text=\"Filter &amp; Suchoptionen\""));
-            assertTrue(fxml.contains("text=\"Geschmacksfilter\""));
-            assertTrue(fxml.contains("gilt nur für ausgewählte Geschmacksrichtungen"));
-            assertTrue(fxml.indexOf("fx:id=\"searchOptionsContent\"")
-                    < fxml.indexOf("fx:id=\"tasteAndMode\""));
-            assertTrue(fxml.indexOf("<Button text=\"Gericht finden\"")
-                    < fxml.indexOf("fx:id=\"searchOptionsButton\""));
-            assertTrue(fxml.indexOf("fx:id=\"searchOptionsButton\"")
+            assertTrue(fxml.contains("text=\"Suchmodus für Geschmack\""));
+            assertFalse(fxml.contains("Gilt nur für ausgewählte Geschmacksrichtungen"));
+            assertTrue(fxml.indexOf("fx:id=\"tasteAndMode\"")
+                    < fxml.indexOf("<Button text=\"Suche starten\""));
+            assertTrue(fxml.indexOf("<Button text=\"Suche starten\"")
                     < fxml.indexOf("text=\"Alle Filter zurücksetzen\""));
-            assertTrue(fxml.contains("<HBox alignment=\"CENTER_RIGHT\" spacing=\"12.0\">"));
+            assertTrue(fxml.contains("<FlowPane alignment=\"CENTER_LEFT\" hgap=\"12.0\" vgap=\"10.0\">"));
             assertFalse(fxml.contains("styleClass=\"search-actions\""));
             assertFalse(css.contains(".search-actions"));
             assertTrue(fxml.contains("onAction=\"#resetFilters\""));
-            assertTrue(fxml.contains("onAction=\"#toggleSearchOptions\""));
+            assertFalse(fxml.contains("toggleSearchOptions"));
             assertTrue(fxml.contains("styleClass=\"secondary-button, search-reset-button\""));
             assertTrue(fxml.contains("onAction=\"#search\""));
             assertTrue(fxml.contains("fx:id=\"resultsContainer\" alignment=\"TOP_LEFT\""));
@@ -175,12 +199,12 @@ class FxmlResourceTest {
     }
 
     @Test
-    void homeUsesOneCentralActionForCombinedSearch() throws Exception {
+    void homeUsesOneCentralRecommendationAction() throws Exception {
         String fxml = readResource("/de/mealdeal/ui/home-view.fxml");
         String css = readResource("/de/mealdeal/ui/styles.css");
 
-        assertTrue(fxml.contains("text=\"Gericht finden\""));
-        assertEquals(1, fxml.split("onAction=\"#openSearch\"", -1).length - 1);
+        assertTrue(fxml.contains("text=\"Was soll ich kochen?\""));
+        assertEquals(1, fxml.split("onAction=\"#openRecommendation\"", -1).length - 1);
         assertFalse(fxml.contains("Nach Zutaten suchen"));
         assertFalse(fxml.contains("Nach Geschmack suchen"));
         assertTrue(fxml.contains("fx:id=\"todayPlanContent\""));
@@ -292,10 +316,82 @@ class FxmlResourceTest {
         assertTrue(fxml.contains("fx:id=\"rootShell\""));
         assertTrue(fxml.contains("fx:id=\"themeToggle\""));
         assertTrue(fxml.contains("fx:id=\"ingredientsButton\""));
+        assertTrue(fxml.contains("fx:id=\"recommendationButton\""));
+        assertTrue(fxml.contains("text=\"Was soll ich kochen?\""));
+        assertTrue(fxml.contains("onAction=\"#showRecommendation\""));
+        assertTrue(fxml.contains("text=\"Rezeptsuche\""));
+        assertTrue(fxml.contains("fx:id=\"helpButton\""));
+        assertTrue(fxml.contains("onAction=\"#showHelp\""));
         assertTrue(fxml.contains("onAction=\"#showIngredients\""));
         assertTrue(fxml.contains("onAction=\"#toggleTheme\""));
         assertTrue(fxml.contains("VBox.vgrow=\"ALWAYS\""));
         assertTrue(fxml.contains("maxWidth=\"1.7976931348623157E308\""));
+    }
+
+    @Test
+    void recommendationViewDefinesRequestResultsAndExplicitActions() throws Exception {
+        String fxml = readResource("/de/mealdeal/ui/recommendation-view.fxml");
+        String css = readResource("/de/mealdeal/ui/styles.css");
+
+        assertTrue(fxml.contains(
+                "fx:controller=\"de.mealdeal.ui.controller.RecommendationController\""));
+        assertTrue(fxml.contains("fx:id=\"servingsSpinner\""));
+        assertTrue(fxml.contains("fx:id=\"maximumTimeField\""));
+        assertTrue(fxml.contains("Geschmack und Zutaten"));
+        assertTrue(fxml.contains("fx:id=\"ingredientFilterField\""));
+        assertTrue(fxml.contains("onAction=\"#startRecommendation\""));
+        assertTrue(fxml.contains("fx:id=\"resultsContainer\""));
+        assertTrue(fxml.contains("fx:id=\"initialState\""));
+        assertTrue(fxml.contains("fx:id=\"emptyState\""));
+        assertTrue(fxml.contains("fx:id=\"errorState\""));
+        assertTrue(fxml.contains("fx:id=\"inventoryNotice\""));
+        assertTrue(css.contains(".recommendation-card"));
+        assertTrue(css.contains(".recipe-feedback-active"));
+        assertFalse(fxml.contains("Score"));
+        assertControllerWiring(fxml, de.mealdeal.ui.controller.RecommendationController.class);
+    }
+
+    @Test
+    void recommendationWishSelectionIsOptionalCollapsedAndResponsive() throws Exception {
+        String fxml = readResource("/de/mealdeal/ui/recommendation-view.fxml");
+        assertTrue(fxml.contains("fx:id=\"optionalSelectionContent\" spacing=\"12.0\""));
+        assertTrue(fxml.contains("managed=\"false\" visible=\"false\""));
+        assertTrue(fxml.contains("onAction=\"#toggleOptionalSelection\""));
+        assertTrue(fxml.contains("fx:id=\"optionalSelectionGrid\""));
+        assertTrue(fxml.contains("fx:id=\"ingredientWishColumn\""));
+        assertTrue(fxml.contains("fx:id=\"tasteWishColumn\""));
+        assertTrue(fxml.indexOf("fx:id=\"servingsSpinner\"")
+                < fxml.indexOf("fx:id=\"optionalSelectionButton\""));
+        assertTrue(readResource("/de/mealdeal/ui/styles/responsive.css")
+                .contains(".root-shell.viewport-compact .recommendation-selection-grid"));
+    }
+
+    @Test
+    void removedFindingModeLeavesNoModeSelectorsOrDeadCss() throws Exception {
+        String recommendation = readResource(ViewType.RECOMMENDATION.getResourcePath());
+        String search = readResource(ViewType.SEARCH.getResourcePath());
+        String css = readResource("/de/mealdeal/ui/styles/search.css");
+        for (String text : List.of("Für mich empfehlen", "Gezielt suchen", "Gericht finden")) {
+            assertFalse(recommendation.contains(text));
+            assertFalse(search.contains(text));
+        }
+        assertFalse(css.contains("finding-mode"));
+        assertFalse(java.nio.file.Files.exists(java.nio.file.Path.of(
+                "src/main/java/de/mealdeal/ui/controller/FindingMode.java")));
+    }
+
+    @Test
+    void helpViewIsScrollableAndCoversAllUserFacingAreasWithoutImages() throws Exception {
+        String help = readResource(ViewType.HELP.getResourcePath());
+        assertTrue(help.contains("<ScrollPane"));
+        for (String section : List.of("MealDeal kurz erklärt", "Was soll ich kochen?",
+                "Empfehlung oder Rezeptsuche?", "Warum wird mir etwas empfohlen?",
+                "Gefällt mir / Gefällt mir nicht", "Gerade nicht", "Als gekocht markieren",
+                "Rezeptsuche", "Rezepte", "Wochenplan", "Inventar", "Einkaufsliste",
+                "Zutatenverwaltung", "Lokal und offline")) {
+            assertTrue(help.contains(section), section);
+        }
+        assertFalse(help.contains("<Image"));
     }
 
     @Test
@@ -598,7 +694,8 @@ class FxmlResourceTest {
 
     private static Stream<String> allFxmlResources() {
         return Stream.concat(
-                Stream.of(MAIN_VIEW),
+                Stream.of(MAIN_VIEW, "/de/mealdeal/ui/search-view.fxml",
+                        "/de/mealdeal/ui/recommendation-view.fxml"),
                 Arrays.stream(ViewType.values()).map(ViewType::getResourcePath));
     }
 }

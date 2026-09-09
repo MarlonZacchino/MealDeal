@@ -22,6 +22,7 @@ public record RecommendationContext(
         RecommendationRequest request,
         List<InventoryItem> inventorySnapshot,
         TastePreferenceProfile tastePreferences,
+        DesiredIngredientProfile desiredIngredients,
         List<HouseholdMemberPreference> householdPreferences,
         RecommendationConstraints hardConstraints,
         Map<UUID, RecipePersonalizationSignals> personalizationSignals) {
@@ -32,6 +33,8 @@ public record RecommendationContext(
                 inventorySnapshot, "Inventory snapshot");
         tastePreferences = Objects.requireNonNull(
                 tastePreferences, "Taste preferences must not be null.");
+        desiredIngredients = Objects.requireNonNull(
+                desiredIngredients, "Desired ingredients must not be null.");
         householdPreferences = immutableList(
                 householdPreferences, "Household preferences");
         Set<String> memberIds = new HashSet<>();
@@ -75,12 +78,37 @@ public record RecommendationContext(
                 hardConstraints, Map.of());
     }
 
+    /** Backward-compatible R3 context without an ingredient-wish signal. */
+    public RecommendationContext(
+            RecommendationRequest request,
+            List<InventoryItem> inventorySnapshot,
+            TastePreferenceProfile tastePreferences,
+            List<HouseholdMemberPreference> householdPreferences,
+            RecommendationConstraints hardConstraints,
+            Map<UUID, RecipePersonalizationSignals> personalizationSignals) {
+        this(request, inventorySnapshot, tastePreferences, DesiredIngredientProfile.empty(),
+                householdPreferences, hardConstraints, personalizationSignals);
+    }
+
+    /** Creates a request context with a soft ingredient wish and no persisted signals yet. */
+    public RecommendationContext(
+            RecommendationRequest request,
+            List<InventoryItem> inventorySnapshot,
+            TastePreferenceProfile tastePreferences,
+            DesiredIngredientProfile desiredIngredients,
+            List<HouseholdMemberPreference> householdPreferences,
+            RecommendationConstraints hardConstraints) {
+        this(request, inventorySnapshot, tastePreferences, desiredIngredients,
+                householdPreferences, hardConstraints, Map.of());
+    }
+
     /** Creates a context containing only servings and the current inventory snapshot. */
     public static RecommendationContext pantryOnly(
             int servingCount, List<InventoryItem> inventorySnapshot) {
         return new RecommendationContext(
                 RecommendationRequest.forServings(servingCount), inventorySnapshot,
-                TastePreferenceProfile.empty(), List.of(), RecommendationConstraints.none(),
+                TastePreferenceProfile.empty(), DesiredIngredientProfile.empty(),
+                List.of(), RecommendationConstraints.none(),
                 Map.of());
     }
 
@@ -88,7 +116,7 @@ public record RecommendationContext(
     public RecommendationContext withPersonalization(
             Map<UUID, RecipePersonalizationSignals> signals) {
         return new RecommendationContext(request, inventorySnapshot, tastePreferences,
-                householdPreferences, hardConstraints, signals);
+                desiredIngredients, householdPreferences, hardConstraints, signals);
     }
 
     public Optional<RecipePersonalizationSignals> personalizationFor(UUID recipeId) {

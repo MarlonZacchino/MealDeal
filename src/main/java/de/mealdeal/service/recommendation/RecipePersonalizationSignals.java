@@ -69,6 +69,11 @@ public record RecipePersonalizationSignals(
         return lastCookedAt.isEmpty();
     }
 
+    /** Returns whether Meal History places the latest confirmed cooking on today's local date. */
+    public boolean wasCookedToday() {
+        return recency == RecipeRecency.COOKED_TODAY;
+    }
+
     private static BigDecimal normalized(BigDecimal value, String label) {
         Objects.requireNonNull(value, label + " must not be null.");
         if (value.compareTo(BigDecimal.ZERO) < 0 || value.compareTo(BigDecimal.ONE) > 0) {

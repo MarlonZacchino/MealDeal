@@ -87,8 +87,8 @@ public final class HomeController implements NavigationAware {
     }
 
     @FXML
-    void openSearch() {
-        navigation.accept(ViewType.SEARCH);
+    void openRecommendation() {
+        navigation.accept(ViewType.RECOMMENDATION);
     }
 
     @FXML

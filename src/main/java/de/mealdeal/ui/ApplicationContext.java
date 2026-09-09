@@ -5,17 +5,23 @@ import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.repository.IngredientRepository;
 import de.mealdeal.persistence.repository.IngredientCategoryRepository;
 import de.mealdeal.persistence.repository.MealPlanRepository;
+import de.mealdeal.persistence.repository.MealHistoryRepository;
 import de.mealdeal.persistence.repository.InventoryRepository;
 import de.mealdeal.persistence.repository.InventoryConsumptionRepository;
+import de.mealdeal.persistence.repository.RecipeFeedbackRepository;
 import de.mealdeal.persistence.repository.RecipeRepository;
+import de.mealdeal.persistence.repository.RecommendationInteractionRepository;
 import de.mealdeal.persistence.repository.TasteRepository;
 import de.mealdeal.persistence.sqlite.SqliteDatabase;
 import de.mealdeal.persistence.sqlite.SqliteIngredientRepository;
 import de.mealdeal.persistence.sqlite.SqliteIngredientCategoryRepository;
 import de.mealdeal.persistence.sqlite.SqliteMealPlanRepository;
+import de.mealdeal.persistence.sqlite.SqliteMealHistoryRepository;
 import de.mealdeal.persistence.sqlite.SqliteInventoryRepository;
 import de.mealdeal.persistence.sqlite.SqliteInventoryConsumptionRepository;
 import de.mealdeal.persistence.sqlite.SqliteRecipeRepository;
+import de.mealdeal.persistence.sqlite.SqliteRecipeFeedbackRepository;
+import de.mealdeal.persistence.sqlite.SqliteRecommendationInteractionRepository;
 import de.mealdeal.persistence.sqlite.SqliteTasteRepository;
 import de.mealdeal.ui.controller.CreateRecipeController;
 import de.mealdeal.ui.controller.HomeController;
@@ -24,18 +30,26 @@ import de.mealdeal.ui.controller.InventoryController;
 import de.mealdeal.ui.controller.IngredientsController;
 import de.mealdeal.ui.controller.MainController;
 import de.mealdeal.ui.controller.RecipeDetailController;
+import de.mealdeal.ui.controller.RecommendationController;
 import de.mealdeal.ui.controller.RecipesController;
 import de.mealdeal.ui.controller.ShoppingListController;
 import de.mealdeal.ui.controller.WeekPlanController;
 import de.mealdeal.service.CombinedRecipeSearchService;
 import de.mealdeal.service.InventoryService;
+import de.mealdeal.service.MealHistoryService;
 import de.mealdeal.service.InventoryConsumptionService;
 import de.mealdeal.service.IngredientCategoryService;
 import de.mealdeal.service.IngredientManagementService;
 import de.mealdeal.service.RecipeScaler;
 import de.mealdeal.service.RecipeSearchService;
+import de.mealdeal.service.RecipeFeedbackService;
+import de.mealdeal.service.RecommendationInteractionService;
 import de.mealdeal.service.ShoppingListService;
 import de.mealdeal.service.WeeklyMealPlanService;
+import de.mealdeal.service.recommendation.PersonalizedRecommendationService;
+import de.mealdeal.service.recommendation.RecipeRecommendationService;
+import de.mealdeal.service.recommendation.RecommendationPersonalizationService;
+import de.mealdeal.service.recommendation.RecommendationWorkflowService;
 import de.mealdeal.ui.theme.ThemeService;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -44,6 +58,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.Clock;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -75,6 +90,8 @@ public final class ApplicationContext {
     private final IngredientCategoryService ingredientCategoryService;
     private final IngredientManagementService ingredientManagementService;
     private final InventoryConsumptionService inventoryConsumptionService;
+    private final RecommendationWorkflowService recommendationWorkflowService;
+    private final RecipeFeedbackService recipeFeedbackService;
 
     /**
      * Preserves the earlier isolated-test composition without requiring a meal-plan fixture.
@@ -110,7 +127,11 @@ public final class ApplicationContext {
                 new SqliteTasteRepository(database), new SqliteMealPlanRepository(database),
                 new SqliteIngredientCategoryRepository(database),
                 new SqliteInventoryRepository(database),
-                new SqliteInventoryConsumptionRepository(database), themeService);
+                new SqliteInventoryConsumptionRepository(database),
+                new SqliteMealHistoryRepository(database),
+                new SqliteRecipeFeedbackRepository(database),
+                new SqliteRecommendationInteractionRepository(database),
+                themeService, true);
         inventoryConsumptionService.consumePastEntries();
     }
 
@@ -182,6 +203,23 @@ public final class ApplicationContext {
                                InventoryConsumptionRepository consumptionRepository,
                                ThemeService themeService,
                                boolean consumptionEnabled) {
+        this(recipeRepository, ingredientRepository, tasteRepository, mealPlanRepository,
+                ingredientCategoryRepository, inventoryRepository, consumptionRepository,
+                null, null, null, themeService, consumptionEnabled);
+    }
+
+    private ApplicationContext(RecipeRepository recipeRepository,
+                               IngredientRepository ingredientRepository,
+                               TasteRepository tasteRepository,
+                               MealPlanRepository mealPlanRepository,
+                               IngredientCategoryRepository ingredientCategoryRepository,
+                               InventoryRepository inventoryRepository,
+                               InventoryConsumptionRepository consumptionRepository,
+                               MealHistoryRepository mealHistoryRepository,
+                               RecipeFeedbackRepository recipeFeedbackRepository,
+                               RecommendationInteractionRepository interactionRepository,
+                               ThemeService themeService,
+                               boolean consumptionEnabled) {
         this.recipeRepository = Objects.requireNonNull(
                 recipeRepository, "Recipe repository must not be null.");
         this.ingredientRepository = Objects.requireNonNull(
@@ -214,6 +252,26 @@ public final class ApplicationContext {
                 ? new ShoppingListService(this.mealPlanRepository, this.inventoryRepository,
                         this.inventoryConsumptionService)
                 : new ShoppingListService(this.mealPlanRepository, this.inventoryRepository);
+        recipeFeedbackService = recipeFeedbackRepository == null ? null
+                : new RecipeFeedbackService(recipeFeedbackRepository);
+        if (mealHistoryRepository == null || recipeFeedbackRepository == null
+                || interactionRepository == null) {
+            this.recommendationWorkflowService = null;
+        } else {
+            MealHistoryService historyService = new MealHistoryService(mealHistoryRepository);
+            RecommendationInteractionService interactionService =
+                    new RecommendationInteractionService(interactionRepository);
+            PersonalizedRecommendationService personalizedRecommendationService =
+                    new PersonalizedRecommendationService(
+                            new RecommendationPersonalizationService(
+                                    mealHistoryRepository, recipeFeedbackRepository,
+                                    interactionRepository, Clock.systemDefaultZone()),
+                            new RecipeRecommendationService());
+            this.recommendationWorkflowService = new RecommendationWorkflowService(
+                    this.recipeRepository, this.inventoryRepository,
+                    personalizedRecommendationService, interactionService,
+                    recipeFeedbackService, historyService, inventoryConsumptionService);
+        }
     }
 
     /** Loads the application's single main view. */
@@ -240,12 +298,20 @@ public final class ApplicationContext {
             return new RecipesController(recipeRepository);
         }
         if (controllerType == RecipeDetailController.class) {
-            return new RecipeDetailController(recipeRepository, recipeScaler);
+            return new RecipeDetailController(recipeRepository, recipeScaler, recipeFeedbackService);
         }
         if (controllerType == IngredientSearchController.class) {
             return new IngredientSearchController(
                     ingredientRepository, tasteRepository, recipeRepository,
                     recipeSearchService, combinedSearchService);
+        }
+        if (controllerType == RecommendationController.class) {
+            if (recommendationWorkflowService == null) {
+                throw new ViewLoadingException(
+                        "Recommendation services are not configured in this composition.");
+            }
+            return new RecommendationController(
+                    recommendationWorkflowService, ingredientRepository, tasteRepository);
         }
         if (controllerType == CreateRecipeController.class) {
             return new CreateRecipeController(

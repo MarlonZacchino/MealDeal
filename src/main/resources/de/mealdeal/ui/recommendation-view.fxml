@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="de.mealdeal.ui.controller.RecommendationController"
+            fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
+    <content>
+        <StackPane alignment="TOP_CENTER" styleClass="page-shell">
+            <VBox maxWidth="1.7976931348623157E308" spacing="24.0"
+                  styleClass="page-container">
+                <VBox spacing="6.0">
+                    <Label text="Was soll ich kochen?" styleClass="page-title"/>
+                    <Label text="MealDeal schlägt dir passende Gerichte aus deinen Rezepten und deinem Vorrat vor."
+                           wrapText="true" styleClass="page-subtitle"/>
+                </VBox>
+                <Label fx:id="recommendationMessage" managed="false" visible="false"
+                       wrapText="true" styleClass="form-message"/>
+                <VBox spacing="16.0" styleClass="content-card, recommendation-request-card">
+                    <FlowPane hgap="18.0" vgap="14.0" styleClass="recommendation-request-fields">
+                        <VBox spacing="7.0">
+                            <Label text="Personen" styleClass="form-label"/>
+                            <Spinner fx:id="servingsSpinner" editable="true" prefWidth="120.0"/>
+                        </VBox>
+                        <VBox spacing="7.0">
+                            <Label text="Maximale Zeit (Min., optional)" styleClass="form-label"/>
+                            <TextField fx:id="maximumTimeField" promptText="Egal" prefWidth="220.0"/>
+                        </VBox>
+                    </FlowPane>
+                    <VBox spacing="7.0">
+                        <Label text="Geschmack und Zutaten" styleClass="form-label"/>
+                        <ToggleButton fx:id="optionalSelectionButton" text="Optional auswählen ▾"
+                                      accessibleText="Geschmack und Zutaten, optionale Auswahl öffnen"
+                                      onAction="#toggleOptionalSelection"
+                                      styleClass="secondary-button"/>
+                    </VBox>
+                    <VBox fx:id="optionalSelectionContent" spacing="12.0"
+                          managed="false" visible="false">
+                        <GridPane fx:id="optionalSelectionGrid" hgap="16.0" vgap="16.0"
+                                  styleClass="recommendation-selection-grid">
+                            <VBox fx:id="ingredientWishColumn" minWidth="0.0"
+                                  maxWidth="1.7976931348623157E308" spacing="12.0"
+                                  GridPane.columnIndex="0" styleClass="sub-card">
+                                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                    <Label text="Wunschzutaten" styleClass="card-title"
+                                           HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="ingredientSelectionCountLabel"
+                                           styleClass="selection-count"/>
+                                </HBox>
+                                <TextField fx:id="ingredientFilterField"
+                                           promptText="Zutaten durchsuchen …"/>
+                                <VBox fx:id="availableIngredientsContainer" spacing="10.0"/>
+                                <Label text="Deine Auswahl" styleClass="form-label"/>
+                                <FlowPane fx:id="selectedIngredientsContainer"
+                                          hgap="10.0" vgap="10.0"/>
+                            </VBox>
+                            <VBox fx:id="tasteWishColumn" minWidth="0.0"
+                                  maxWidth="1.7976931348623157E308" spacing="12.0"
+                                  GridPane.columnIndex="1" styleClass="sub-card">
+                                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                    <Label text="Gewünschte Geschmacksrichtungen"
+                                           wrapText="true" styleClass="card-title"
+                                           HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="tasteSelectionCountLabel"
+                                           styleClass="selection-count"/>
+                                </HBox>
+                                <TextField fx:id="tasteFilterField"
+                                           promptText="Geschmacksrichtungen durchsuchen …"/>
+                                <FlowPane fx:id="availableTastesContainer"
+                                          hgap="10.0" vgap="10.0"/>
+                                <Label text="Deine Auswahl" styleClass="form-label"/>
+                                <FlowPane fx:id="selectedTastesContainer"
+                                          hgap="10.0" vgap="10.0"/>
+                            </VBox>
+                        </GridPane>
+                    </VBox>
+                    <Label fx:id="inventoryNotice"
+                           text="Dein Inventar ist leer. Die Vorschläge berücksichtigen weiterhin Zeit, Geschmack und bisherige Nutzung."
+                           managed="false" visible="false" wrapText="true"
+                           styleClass="recommendation-inventory-notice"/>
+                    <Button text="Vorschläge anzeigen" onAction="#startRecommendation"
+                            styleClass="primary-button"/>
+                </VBox>
+                <VBox spacing="14.0">
+                    <Label text="Deine Vorschläge" styleClass="section-title"/>
+                    <VBox fx:id="resultsContainer" alignment="TOP_LEFT" spacing="12.0"
+                          managed="false" visible="false"/>
+                    <VBox fx:id="initialState" alignment="CENTER" spacing="8.0"
+                          styleClass="content-card, search-state-card">
+                        <Label text="Bereit für passende Vorschläge" styleClass="card-title"/>
+                        <Label text="Du kannst direkt starten oder vorher Wünsche ergänzen."
+                               wrapText="true" styleClass="card-text"/>
+                    </VBox>
+                    <VBox fx:id="emptyState" alignment="CENTER" spacing="8.0"
+                          managed="false" visible="false"
+                          styleClass="content-card, search-state-card">
+                        <Label fx:id="emptyTitle" text="Keine geeigneten Rezepte vorhanden"
+                               styleClass="card-title"/>
+                        <Label fx:id="emptyMessage" text="Lege ein Rezept mit Zutaten an."
+                               wrapText="true" styleClass="card-text"/>
+                    </VBox>
+                    <VBox fx:id="errorState" alignment="CENTER" spacing="8.0"
+                          managed="false" visible="false"
+                          styleClass="content-card, search-state-card">
+                        <Label text="Vorschläge sind gerade nicht verfügbar"
+                               styleClass="card-title"/>
+                        <Label text="Bitte versuche es erneut." wrapText="true"
+                               styleClass="card-text"/>
+                    </VBox>
+                </VBox>
+            </VBox>
+        </StackPane>
+    </content>
+</ScrollPane>

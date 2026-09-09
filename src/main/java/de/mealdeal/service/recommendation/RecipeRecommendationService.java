@@ -50,6 +50,7 @@ public final class RecipeRecommendationService {
     private final CandidateEligibilityEvaluator eligibilityEvaluator;
     private final PantrySignalCalculator pantryCalculator;
     private final PreferenceSignalCalculator preferenceCalculator;
+    private final DesiredIngredientSignalCalculator desiredIngredientCalculator;
 
     /** Creates the baseline with the experimental V1 scoring profile. */
     public RecipeRecommendationService() {
@@ -69,6 +70,7 @@ public final class RecipeRecommendationService {
                 scoringProfile.weightOf(RecommendationSignal.PANTRY_COVERAGE),
                 scoringProfile.weightOf(RecommendationSignal.MISSING_INGREDIENT_PENALTY));
         preferenceCalculator = new PreferenceSignalCalculator(scoringProfile);
+        desiredIngredientCalculator = new DesiredIngredientSignalCalculator();
     }
 
     /** Evaluates eligibility, scores allowed candidates, and returns stable ranking order. */
@@ -121,6 +123,17 @@ public final class RecipeRecommendationService {
                     values.put(RecommendationSignal.TASTE_AFFINITY, value);
                     if (hasWeight(RecommendationSignal.TASTE_AFFINITY)) {
                         reasons.add(tasteReason(value));
+                    }
+                });
+        desiredIngredientCalculator.score(context.desiredIngredients(), recipe)
+                .ifPresent(value -> {
+                    values.put(RecommendationSignal.DESIRED_INGREDIENT_FIT, value);
+                    if (hasWeight(RecommendationSignal.DESIRED_INGREDIENT_FIT)) {
+                        if (value.compareTo(BigDecimal.ONE) == 0) {
+                            reasons.add(RecommendationReasonCode.DESIRED_INGREDIENT_MATCH);
+                        } else if (value.signum() > 0) {
+                            reasons.add(RecommendationReasonCode.DESIRED_INGREDIENT_PARTIAL_MATCH);
+                        }
                     }
                 });
         addTimeSignal(recipe, context, values, reasons);

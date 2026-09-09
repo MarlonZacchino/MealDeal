@@ -146,21 +146,22 @@ class RecommendationR4GoldenScenarioTest {
 
     private static GoldenScenario recency() {
         Recipe NeverCooked = candidate("r4-e-never", "Never Cooked");
-        Recipe CookedToday = candidate("r4-e-today", "Cooked Today");
+        Recipe CookedYesterday = candidate("r4-e-yesterday", "Cooked Yesterday");
         Map<UUID, RecipePersonalizationSignals> personalization = Map.of(
                 NeverCooked.getId(), signals(NeverCooked, "1", null, "0", 0, 0),
-                CookedToday.getId(), signals(CookedToday, "0", null, "0", 0, 0));
+                CookedYesterday.getId(), signals(
+                        CookedYesterday, "0.0714285714285714", null, "0", 0, 0));
         return scenario("E-RECENCY", "Recipe recency",
-                List.of(CookedToday, NeverCooked),
-                personalizedContext(stockForAll("100", NeverCooked, CookedToday),
+                List.of(CookedYesterday, NeverCooked),
+                personalizedContext(stockForAll("100", NeverCooked, CookedYesterday),
                         TastePreferenceProfile.empty(), List.of(),
                         RecommendationRequest.forServings(2), personalization),
-                List.of(NeverCooked, CookedToday),
+                List.of(NeverCooked, CookedYesterday),
                 mergeReasons(
                         reasons(NeverCooked, RecommendationReasonCode.RECIPE_NEVER_COOKED),
-                        reasons(CookedToday, RecommendationReasonCode.RECIPE_COOKED_TODAY)),
+                        reasons(CookedYesterday, RecommendationReasonCode.RECENTLY_COOKED)),
                 Map.of(), Optional.empty(),
-                "With equal basis quality, the never-cooked recipe provides more variety.");
+                "Yesterday remains eligible while the never-cooked recipe provides more variety.");
     }
 
     private static GoldenScenario explicitFeedback() {
@@ -280,7 +281,7 @@ class RecommendationR4GoldenScenarioTest {
         Recipe BasisWeakLiked = candidate("r4-k-weak", "Basis Weak Liked");
         Map<UUID, RecipePersonalizationSignals> personalization = Map.of(
                 BasisStrongNeutral.getId(), signals(
-                        BasisStrongNeutral, "0", null, "0", 0, 0),
+                        BasisStrongNeutral, "0.000001", null, "0", 0, 0),
                 BasisWeakLiked.getId(), signals(BasisWeakLiked, "1", "1", "0", 0, 0));
         return scenario("K-COMPOUND", "Compound trade-off",
                 List.of(BasisWeakLiked, BasisStrongNeutral),

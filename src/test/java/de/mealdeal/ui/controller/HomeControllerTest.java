@@ -10,12 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class HomeControllerTest {
 
     @Test
-    void centralSearchActionNavigatesToCombinedSearch() {
+    void centralActionNavigatesToRecommendation() {
         AtomicReference<ViewType> destination = new AtomicReference<>();
         HomeController controller = new HomeController(destination::set);
 
-        controller.openSearch();
+        controller.openRecommendation();
 
-        assertEquals(ViewType.SEARCH, destination.get());
+        assertEquals(ViewType.RECOMMENDATION, destination.get());
     }
 }

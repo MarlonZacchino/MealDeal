@@ -4,6 +4,7 @@ import de.mealdeal.domain.Recipe;
 import de.mealdeal.domain.RecipeIngredientGroup;
 import de.mealdeal.domain.RecipeIngredientOption;
 import de.mealdeal.service.RecipeScaler;
+import de.mealdeal.ui.navigation.RecipeDetailContext;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,11 +21,17 @@ final class RecipeDetailIngredientModel {
     private int servingCount;
 
     RecipeDetailIngredientModel(Recipe recipe, RecipeScaler scaler) {
+        this(RecipeDetailContext.standard(recipe), scaler);
+    }
+
+    RecipeDetailIngredientModel(RecipeDetailContext context, RecipeScaler scaler) {
+        Recipe recipe = context.recipe();
         this.recipe = Objects.requireNonNull(recipe, "Recipe must not be null.");
         this.scaler = Objects.requireNonNull(scaler, "Recipe scaler must not be null.");
-        servingCount = recipe.getStandardServingCount();
+        servingCount = context.servings();
         recipe.getIngredientGroups().forEach(group -> selectedOptionIds.put(
                 group.getId(), group.getStandardOptionId()));
+        context.selectedOptions().forEach(this::selectOption);
     }
 
     void setServingCount(int servingCount) {

@@ -48,7 +48,7 @@ erwartete Reason Codes stimmen. Exakte Dezimalwerte werden nur an echten Grenzwe
 | 25 | identische Scores und fehlende Gruppen | eligible; kürzere bekannte Zeit vor längerer | Time-/Pantry-Gründe unverändert |
 | 26 | vollständiger fachlicher Tie | eligible; Name, dann UUID entscheidet stabil | gleiche fachliche Gründe |
 | 27 | Recipe ohne optionale Zeit/Nutrition/Steps | eligible, sofern Gruppen/Taste valide | keine Gründe für fehlende optionale Daten |
-| 28 | gleiches Basis-Fit, heute gekocht vs. nie gekocht | nie oder lange nicht gekocht liegt vorn; nur bestätigte History zählt | `RECIPE_COOKED_TODAY` bzw. `RECIPE_NEVER_COOKED` |
+| 28 | heute gekocht vs. gestern gekocht vs. nie gekocht | heute gekocht ist ausgeschlossen; gestern bleibt Candidate und liegt bei gleichem Basis-Fit hinter nie gekocht | Ausschluss `RECIPE_COOKED_TODAY`, sonst `RECENTLY_COOKED` bzw. `RECIPE_NEVER_COOKED` |
 | 29 | gleiches Basis-Fit, explizites LIKE vs. neutral | liked Recipe liegt vorn; kein doppelter Rating-Bonus | `RECIPE_EXPLICITLY_LIKED` |
 | 30 | Candidate- oder Inventory-Reihenfolge vertauscht | identische Eligibility, Scores, Optionen und Reihenfolge | identische Reason Codes |
 | 31 | starkes Basis-Fit neutral vs. schwaches Fit mit LIKE | Pantry- und Basisqualität bleibt ausschlaggebend | passende Pantry- und Preference-Gründe |
@@ -308,3 +308,51 @@ Für einen späteren freiwilligen, lokalen Pilot sind sinnvoll:
 Diese Metriken sind nur mit vorheriger Einwilligung und klarer Löschfrist sinnvoll. R4
 implementiert weder Telemetrie noch Analytics und gibt mangels Ground Truth keine
 irreführenden Precision-/Recall-/NDCG-Aussagen als Produktqualität aus.
+
+## R5.3 Re-Evaluation: Wunschzutaten
+
+R5.3 ergänzt genau ein optionales Signal: `DESIRED_INGREDIENT_FIT`. Es misst den Anteil
+gewählter lokaler Ingredient-UUIDs, die in mindestens einer Option einer RecipeIngredientGroup
+vorkommen. Das Signal ist bei leerer Auswahl abwesend, verändert keine Pantry-Menge und
+schließt einen Kandidaten mit null Treffern nicht aus. Bestehende Top-Level-Gewichte,
+Strong-Match-Regeln, Household-Cap, Eligibility und Tie-Breaking bleiben unverändert.
+
+### Gewichtsaudit
+
+Vor R5.3 summierten sich die konfigurierten Rohgewichte auf `1,00`; fehlende Signale wurden
+bereits aus dem aktiven Nenner entfernt. Damit existiert ein sauberer Extension-Point, ohne
+vorhandene Gewichte neu zu verteilen. Verglichen wurden `0,03`, `0,05` und `0,07`.
+
+| Kandidat | maximale Wirkung beim minimalen Pantry-Context | Einordnung |
+|---:|---:|---|
+| 0,03 | `0,03 / 0,53 = 5,66 %` | sehr zurückhaltend; kann selbst enge Wünsche leicht übersehen |
+| 0,05 | `0,05 / 0,55 = 9,09 %` | entspricht Recipe Preference und bleibt Pantry klar untergeordnet |
+| 0,07 | `0,07 / 0,57 = 12,28 %` | nähert sich dem Time-Signal und gibt einem optionalen Wunsch relativ viel Kraft |
+
+Im üblichen vollständigen Context mit vorherigem aktivem Nenner `0,95` bewirkt ein voller
+gegenüber keinem Match bei `0,05` höchstens fünf Score-Prozentpunkte. Entscheidung:
+**Gewicht `0,05`**. Es ist sichtbar genug, um einen fachlichen Tie zu beeinflussen, und
+klein genug, dass ein deutlich besserer Pantry-Basisfit ohne Wunschzutat weiterhin gewinnt.
+
+### Ausgeführte Guardrails
+
+- keine Wunschzutaten: Signal abwesend und bisheriges Recommendation-Ergebnis exakt gleich,
+- voller, teilweiser und fehlender Match: monotoner Signalwert `1`, Anteil, `0`,
+- fehlender Match: Recipe bleibt Candidate,
+- passende Alternative: Group erfüllt den Wunsch ohne Änderung der Pantry-Zuordnung,
+- Input-Reihenfolge: identische Scores, Reihenfolge und Reasons,
+- alle drei Kandidatengewichte: deutlich besserer Pantry-Fit bleibt dominant,
+- R4 Golden Scenarios, Strong-Match- und Household-Regeln: unverändert bestanden.
+
+Das Profil trägt wegen der nachweisbaren, bewusst sichtbaren Signalerweiterung die Version
+`V1.1`. Es handelt sich nicht um eine Neukalibrierung des Scores; rohe Werte bleiben in der
+UI unsichtbar.
+
+### R5.3 Akzeptanzkorrektur: am selben Tag gekocht
+
+Ein bestätigtes `MealHistoryEntry.occurredAt` am aktuellen Datum der injizierten Clock-Zone
+schließt das Recipe nun vor dem Ranking aus. Das ist eine Candidate-Regel, kein Signal und
+kein neuer Penalty. Die Gewichte, Active-Weight-Normalisierung und lineare 14-Tage-Freshness
+bleiben unverändert. Gestern oder früher gekochte Recipes sind weiterhin Kandidaten. Der
+angepasste Golden-Fall E prüft deshalb den unveränderten Recency-Vergleich ab dem Folgetag;
+die Same-Day-Eligibility besitzt eigene Service- und Workflow-Regressionstests.

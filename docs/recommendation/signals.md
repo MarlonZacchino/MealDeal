@@ -88,7 +88,10 @@ dass das Signal bei dieser Anfrage nicht in die gewichtete Summe eingeht.
 - Berechnung: `clamp(vergangene Sekunden / 14 Tage, 0, 1)`.
 - Nie gekocht und mindestens 14 Tage: `1`; heute beziehungsweise zukünftiger Zeitstempel:
   `0`; dazwischen kontinuierlich monoton.
-- Reasons: `RECIPE_NEVER_COOKED`, `RECIPE_COOKED_TODAY`, `RECENTLY_COOKED` für weniger als
+- Ein am aktuellen lokalen Kalendertag bestätigtes Recipe wird bereits in Eligibility
+  ausgeschlossen. `RECIPE_COOKED_TODAY` ist deshalb ein Ausschlussgrund und kein zusätzlicher
+  Score-Penalty. Ab dem Folgetag bleibt das Recipe Candidate.
+- Reasons für bewertete Candidates: `RECIPE_NEVER_COOKED`, `RECENTLY_COOKED` für weniger als
   sieben Tage und `RECIPE_NOT_COOKED_RECENTLY` ab 14 Tagen. Der mittlere Bereich erzeugt
   keine künstlich präzise Anzeige-Reason.
 - Recipe-Ähnlichkeit, Frequency und weitere Variety-Dimensionen bleiben außerhalb V1.

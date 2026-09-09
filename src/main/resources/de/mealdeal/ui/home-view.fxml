@@ -17,13 +17,13 @@
                 <VBox maxWidth="1.7976931348623157E308"
                       styleClass="content-card, home-card">
                     <HBox alignment="CENTER_LEFT" styleClass="content-card-header">
-                        <Label text="Gericht finden" wrapText="true"
+                        <Label text="Was soll ich kochen?" wrapText="true"
                                styleClass="content-card-header-title"/>
                     </HBox>
                     <VBox spacing="16.0" styleClass="content-card-body">
-                        <Label text="Suche nach passenden Gerichten anhand deiner Zutaten oder deines Geschmacks."
+                        <Label text="Lass dir passende Gerichte aus deinen Rezepten und deinem Inventar vorschlagen."
                                wrapText="true" styleClass="card-text"/>
-                        <Button text="Gericht finden" onAction="#openSearch"
+                        <Button text="Vorschläge erhalten" onAction="#openRecommendation"
                                 styleClass="primary-button"/>
                     </VBox>
                 </VBox>

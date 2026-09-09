@@ -7,31 +7,28 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<ScrollPane xmlns:fx="http://javafx.com/fxml/1" fitToWidth="true" hbarPolicy="NEVER"
-            styleClass="content-scroll"
-            fx:controller="de.mealdeal.ui.controller.IngredientSearchController">
+<ScrollPane xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="de.mealdeal.ui.controller.IngredientSearchController"
+            fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
+    <fx:define><ToggleGroup fx:id="tasteModeGroup"/></fx:define>
     <content>
         <StackPane alignment="TOP_CENTER" styleClass="page-shell">
-            <VBox maxWidth="1.7976931348623157E308" spacing="28.0" styleClass="page-container">
-                <fx:define>
-                    <ToggleGroup fx:id="tasteModeGroup"/>
-                </fx:define>
-                <VBox spacing="6.0" styleClass="page-header">
-                    <Label text="Gericht finden" styleClass="page-title"/>
-                    <Label text="Finde passende Gerichte nach Zutaten oder Geschmack."
+            <VBox maxWidth="1.7976931348623157E308" spacing="20.0"
+                  styleClass="page-container">
+                <VBox spacing="6.0">
+                    <Label text="Rezeptsuche" styleClass="page-title"/>
+                    <Label text="Filtere deine Rezepte gezielt nach Zutaten und Geschmack."
                            wrapText="true" styleClass="page-subtitle"/>
                 </VBox>
-
                 <Label fx:id="searchMessage" managed="false" visible="false"
                        wrapText="true" styleClass="form-message"/>
-
                 <GridPane fx:id="searchSelectionGrid" hgap="18.0" vgap="18.0"
                           styleClass="search-selection-grid">
                     <columnConstraints>
@@ -48,12 +45,10 @@
                                   styleClass="search-selection-content">
                                 <HBox alignment="CENTER_LEFT" spacing="12.0">
                                     <Label text="Wähle mindestens eine und höchstens zehn Zutaten."
-                                           wrapText="true" styleClass="card-text"
-                                           HBox.hgrow="ALWAYS"/>
+                                           wrapText="true" styleClass="card-text" HBox.hgrow="ALWAYS"/>
                                     <Label fx:id="selectionCountLabel" styleClass="selection-count"/>
                                 </HBox>
-                                <TextField fx:id="ingredientFilterField"
-                                           promptText="Zutaten durchsuchen …"/>
+                                <TextField fx:id="ingredientFilterField" promptText="Zutaten durchsuchen …"/>
                                 <VBox fx:id="availableIngredientsContainer" spacing="10.0"/>
                                 <VBox spacing="10.0" styleClass="sub-card, selected-ingredients-box">
                                     <Label text="Deine Auswahl" styleClass="form-label"/>
@@ -62,7 +57,6 @@
                             </VBox>
                         </content>
                     </TitledPane>
-
                     <TitledPane fx:id="tasteSelectionPane" text="Geschmacksrichtungen auswählen"
                                 animated="true" collapsible="true" expanded="false"
                                 minWidth="0.0" maxWidth="1.7976931348623157E308"
@@ -73,12 +67,10 @@
                                   styleClass="search-selection-content">
                                 <HBox alignment="CENTER_LEFT" spacing="12.0">
                                     <Label text="Wähle eine oder mehrere passende Geschmacksrichtungen."
-                                           wrapText="true" styleClass="card-text"
-                                           HBox.hgrow="ALWAYS"/>
+                                           wrapText="true" styleClass="card-text" HBox.hgrow="ALWAYS"/>
                                     <Label fx:id="tasteSelectionCountLabel" styleClass="selection-count"/>
                                 </HBox>
-                                <TextField fx:id="tasteFilterField"
-                                           promptText="Geschmacksrichtungen durchsuchen …"/>
+                                <TextField fx:id="tasteFilterField" promptText="Geschmacksrichtungen durchsuchen …"/>
                                 <FlowPane fx:id="availableTastesContainer" hgap="10.0" vgap="10.0"/>
                                 <VBox spacing="10.0" styleClass="sub-card, selected-ingredients-box">
                                     <Label text="Deine Auswahl" styleClass="form-label"/>
@@ -88,74 +80,40 @@
                         </content>
                     </TitledPane>
                 </GridPane>
-
-                <HBox alignment="CENTER_RIGHT" spacing="12.0">
-                    <Button text="Gericht finden" onAction="#search"
-                            styleClass="primary-button"/>
-                    <Button fx:id="searchOptionsButton" text="Filter &amp; Suchoptionen"
-                            accessibleText="Filter und Suchoptionen öffnen"
-                            onAction="#toggleSearchOptions" styleClass="secondary-button"/>
+                <VBox spacing="8.0" styleClass="sub-card">
+                    <Label text="Suchmodus für Geschmack" styleClass="form-label"/>
+                    <FlowPane hgap="18.0" vgap="10.0">
+                        <RadioButton fx:id="tasteAndMode" text="Alle (AND)" toggleGroup="$tasteModeGroup"/>
+                        <RadioButton fx:id="tasteOrMode" text="Mindestens eine (OR)" toggleGroup="$tasteModeGroup"/>
+                        <RadioButton fx:id="tasteRankingMode" text="Beste Treffer (RANKING)"
+                                     selected="true" toggleGroup="$tasteModeGroup"/>
+                    </FlowPane>
+                </VBox>
+                <FlowPane alignment="CENTER_LEFT" hgap="12.0" vgap="10.0">
+                    <Button text="Suche starten" onAction="#search" styleClass="primary-button"/>
                     <Button text="Alle Filter zurücksetzen" onAction="#resetFilters"
                             styleClass="secondary-button, search-reset-button"/>
-                </HBox>
-
-                <VBox fx:id="searchOptionsContent" managed="false" visible="false"
-                      spacing="12.0" styleClass="content-card">
-                    <Label text="Geschmacksfilter" styleClass="form-label"/>
-                    <Label text="Diese Einstellung gilt nur für ausgewählte Geschmacksrichtungen. Die Zutatenbewertung bleibt PERFECT / GOOD / PARTIAL."
-                           wrapText="true" styleClass="mode-description"/>
-                    <HBox spacing="10.0">
-                        <VBox minWidth="0.0" spacing="5.0" HBox.hgrow="ALWAYS"
-                              styleClass="sub-card, taste-mode-card">
-                            <RadioButton fx:id="tasteAndMode" text="Alle (AND)"
-                                         toggleGroup="$tasteModeGroup"/>
-                            <Label text="Das Gericht enthält jede ausgewählte Geschmacksrichtung."
-                                   wrapText="true" styleClass="mode-description"/>
-                        </VBox>
-                        <VBox minWidth="0.0" spacing="5.0" HBox.hgrow="ALWAYS"
-                              styleClass="sub-card, taste-mode-card">
-                            <RadioButton fx:id="tasteOrMode" text="Mindestens eine (OR)"
-                                         toggleGroup="$tasteModeGroup"/>
-                            <Label text="Das Gericht enthält mindestens eine der ausgewählten Richtungen."
-                                   wrapText="true" styleClass="mode-description"/>
-                        </VBox>
-                        <VBox minWidth="0.0" spacing="5.0" HBox.hgrow="ALWAYS"
-                              styleClass="sub-card, taste-mode-card">
-                            <RadioButton fx:id="tasteRankingMode"
-                                         text="Beste Treffer (RANKING)"
-                                         selected="true" toggleGroup="$tasteModeGroup"/>
-                            <Label text="Alle Treffer werden nach ihrer Übereinstimmung sortiert."
-                                   wrapText="true" styleClass="mode-description"/>
-                        </VBox>
-                    </HBox>
-                </VBox>
-
+                </FlowPane>
                 <VBox spacing="14.0">
                     <Label text="Ergebnisse" styleClass="section-title"/>
                     <VBox fx:id="resultsContainer" alignment="TOP_LEFT" VBox.vgrow="NEVER"
                           managed="false" visible="false" spacing="12.0"/>
-
                     <VBox fx:id="initialState" alignment="CENTER" spacing="8.0"
-                           styleClass="content-card, search-state-card">
+                          styleClass="content-card, search-state-card">
                         <Label text="Bereit für deine Suche" styleClass="card-title"/>
-                        <Label text="Wähle Zutaten, Geschmacksrichtungen oder beides und starte die Suche."
+                        <Label text="Wähle Zutaten, Geschmacksrichtungen oder beides."
                                wrapText="true" styleClass="card-text"/>
                     </VBox>
-
                     <VBox fx:id="emptyState" alignment="CENTER" spacing="8.0"
-                          managed="false" visible="false"
-                           styleClass="content-card, search-state-card">
+                          managed="false" visible="false" styleClass="content-card, search-state-card">
                         <Label text="Keine passenden Gerichte gefunden" styleClass="card-title"/>
-                        <Label text="Verändere deine Auswahl oder probiere einen anderen Suchmodus."
+                        <Label text="Verändere deine Auswahl oder den Suchmodus."
                                wrapText="true" styleClass="card-text"/>
                     </VBox>
-
                     <VBox fx:id="errorState" alignment="CENTER" spacing="8.0"
-                          managed="false" visible="false"
-                           styleClass="content-card, search-state-card">
+                          managed="false" visible="false" styleClass="content-card, search-state-card">
                         <Label text="Die Suche ist gerade nicht verfügbar" styleClass="card-title"/>
-                        <Label text="Bitte versuche es erneut."
-                               wrapText="true" styleClass="card-text"/>
+                        <Label text="Bitte versuche es erneut." wrapText="true" styleClass="card-text"/>
                     </VBox>
                 </VBox>
             </VBox>

@@ -101,6 +101,20 @@ Die R3-Bewertung ruft keine dieser Schreiboperationen auf: SELECTED erzeugt wede
 noch Verbrauch, bestätigte History erzeugt weder LIKE noch Interaction und die Berechnung
 allein erzeugt kein SHOWN-Ereignis.
 
+`RecommendationWorkflowService` bildet in R5 die JavaFX-unabhängige Anwendungsfallgrenze
+für sichtbare Recommendations. Vor dem Inventory-Snapshot führt er den injizierten
+`InventoryConsumptionService.consumePastEntries()` aus; dessen bestehendes Ledger verhindert
+erneuten Verbrauch derselben Planung. Pro ausdrücklichem Start erzeugt er eine Session-UUID,
+lädt Recipes und das abgeglichene Inventory, delegiert das unveränderte Ranking an
+`PersonalizedRecommendationService` und begrenzt nur die sichtbare Liste auf fünf Einträge.
+Er schreibt SHOWN erst nach der Darstellung und innerhalb einer Session höchstens einmal je
+Recipe. SELECTED, DISMISSED, Recipe Feedback und recommendationbasierte Meal History bleiben
+explizite getrennte Aktionen. Eine bestätigte Kochaktion entfernt nur die betreffende Karte
+aus der laufenden Session. In späteren Läufen schließt die vor dem Scoring ausgeführte
+Eligibility-Prüfung Recipes mit `COOKED_TODAY` anhand der Clock-Zone aus; ab dem Folgetag
+greift wieder der unveränderte 14-Tage-Recency-Score. Neurendern verändert weder Rangfolge
+noch Score-Snapshot und erzeugt keine zusätzlichen Interaktionen.
+
 ## Persistence
 
 Kapselt den direkten JDBC-Zugriff auf SQLite. Repository-Schnittstellen kennen nur Domain- und Standard-Java-Typen; ihre SQLite-Implementierungen bilden Domain-Objekte auf das relationale Schema ab.
@@ -201,7 +215,7 @@ ApplicationContext / Services
 Domain und Repositories
 ```
 
-`MealDealApplication` öffnet genau eine primäre Stage. `MainController` hält die Seitenleiste dauerhaft sichtbar, während `ViewNavigator` nur den Inhaltsbereich austauscht und den aktiven Navigationseintrag markiert. Dadurch entstehen beim Wechsel zwischen Start, Gerichten, Suche, Wochenplan, Einkauf, Zutaten und Inventar keine zusätzlichen Fenster.
+`MealDealApplication` öffnet genau eine primäre Stage. `MainController` hält die Seitenleiste dauerhaft sichtbar, während `ViewNavigator` nur den Inhaltsbereich austauscht und den aktiven Navigationseintrag markiert. Dadurch entstehen beim Wechsel zwischen Start, Gerichten, Recommendation, Rezeptsuche, Wochenplan, Einkauf, Zutaten, Inventar und Hilfe keine zusätzlichen Fenster.
 
 Die zentrale Zutaten- und Kategorieverwaltung besitzt mit `IngredientsController` eine eigene Ansicht. Sie verwendet weiterhin ausschließlich `IngredientManagementService` und `IngredientCategoryService`; Anlegen, Umbenennen, Umkategorisieren, Sortieren und das transaktionale Löschen einer Kategorie bleiben damit außerhalb der UI. Ein kompakter lokaler Formularzustand legt neue Zutaten mit Name und Kategorie an und schließt sich nach Erfolg oder Abbruch wieder. Die alphabetisch sortierten, nichtleeren Kategorien erscheinen als responsives Raster. Eine lokale Auswahl zeigt genau eine ebenfalls alphabetisch sortierte Zutatenliste unterhalb des gesamten Rasters; beim ersten Öffnen bleibt keine Kategorie ausgewählt. `InventoryController` verwaltet dagegen nur noch Bestandsmenge und Unit zentraler Ingredients. Beide Controller erhalten ihre Services weiterhin manuell über den `ApplicationContext`.
 
@@ -211,7 +225,7 @@ Die Anwendung überlässt die Per-Monitor-DPI-Skalierung vollständig dem JavaFX
 
 `MainController` kennzeichnet den Root nur anhand der verfügbaren logischen Scene-Breite als kompakt (unter 1100 px), normal, breit (ab 1440 px) oder extrabreit (ab 2100 px). Das zentrale Stylesheet reduziert im Kompaktzustand ausschließlich die horizontal platzkritischen Abstände des Wochenplans; seine Tagesköpfe und Eintragszeilen teilen Inhalt und geschützte Aktionen außerdem über flexible beziehungsweise umbrechende Layout-Container auf. Für breite Viewports erweitert das Stylesheet die regulären Seitencontainer von 1080 px beziehungsweise die Detailansicht von 1240 px auf bis zu 1320/1440 px oder 1640/1760 px. Gleichzeitig wachsen Seitenleiste, Abstände, Titel und Controls moderat. Beschreibende Texte behalten eigene Maximalbreiten, damit breite Karten keine unnötig langen Zeilen erzeugen.
 
-Auf der Startseite führt eine einzige zentrale Aktion „Gericht finden“ in die kombinierte Zutaten- und Geschmackssuche. Tages- und Wochenplanung stehen entsprechend ihrer fachlichen Gewichtung als breite Karten direkt untereinander. Diese vertikale Reihenfolge bleibt auch bei schmaleren Fenstern eindeutig und verhindert ein unnötiges horizontales Auseinanderziehen.
+Auf der Startseite führt die zentrale Aktion „Was soll ich kochen?“ in den einfachen Recommendation-Workflow. Die detailliertere „Rezeptsuche“ bleibt ein eigener Navigationseintrag. Tages- und Wochenplanung stehen entsprechend ihrer fachlichen Gewichtung als breite Karten direkt untereinander. Diese vertikale Reihenfolge bleibt auch bei schmaleren Fenstern eindeutig und verhindert ein unnötiges horizontales Auseinanderziehen.
 
 `HomeController` lädt die sichtbaren Planungszusammenfassungen ausschließlich über `WeeklyMealPlanService.loadCurrentWeek()`. Für Heute rendert er das von `MealPlanDay` gelieferte optionale Hauptgericht sowie alle geordneten Beilagen und Nachtische mit ihrer jeweiligen Portionszahl in getrennten Bereichen; ein Beilagen- oder Nachtisch-only-Tag ist damit kein leerer Tag. Die kompakte Wochenübersicht verwendet dasselbe Modell für alle sieben Tage. `HomeMealPlanViewModel` bleibt JavaFX-unabhängig und überführt nur dieses bereits fachlich validierte Tagesmodell in Präsentationsdaten; der Controller enthält weder Repository-Zugriffe noch MealRole-Fachlogik.
 
@@ -221,11 +235,40 @@ Das gemeinsame Stylesheet definiert die Oberflächenfarben als vererbte UI-Token
 
 Container verwenden drei gemeinsame, tokenbasierte CSS-Grundtypen: `content-card` für normale Hauptflächen, `expandable-card` für einheitliche Bordeaux-Header samt Inhalt und `sub-card` für kompakte innere Bereiche. Fachspezifische Klassen ergänzen nur noch das jeweilige Layout oder Verhalten. Breite Viewports vergrößern dabei moderat den horizontalen Innenabstand der Hauptkarten, ohne deren vertikale Abstände unnötig aufzublähen.
 
-`ApplicationContext` übernimmt die bewusste manuelle Zusammensetzung der UI. Er erstellt für den konfigurierten Datenbankpfad die SQLite-Implementierungen von `RecipeRepository`, `IngredientRepository`, `TasteRepository` und `MealPlanRepository` auf einer gemeinsamen `SqliteDatabase` und injiziert die benötigten Schnittstellen und Services in die Controller; ein Dependency-Injection-Framework ist dafür nicht erforderlich.
+`ApplicationContext` übernimmt die bewusste manuelle Zusammensetzung der UI. Er erstellt für den konfigurierten Datenbankpfad die SQLite-Implementierungen von `RecipeRepository`, `IngredientRepository`, `TasteRepository`, `MealPlanRepository`, `MealHistoryRepository`, `RecipeFeedbackRepository` und `RecommendationInteractionRepository` auf einer gemeinsamen `SqliteDatabase` und injiziert die benötigten Schnittstellen und Services in die Controller; ein Dependency-Injection-Framework ist dafür nicht erforderlich.
+
+Seit R5.3 sind die Nutzerziele sichtbar getrennt: `RECOMMENDATION` öffnet „Was soll ich
+kochen?“ und `SEARCH` die „Rezeptsuche“. Es gibt keinen Mode-Selector und keinen gemeinsamen
+Wrapper. Die Recommendation bleibt kompakt und nimmt Personen, optionales Zeitlimit sowie
+einen standardmäßig geschlossenen Bereich für Wunschzutaten und Geschmack entgegen. Die
+klassische Suche behält ihre IngredientGroup-Auswertung, PERFECT/GOOD/PARTIAL sowie die
+Taste-Modi AND/OR/RANKING vollständig unabhängig. `HELP` öffnet eine scrollbare lokale
+Bedienhilfe; sie besitzt keine Fach- oder Persistenzlogik.
+
+Der `RecommendationController` koordiniert Eingaben, Darstellung, Navigation und
+Fehlerzustände. Personen, optionales Zeitlimit, optionale Tastes und lokale Wunschzutaten
+werden an den Workflow übergeben; Inventory wird automatisch und davon unabhängig
+berücksichtigt. Der reine Scorer bildet Wunschzutaten als optionales, weiches
+`DESIRED_INGREDIENT_FIT` ab, ohne Recipes ohne Treffer auszuschließen. Ergebnis-Karten übersetzen die
+maschinenlesbaren Reason Codes in kurze deutsche Hinweise und zeigen bewusst keinen rohen,
+nicht kalibrierten Score. Detailöffnung, sessionlokales Ausblenden, Like/Dislike und
+„Als gekocht markieren“ delegieren jeweils an die bestehenden Services. Der vollständige
+UI-/Event-Vertrag steht in `docs/recommendation/ui-feedback-loop.md`.
+
+`ViewNavigator` hält für eine Detail-/Edit-Kette genau eine Ursprungsansicht samt Controller.
+Zurück stellt diese Instanz wieder her; Hauptnavigation gibt den Rückkehrzustand frei.
+Bearbeiten mit Speichern und Löschen invalidieren die alte Ansicht und laden beim Rückweg
+die Herkunftsroute neu. Ohne Herkunft gilt die Bibliothek als Rückfallziel. Ein
+`RecipeDetailContext` trägt die angefragte Portionszahl und vorgeschlagenen Option-UUIDs
+ausschließlich temporär in das bestehende `RecipeDetailIngredientModel`. Normale Aufrufe
+verwenden Recipe-Standards. Die gemeinsame `RecipeFeedbackView` bietet Like/Dislike als
+eindeutig markierte Schalter auf Karten und im Detail unabhängig von der Herkunft; ein
+erneuter Klick auf den aktiven Schalter löscht den Zustand. Nach Rückkehr wird nur explizites
+Feedback aktualisiert; Ranking, Session-UUID und Event-Deduplizierung bleiben erhalten.
 
 Der `RecipesController` lädt die gespeicherten Rezepte beim Öffnen der Ansicht neu. Er sortiert sie deterministisch nach Name und bei Namensgleichheit nach UUID und erzeugt daraus kompakte, auswählbare UI-Einträge. Jedes zeigt seinen `DishType` als deutsches Label (`Hauptgericht`, `Beilage` oder `Nachtisch`), ohne die Sortierung oder Navigation zu verändern. Empty State und Ladefehler sind eigene sichtbare Zustände.
 
-Ein ausgewähltes Recipe wird als vollständiges Domain-Objekt an die Detailansicht im bestehenden Inhaltsbereich übergeben. Der `RecipeDetailController` erhält den `RecipeScaler` über den `ApplicationContext` und bezieht bei jeder Änderung der Personenanzahl ausschließlich von ihm neue Zutatenmengen. Die Anzeige formatiert `BigDecimal` ohne binäre Fließkommazahlen mit deutschem Dezimaltrennzeichen und verwendet deutsche Küchenbezeichnungen für Units. Sein `DishType` erscheint als deutsches Metadaten-Label; Tastes werden als Chips dargestellt. Alle vier Zeitzeilen und die abgeleitete Summe verwenden eine sekundenpräzise deutsche Kurzform, fehlende Werte einen Gedankenstrich. Nährwerte bleiben unverändert pro Portion. Bei Alternativgruppen hält ein `RecipeDetailIngredientModel` die Auswahl ausschließlich für die aktuell offene Detailinstanz; es verändert oder persistiert weder Recipe noch MealPlan und startet beim erneuten Öffnen wieder mit der Standardoption.
+Ein ausgewähltes Recipe wird als vollständiges Domain-Objekt an die Detailansicht im bestehenden Inhaltsbereich übergeben. Der `RecipeDetailController` erhält den `RecipeScaler` über den `ApplicationContext` und bezieht bei jeder Änderung der Personenanzahl ausschließlich von ihm neue Zutatenmengen. Die Anzeige formatiert `BigDecimal` ohne binäre Fließkommazahlen mit deutschem Dezimaltrennzeichen und verwendet deutsche Küchenbezeichnungen für Units. Sein `DishType` erscheint als deutsches Metadaten-Label; Tastes werden als Chips dargestellt. Alle vier Zeitzeilen und die abgeleitete Summe verwenden eine sekundenpräzise deutsche Kurzform, fehlende Werte einen Gedankenstrich. Nährwerte bleiben unverändert pro Portion. Bei Alternativgruppen hält ein `RecipeDetailIngredientModel` die Auswahl ausschließlich für die aktuell offene Detailinstanz; es verändert oder persistiert weder Recipe noch MealPlan und übernimmt bei einer Recommendation deren temporäre Startauswahl; normale Aufrufe verwenden die Standardoption.
 
 Das Löschen eines Recipe wird in der Detailansicht ausdrücklich bestätigt und anschließend ausschließlich über `RecipeRepository.deleteById()` ausgeführt. Die abhängigen Recipe-Beziehungszeilen werden durch die bestehenden Cascades entfernt, zentrale Ingredients und Tastes jedoch nicht. Verhindert eine vorhandene Wochenplanung das Löschen per `ON DELETE RESTRICT`, übersetzt die SQLite-Implementierung diesen konkreten Constraint in eine `RecipeDeletionRestrictedException`; die UI bleibt in der Detailansicht und erklärt den Konflikt, ohne Planungsdaten automatisch zu verändern.
 

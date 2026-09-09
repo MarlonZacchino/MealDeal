@@ -5,6 +5,8 @@ import de.mealdeal.domain.RecipeFeedbackValue;
 import de.mealdeal.persistence.repository.RecipeFeedbackRepository;
 
 import java.time.Clock;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -51,6 +53,12 @@ public final class RecipeFeedbackService {
     public Optional<RecipeFeedback> findByRecipeId(UUID recipeId) {
         return repository.findByRecipeId(Objects.requireNonNull(
                 recipeId, "Recipe ID must not be null."));
+    }
+
+    /** Loads current feedback for several Recipes in one repository call. */
+    public Map<UUID, RecipeFeedback> findByRecipeIds(Collection<UUID> recipeIds) {
+        return repository.findByRecipeIds(Objects.requireNonNull(
+                recipeIds, "Recipe IDs must not be null."));
     }
 
     public boolean clear(UUID recipeId) {

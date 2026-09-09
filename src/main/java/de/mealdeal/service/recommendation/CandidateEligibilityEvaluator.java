@@ -26,6 +26,9 @@ final class CandidateEligibilityEvaluator {
                 .anyMatch(constraints -> constraints.excludedRecipeIds().contains(recipe.getId()))) {
             reasons.add(RecommendationReasonCode.RECIPE_HARD_EXCLUDED);
         }
+        context.personalizationFor(recipe.getId())
+                .filter(RecipePersonalizationSignals::wasCookedToday)
+                .ifPresent(ignored -> reasons.add(RecommendationReasonCode.RECIPE_COOKED_TODAY));
         Set<UUID> excludedIngredients = excludedIngredientIds(context);
         if (recipe.getIngredientGroups().stream().anyMatch(group -> group.getOptions().stream()
                 .allMatch(option -> excludedIngredients.contains(option.getIngredient().getId())))) {

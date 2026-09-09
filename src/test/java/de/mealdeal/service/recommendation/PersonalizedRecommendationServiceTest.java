@@ -30,11 +30,12 @@ class PersonalizedRecommendationServiceTest {
     private final RecipeRecommendationService scorer = new RecipeRecommendationService();
 
     @Test
-    void olderOrNeverCookedRecipeWinsWhenBaseFitIsEqual() {
+    void yesterdayCookedRecipeRemainsCandidateAndRecencyStillRanksItLower() {
         Recipe recent = candidate("recent", "Alpha Recent");
         Recipe fresh = candidate("fresh", "Zulu Fresh");
         RecommendationContext context = context(List.of(recent, fresh), Map.of(
-                recent.getId(), signals(recent, RecipeRecency.COOKED_TODAY, "0", null, "0", 0, 0),
+                recent.getId(), signals(recent, RecipeRecency.COOKED_RECENTLY,
+                        "0.0714285714285714", null, "0", 0, 0),
                 fresh.getId(), signals(fresh, RecipeRecency.NEVER_COOKED, "1", null, "0", 0, 0)));
 
         RecommendationOutcome result = scorer.recommend(List.of(recent, fresh), context);
@@ -43,7 +44,27 @@ class PersonalizedRecommendationServiceTest {
         assertTrue(result.recommendations().getFirst().reasonCodes().contains(
                 RecommendationReasonCode.RECIPE_NEVER_COOKED));
         assertTrue(result.recommendations().get(1).reasonCodes().contains(
-                RecommendationReasonCode.RECIPE_COOKED_TODAY));
+                RecommendationReasonCode.RECENTLY_COOKED));
+        assertTrue(result.exclusions().isEmpty());
+    }
+
+    @Test
+    void todayCookedRecipeIsExcludedBeforeScoringWhileOtherRecipesRemainUnchanged() {
+        Recipe cookedToday = candidate("today", "Alpha Today");
+        Recipe other = candidate("other", "Zulu Other");
+        RecommendationContext context = context(List.of(cookedToday, other), Map.of(
+                cookedToday.getId(), signals(cookedToday, RecipeRecency.COOKED_TODAY,
+                        "0", null, "0", 0, 0),
+                other.getId(), signals(other, RecipeRecency.NEVER_COOKED,
+                        "1", null, "0", 0, 0)));
+
+        RecommendationOutcome result = scorer.recommend(List.of(cookedToday, other), context);
+
+        assertEquals(List.of(other), result.recommendations().stream()
+                .map(RecipeRecommendation::recipe).toList());
+        assertEquals(cookedToday, result.exclusions().getFirst().recipe());
+        assertTrue(result.exclusions().getFirst().reasonCodes()
+                .contains(RecommendationReasonCode.RECIPE_COOKED_TODAY));
     }
 
     @Test

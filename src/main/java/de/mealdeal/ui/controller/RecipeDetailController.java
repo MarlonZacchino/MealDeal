@@ -6,9 +6,11 @@ import de.mealdeal.persistence.PersistenceException;
 import de.mealdeal.persistence.RecipeDeletionRestrictedException;
 import de.mealdeal.persistence.repository.RecipeRepository;
 import de.mealdeal.service.RecipeScaler;
+import de.mealdeal.service.RecipeFeedbackService;
+import de.mealdeal.domain.RecipeFeedbackValue;
 import de.mealdeal.ui.navigation.NavigationAware;
 import de.mealdeal.ui.navigation.ViewNavigator;
-import de.mealdeal.ui.navigation.ViewType;
+import de.mealdeal.ui.navigation.RecipeDetailContext;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -33,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.BooleanSupplier;
 
 /** Renders one recipe and keeps serving and alternative choices local to this view. */
@@ -44,6 +47,7 @@ public final class RecipeDetailController implements NavigationAware {
 
     private final RecipeRepository recipeRepository;
     private final RecipeScaler recipeScaler;
+    private final RecipeFeedbackService feedbackService;
     private final ListChangeListener<String> viewportListener = ignored -> applyResponsiveLayout();
     private ViewNavigator navigator;
     private Recipe recipe;
@@ -78,11 +82,18 @@ public final class RecipeDetailController implements NavigationAware {
     @FXML private VBox stepsSection;
     @FXML private VBox stepsContainer;
     @FXML private Label emptyStepsLabel;
+    @FXML private VBox feedbackContainer;
 
     public RecipeDetailController(RecipeRepository recipeRepository, RecipeScaler recipeScaler) {
+        this(recipeRepository, recipeScaler, null);
+    }
+
+    public RecipeDetailController(RecipeRepository recipeRepository, RecipeScaler recipeScaler,
+                                  RecipeFeedbackService feedbackService) {
         this.recipeRepository = Objects.requireNonNull(
                 recipeRepository, "Recipe repository must not be null.");
         this.recipeScaler = Objects.requireNonNull(recipeScaler, "Recipe scaler must not be null.");
+        this.feedbackService = feedbackService;
     }
 
     @FXML
@@ -106,8 +117,14 @@ public final class RecipeDetailController implements NavigationAware {
 
     /** Supplies the selected recipe after FXML loading and resets transient choices. */
     public void showRecipe(Recipe recipe) {
+        showRecipe(RecipeDetailContext.standard(recipe));
+    }
+
+    /** Initializes temporary choices without changing the stored Recipe. */
+    public void showRecipe(RecipeDetailContext context) {
+        Recipe recipe = context.recipe();
         this.recipe = Objects.requireNonNull(recipe, "Recipe must not be null.");
-        ingredientModel = new RecipeDetailIngredientModel(recipe, recipeScaler);
+        ingredientModel = new RecipeDetailIngredientModel(context, recipeScaler);
         nameLabel.setText(recipe.getName());
         standardServingLabel.setText("Standard: " + servingText(recipe.getStandardServingCount()));
         dishTypeLabel.setText(GermanRecipeDisplay.dishType(recipe.getDishType()));
@@ -115,20 +132,57 @@ public final class RecipeDetailController implements NavigationAware {
         renderTimes();
         renderNutrition();
         renderSteps();
-        configureServingSelection();
+        configureServingSelection(context.servings());
+        renderFeedback();
         applyResponsiveLayout();
     }
 
-    @FXML private void backToRecipes() { navigator.navigateTo(ViewType.RECIPES); }
+    @FXML private void backToRecipes() { navigator.returnFromRecipeDetail(false); }
 
     @FXML private void editRecipe() { navigator.navigateToRecipeEdit(recipe); }
+
+    private void renderFeedback() {
+        feedbackContainer.setVisible(feedbackService != null);
+        feedbackContainer.setManaged(feedbackService != null);
+        if (feedbackService == null) {
+            return;
+        }
+        try {
+            Label title = new Label("Dein Feedback zu diesem Gericht");
+            title.getStyleClass().add("section-title");
+            feedbackContainer.getChildren().setAll(title,
+                    new RecipeFeedbackView(feedbackService.findByRecipeId(recipe.getId()),
+                            value -> updateFeedback(Optional.of(value)),
+                            () -> updateFeedback(Optional.empty())));
+        } catch (RuntimeException exception) {
+            showFeedbackError(exception);
+        }
+    }
+
+    private void updateFeedback(Optional<RecipeFeedbackValue> value) {
+        try {
+            feedbackService.update(recipe.getId(), value, OptionalInt.empty());
+            renderFeedback();
+        } catch (RuntimeException exception) {
+            showFeedbackError(exception);
+        }
+    }
+
+    private void showFeedbackError(RuntimeException exception) {
+        LOGGER.log(System.Logger.Level.ERROR, "Could not access Recipe feedback.", exception);
+        Label message = new Label("Das Feedback konnte nicht geladen oder gespeichert werden. "
+                + "Öffne das Gericht erneut und versuche es noch einmal.");
+        message.setWrapText(true);
+        message.getStyleClass().add("form-message");
+        feedbackContainer.getChildren().setAll(message);
+    }
 
     @FXML
     private void deleteRecipe() {
         try {
             DeletionOutcome outcome = deleteAfterConfirmation(recipe, this::confirmDeletion);
             if (outcome == DeletionOutcome.DELETED || outcome == DeletionOutcome.NOT_FOUND) {
-                navigator.navigateTo(ViewType.RECIPES);
+                navigator.returnFromRecipeDetail(true);
             }
         } catch (RecipeDeletionRestrictedException exception) {
             LOGGER.log(System.Logger.Level.WARNING,
@@ -172,10 +226,10 @@ public final class RecipeDetailController implements NavigationAware {
         error.showAndWait();
     }
 
-    private void configureServingSelection() {
+    private void configureServingSelection(int servings) {
         SpinnerValueFactory.IntegerSpinnerValueFactory values =
                 new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                        1, MAX_SERVING_COUNT, recipe.getStandardServingCount());
+                        1, MAX_SERVING_COUNT, servings);
         servingSpinner.setValueFactory(values);
         values.valueProperty().addListener((ignored, previous, selected) -> {
             ingredientModel.setServingCount(selected);

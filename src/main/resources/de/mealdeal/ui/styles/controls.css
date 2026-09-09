@@ -1,3 +1,9 @@
+.hyperlink {
+    -fx-text-fill: -md-text;
+    -fx-font-size: 15px;
+    -fx-padding: 10px;
+}
+
 .check-box,
 .radio-button {
     -fx-text-fill: -md-text;
@@ -5,6 +11,7 @@
 
 .primary-button,
 .secondary-button,
+.tertiary-button,
 .danger-button {
     -fx-background-radius: 10px;
     -fx-cursor: hand;
@@ -29,6 +36,18 @@
 
 .secondary-button:hover {
     -fx-background-color: -md-accent-soft-hover;
+}
+
+.tertiary-button {
+    -fx-background-color: -md-surface;
+    -fx-border-color: -md-border;
+    -fx-border-radius: 10px;
+    -fx-text-fill: -md-text;
+}
+
+.tertiary-button:hover {
+    -fx-background-color: -md-surface-hover;
+    -fx-border-color: -md-accent;
 }
 
 .text-field,

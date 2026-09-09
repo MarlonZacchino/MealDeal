@@ -37,6 +37,8 @@
                     </FlowPane>
                 </HBox>
 
+                <VBox fx:id="feedbackContainer" spacing="12.0" managed="false" visible="false"/>
+
                 <GridPane fx:id="detailMetaGrid" hgap="18.0" vgap="18.0"
                           styleClass="recipe-detail-meta-grid">
                     <columnConstraints>

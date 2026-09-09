@@ -6,11 +6,13 @@ public enum ViewType {
     RECIPES("/de/mealdeal/ui/recipes-view.fxml"),
     RECIPE_DETAIL("/de/mealdeal/ui/recipe-detail-view.fxml"),
     CREATE_RECIPE("/de/mealdeal/ui/create-recipe-view.fxml"),
+    RECOMMENDATION("/de/mealdeal/ui/recommendation-view.fxml"),
     SEARCH("/de/mealdeal/ui/search-view.fxml"),
     WEEK_PLAN("/de/mealdeal/ui/week-plan-view.fxml"),
     INGREDIENTS("/de/mealdeal/ui/ingredients-view.fxml"),
     INVENTORY("/de/mealdeal/ui/inventory-view.fxml"),
-    SHOPPING("/de/mealdeal/ui/shopping-view.fxml");
+    SHOPPING("/de/mealdeal/ui/shopping-view.fxml"),
+    HELP("/de/mealdeal/ui/help-view.fxml");
 
     private final String resourcePath;
 
